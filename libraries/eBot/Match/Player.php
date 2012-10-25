@@ -179,7 +179,7 @@ class Player {
     }
 
     public function save() {
-        mysql_query("UPDATE `players` SET pseudo='" . \mysql_escape_string($this->name) . "', current_side='" . $this->currentSide . "' WHERE id='{$this->mysql_id}'");
+        mysql_query("UPDATE `players` SET pseudo='" . \mysql_escape_string($this->name) . "', current_side='" . $this->currentSide . "' WHERE id='{$this->mysql_id}'") or Logger::error(mysql_error());
     }
 
     public function saveScore() {

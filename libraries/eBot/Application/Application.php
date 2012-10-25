@@ -117,6 +117,7 @@ class Application extends AbstractApplication {
                     }
                 } else {
                     $line = substr($data, 7);
+
                     if (\eBot\Manager\MatchManager::getInstance()->getMatch($ip)) {
                         $line = trim(substr($line, 23));
                         \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->processMessage($line);

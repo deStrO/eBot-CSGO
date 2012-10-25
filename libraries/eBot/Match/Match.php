@@ -137,7 +137,7 @@ class Match implements Taskable {
                 $this->pluginCsay = true;
                 $this->pluginPrintPlayers = true;
                 $this->pluginSwitch = true;
-                $this->addMatchLog("- CSay version " . $match[1], true, false);
+                $this->addMatchLog("- CSay version " . $match[1], false, false);
             }
         } catch (\Exception $ex) {
             Logger::error("Error while getting plugins information");
@@ -578,11 +578,12 @@ class Match implements Taskable {
         $ip = explode(":", $this->server_ip);
         try {
             $this->rcon = new Rcon($ip[0], $ip[1], $this->rconPassword);
-            $this->rcon->send("echo eBot");
+            $this->rcon->send("echo eBot;");
 
             if ($this->matchData["config_password"] != "") {
                 $this->rcon->send("sv_password \"" . $this->matchData["config_password"] . "\"");
             }
+            
         } catch (\Exception $ex) {
             Logger::error("Reinit rcon failed - " . $ex->getMessage());
             TaskManager::getInstance()->addTask(new Task($this, self::REINIT_RCON, microtime(true) + 1));
@@ -1039,6 +1040,9 @@ class Match implements Taskable {
                     $this->setStatus(self::STATUS_WU_2_SIDE, true);
                     $this->currentMap->setStatus(Map::STATUS_WU_2_SIDE, true);
                     $this->saveScore();
+                    if ($this->maxRound != 15) {
+                        $this->rcon->send("mp_swapteams;");
+                    }
                     $this->rcon->send("mp_restartgame 1");
                 }
             } elseif ($this->getStatus() == self::STATUS_SECOND_SIDE) {
