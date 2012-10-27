@@ -265,6 +265,10 @@ class Match implements Taskable {
         }
 
         $this->addMatchLog("----------- End match loading -----------", false, false);
+
+        if ($this->getStatus() < self::STATUS_WU_1_SIDE) {
+            $this->sendTeamNames();
+        }
     }
 
     private function recupStatus($eraseAll = false) {
@@ -583,7 +587,11 @@ class Match implements Taskable {
             if ($this->matchData["config_password"] != "") {
                 $this->rcon->send("sv_password \"" . $this->matchData["config_password"] . "\"");
             }
-            
+
+            $this->rcon->send("mp_teamname_1 \"" . $this->matchData["team_a"] . "\"");
+            $this->rcon->send("mp_teamname_2 \"" . $this->matchData["team_b"] . "\"");
+            $this->rcon->send("mp_teamflag_1 \"FR\"");
+            $this->rcon->send("mp_teamflag_1 \"FR\"");
         } catch (\Exception $ex) {
             Logger::error("Reinit rcon failed - " . $ex->getMessage());
             TaskManager::getInstance()->addTask(new Task($this, self::REINIT_RCON, microtime(true) + 1));
@@ -847,6 +855,7 @@ class Match implements Taskable {
 
                 $this->say("swaping teams");
                 $this->rcon->send("mp_swapteams");
+                $this->sendTeamNames();
             }
         } elseif ($text == "!notready") {
             if ($this->isWarmupRound()) {
@@ -928,7 +937,7 @@ class Match implements Taskable {
                 $player->saveKillRound();
 
             $teamWin = $this->currentMap->addRound($message->getTeamWin());
-
+            
             if ($message->type != "saved") {
                 if ($this->specialSituation['active']) {
                     $nbAlive = 0;
@@ -1018,6 +1027,11 @@ class Match implements Taskable {
 
             $this->score["team_a"] = $this->currentMap->getScore1();
             $this->score["team_b"] = $this->currentMap->getScore2();
+            
+            if ($this->getNbRound() == $this->maxRound - 1) {
+                // Ensure that halftime_pausetimer is set
+                $this->rcon->send("mp_halftime_pausetimer 1");
+            }
 
             $this->say("\005" . $this->matchData["team_a"] . " \004" . $this->currentMap->getScore1() . " \001- \004" . $this->currentMap->getScore2() . " \005" . $this->matchData["team_b"]);
 
@@ -1040,10 +1054,8 @@ class Match implements Taskable {
                     $this->setStatus(self::STATUS_WU_2_SIDE, true);
                     $this->currentMap->setStatus(Map::STATUS_WU_2_SIDE, true);
                     $this->saveScore();
-                    if ($this->maxRound != 15) {
-                        $this->rcon->send("mp_swapteams;");
-                    }
-                    $this->rcon->send("mp_restartgame 1");
+
+                    $this->rcon->send("mp_halftime_pausetimer 1");
                 }
             } elseif ($this->getStatus() == self::STATUS_SECOND_SIDE) {
                 if (($this->score["team_a"] + $this->score["team_b"] == $this->maxRound * 2)
@@ -1057,7 +1069,8 @@ class Match implements Taskable {
                         $this->currentMap->addOvertime();
                         $this->nbOT++;
                         $this->addLog("Going to overtime");
-                        $this->rcon->send("Going to overtime");
+                        $this->say("Going to overtime");
+                        $this->rcon->send("mp_restartgame 1");
                     } else {
                         $this->currentMap->setStatus(Map::STATUS_MAP_ENDED, true);
 
@@ -1074,7 +1087,12 @@ class Match implements Taskable {
                     $this->currentMap->setStatus(Map::STATUS_WU_OT_2_SIDE, true);
                     $this->saveScore();
                     $this->swapSides();
-                    $this->rcon->send("mp_switchteams");
+                    $this->sendTeamNames();
+
+                    // Plus besoin, c'est géré par le mp_maxrounds
+                    // $this->rcon->send("mp_restartgame 1");
+                    
+                    $this->rcon->send("mp_halftime_pausetimer 1");
                 }
             } elseif ($this->getStatus() == self::STATUS_OT_SECOND_SIDE) {
                 $scoreToReach = $this->oldMaxround * 2 + $this->maxRound * 2 + ($this->maxRound * 2 * ($this->nbOT - 1));
@@ -1090,6 +1108,7 @@ class Match implements Taskable {
                         $this->maxRound = \eBot\Config\Config::getInstance()->getNbRoundOvertime();
                         $this->currentMap->addOvertime();
                         $this->addLog("Going to overtime");
+                        $this->rcon->send("mp_restartgame 1");
                     } else {
                         $this->currentMap->setStatus(Map::STATUS_MAP_ENDED, true);
 
@@ -1118,6 +1137,8 @@ class Match implements Taskable {
                 $allFinish = false;
         }
 
+        $this->rcon->send("tv_stoprecord");
+
         if (count($this->maps) == 1 || $allFinish) {
             $this->setStatus(self::STATUS_END_MATCH, true);
 
@@ -1133,6 +1154,7 @@ class Match implements Taskable {
                 $this->addMatchLog("Final score: " . $this->score["team_a"] . " - " . $this->score["team_b"] . " - Draw !");
             }
             $this->rcon->send("exec server.cfg");
+            $this->rcon->send("mp_teamname_1 \"\"; mp_teamname_2 \"\"; mp_teamflag_1 \"\"; mp_teamflag_1 \"\"");
         } else {
             // manage second map
             if ($this->score["team_a"] > $this->score["team_b"]) {
@@ -1299,11 +1321,22 @@ class Match implements Taskable {
         }
     }
 
+    private $waitRoundStartRecord = false;
+
     private function processRoundRestart(\eBot\Message\Type\RoundRestart $message) {
+        if ($this->wait3rs && $this->getStatus() == self::STATUS_FIRST_SIDE) {
+            $this->waitRoundStartRecord = true;
+        }
         $this->wait3rs = false;
     }
 
     private function processRoundStart(\eBot\Message\Type\RoundStart $message) {
+        if ($this->waitRoundStartRecord) {
+            Logger::log("Launching record match_" . $this->match_id . "_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_a']) . "_vs_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_b']) . ";");
+            $this->rcon->send("tv_record match_" . $this->match_id . "_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_a']) . "_vs_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_b']) . ";");
+            $this->waitRoundStartRecord = false;
+        }
+        
         $this->nbLast['nb_ct'] = $this->nbLast['nb_max_ct'];
         $this->nbLast['nb_t'] = $this->nbLast['nb_max_t'];
         $this->gameBombPlanter = null;
@@ -1536,11 +1569,17 @@ class Match implements Taskable {
                 $this->setStatus(self::STATUS_KNIFE, true);
                 $this->currentMap->setStatus(Map::STATUS_KNIFE, true);
 
+                // FIX for warmup
+                $this->rcon->send("mp_warmuptime 0; mp_do_warmup_period 0; mp_warmup_pausetimer 0;");
+
                 $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_restartgame 3");
                 $this->say("KNIFE ROUND !");
                 $this->say("KNIFE ROUND !");
                 $this->say("KNIFE ROUND !");
             } else {
+                // FIX for warmup
+                $this->rcon->send("mp_warmup_pausetimer 0;");
+
                 $this->stop['t'] = false;
                 $this->stop['ct'] = false;
                 $this->enable = true;
@@ -1554,27 +1593,38 @@ class Match implements Taskable {
                     case Map::STATUS_WU_1_SIDE:
                         $this->currentMap->setStatus(Map::STATUS_FIRST_SIDE, true);
                         $this->setStatus(self::STATUS_FIRST_SIDE, true);
-                        $fichier = $this->matchData["rules"] . ".cfg";
+                        $fichier = $this->matchData["rules"] . ".cfg; mp_maxrounds " . ($this->maxRound * 2);
+
+                        // NEW
+                        $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_do_warmup_period 0; mp_restartgame 3; mp_halftime_pausetimer 1");
+                        $this->say("Going live !!!");
                         break;
                     case Map::STATUS_WU_2_SIDE :
                         $this->currentMap->setStatus(Map::STATUS_SECOND_SIDE, true);
                         $this->setStatus(self::STATUS_SECOND_SIDE, true);
                         $fichier = $this->matchData["rules"] . ".cfg";
+
+                        // NEW
+                        $this->rcon->send("mp_halftime_pausetimer 0");
                         break;
                     case Map::STATUS_WU_OT_1_SIDE :
                         $this->currentMap->setStatus(Map::STATUS_OT_FIRST_SIDE, true);
                         $this->setStatus(self::STATUS_OT_FIRST_SIDE, true);
-                        $fichier = $this->matchData["rules"] . "_overtime.cfg";
+                        $fichier = $this->matchData["rules"] . "_overtime.cfg; mp_maxrounds " . ($this->maxRound * 2);
+
+                        // NEW
+                        $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_do_warmup_period 0; mp_restartgame 3; mp_halftime_pausetimer 1");
+                        $this->say("Going live !!!");
                         break;
                     case Map::STATUS_WU_OT_2_SIDE :
                         $this->currentMap->setStatus(Map::STATUS_OT_SECOND_SIDE, true);
                         $this->setStatus(self::STATUS_OT_SECOND_SIDE, true);
                         $fichier = $this->matchData["rules"] . "_overtime.cfg";
+
+                        // NEW
+                        $this->rcon->send("mp_halftime_pausetimer 0");
                         break;
                 }
-
-                $this->rcon->send("exec $fichier; mp_restartgame 3");
-                $this->say("Going live !!!");
 
                 if ($this->getStatus() == self::STATUS_FIRST_SIDE) {
                     $this->recupStatus(true);
@@ -1722,6 +1772,19 @@ class Match implements Taskable {
 
             $this->stopMatch();
         }
+    }
+
+    private function sendTeamNames() {
+        if ($this->currentMap->getCurrentSide() == "ct") {
+            $this->rcon->send("mp_teamname_1 \"" . $this->matchData["team_a"] . "\"");
+            $this->rcon->send("mp_teamname_2 \"" . $this->matchData["team_b"] . "\"");
+        } else {
+            $this->rcon->send("mp_teamname_1 \"" . $this->matchData["team_a"] . "\"");
+            $this->rcon->send("mp_teamname_2 \"" . $this->matchData["team_b"] . "\"");
+        }
+
+        $this->rcon->send("mp_teamflag_1 \"FR\"");
+        $this->rcon->send("mp_teamflag_1 \"FR\"");
     }
 
 }

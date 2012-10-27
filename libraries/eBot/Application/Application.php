@@ -111,6 +111,13 @@ class Application extends AbstractApplication {
                             } else {
                                 Logger::error($match["ip"] . " is not managed !");
                             }
+                        } elseif (preg_match("!^goBackRounds (?<ip>.*) (?<round>\d+)$!", $text, $match)) {
+                            $match = \eBot\Manager\MatchManager::getInstance()->getMatch($match["ip"], $match["round"]);
+                            if ($match) {
+                                $match->adminGoBackRounds();
+                            } else {
+                                Logger::error($match["ip"] . " is not managed !");
+                            }
                         } else {
                             Logger::error($text . " not managed");
                         }
