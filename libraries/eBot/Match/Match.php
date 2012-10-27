@@ -90,6 +90,9 @@ class Match implements Taskable {
     private $currentMap = null;
     private $messageManager;
     private $rconPassword;
+    private $isPaused;
+    private $pause = array("ct" => false, "t" => false);
+    private $unpause = array("ct" => false, "t" => false);
 
     public function __construct($match_id, $server_ip, $rcon) {
         Logger::debug("Registring MessageManager");
@@ -269,6 +272,8 @@ class Match implements Taskable {
         if ($this->getStatus() < self::STATUS_WU_1_SIDE) {
             $this->sendTeamNames();
         }
+        
+        $this->rcon->send("mp_backup_round_file \"ebot_".$this->match_id."\""); 
     }
 
     private function recupStatus($eraseAll = false) {
@@ -441,6 +446,13 @@ class Match implements Taskable {
                 || ($this->getStatus() == self::STATUS_END_KNIFE)
                 || ($this->getStatus() == self::STATUS_WU_OT_1_SIDE)
                 || ($this->getStatus() == self::STATUS_WU_OT_2_SIDE);
+    }
+
+    private function isMatchRound() {
+        return ($this->getStatus() == self::STATUS_FIRST_SIDE)
+                || ($this->getStatus() == self::STATUS_SECOND_SIDE)
+                || ($this->getStatus() == self::STATUS_OT_FIRST_SIDE)
+                || ($this->getStatus() == self::STATUS_OT_SECOND_SIDE);
     }
 
     public function sendRotateMessage() {
@@ -835,6 +847,50 @@ class Match implements Taskable {
 
                 $this->startMatch();
             }
+        } elseif ($text == "!pause") {
+            if ($this->isMatchRound() && !$this->isPaused) {
+                $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say pause");
+
+                if ($message->getUserTeam() == "CT") {
+                    $team = ($this->side['team_a'] == "ct") ? $this->matchData['team_a'] : $this->matchData['team_b'];
+
+                    if (!$this->pause['ct']) {
+                        $this->pause['ct'] = true;
+                        $this->say($team . " (CT) \003want to pause, write !pause to confirm");
+                    }
+                } elseif ($message->getUserTeam() == "TERRORIST") {
+                    $team = ($this->side['team_a'] == "t") ? $this->matchData['team_a'] : $this->matchData['team_b'];
+
+                    if (!$this->pause['t']) {
+                        $this->pause['t'] = true;
+                        $this->say($team . " (T) \003want to pause, write !pause to confirm");
+                    }
+                }
+
+                $this->pauseMatch();
+            }
+        } elseif ($text == "!unpause") {
+            if ($this->isMatchRound() && $this->isPaused) {
+                $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say pause");
+
+                if ($message->getUserTeam() == "CT") {
+                    $team = ($this->side['team_a'] == "ct") ? $this->matchData['team_a'] : $this->matchData['team_b'];
+
+                    if (!$this->unpause['ct']) {
+                        $this->unpause['ct'] = true;
+                        $this->say($team . " (CT) \003want to remove pause, write !unpause to confirm");
+                    }
+                } elseif ($message->getUserTeam() == "TERRORIST") {
+                    $team = ($this->side['team_a'] == "t") ? $this->matchData['team_a'] : $this->matchData['team_b'];
+
+                    if (!$this->unpause['t']) {
+                        $this->unpause['t'] = true;
+                        $this->say($team . " (T) \003want to remove pause, write !unpause to confirm");
+                    }
+                }
+
+                $this->unpauseMatch();
+            }
         } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!stay")) {
             if ($message->getUserTeam() == $this->winKnife) {
                 $this->addLog($message->getUserName() . " want to stay, going to warmup");
@@ -937,7 +993,7 @@ class Match implements Taskable {
                 $player->saveKillRound();
 
             $teamWin = $this->currentMap->addRound($message->getTeamWin());
-            
+
             if ($message->type != "saved") {
                 if ($this->specialSituation['active']) {
                     $nbAlive = 0;
@@ -1027,7 +1083,7 @@ class Match implements Taskable {
 
             $this->score["team_a"] = $this->currentMap->getScore1();
             $this->score["team_b"] = $this->currentMap->getScore2();
-            
+
             if ($this->getNbRound() == $this->maxRound - 1) {
                 // Ensure that halftime_pausetimer is set
                 $this->rcon->send("mp_halftime_pausetimer 1");
@@ -1089,9 +1145,9 @@ class Match implements Taskable {
                     $this->swapSides();
                     $this->sendTeamNames();
 
-                    // Plus besoin, c'est géré par le mp_maxrounds
+                    // Not needed anymore with last updates
                     // $this->rcon->send("mp_restartgame 1");
-                    
+
                     $this->rcon->send("mp_halftime_pausetimer 1");
                 }
             } elseif ($this->getStatus() == self::STATUS_OT_SECOND_SIDE) {
@@ -1336,7 +1392,7 @@ class Match implements Taskable {
             $this->rcon->send("tv_record match_" . $this->match_id . "_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_a']) . "_vs_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_b']) . ";");
             $this->waitRoundStartRecord = false;
         }
-        
+
         $this->nbLast['nb_ct'] = $this->nbLast['nb_max_ct'];
         $this->nbLast['nb_t'] = $this->nbLast['nb_max_t'];
         $this->gameBombPlanter = null;
@@ -1502,6 +1558,34 @@ class Match implements Taskable {
         $this->addLog("Counting players :: CT:" . $this->nbLast['nb_max_ct'] . " :: T:" . $this->nbLast['nb_max_t']);
     }
 
+    private function pauseMatch() {
+        if ($this->pause["ct"] && $this->pause["t"] && $this->isMatchRound() && !$this->isPaused) {
+            $this->isPaused = true;
+            $this->say("Match is paused");
+            $this->addMatchLog("Pausing match");
+            $this->rcon->send("pause");
+
+            $this->pause["ct"] = false;
+            $this->pause["t"] = false;
+            $this->unpause["ct"] = false;
+            $this->unpause["t"] = false;
+        }
+    }
+
+    private function unpauseMatch() {
+        if ($this->unpause["ct"] && $this->unpause["t"] && $this->isMatchRound() && $this->isPaused) {
+            $this->isPaused = false;
+            $this->say("Match is unpaused, live !");
+            $this->addMatchLog("Unpausing match");
+            $this->rcon->send("pause");
+
+            $this->pause["ct"] = false;
+            $this->pause["t"] = false;
+            $this->unpause["ct"] = false;
+            $this->unpause["t"] = false;
+        }
+    }
+
     private function stopMatch() {
         if ($this->stop["ct"] && $this->stop["t"]) {
             if (in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
@@ -1533,6 +1617,10 @@ class Match implements Taskable {
                 $this->ready["t"] = false;
                 $this->stop["ct"] = false;
                 $this->stop["t"] = false;
+                $this->pause["ct"] = false;
+                $this->pause["t"] = false;
+                $this->unpause["ct"] = false;
+                $this->unpause["t"] = false;
 
                 $this->score["team_a"] = $this->currentMap->getScore1();
                 $this->score["team_b"] = $this->currentMap->getScore2();
@@ -1549,6 +1637,10 @@ class Match implements Taskable {
                 $this->ready["t"] = false;
                 $this->stop["ct"] = false;
                 $this->stop["t"] = false;
+                $this->pause["ct"] = false;
+                $this->pause["t"] = false;
+                $this->unpause["ct"] = false;
+                $this->unpause["t"] = false;
 
                 $this->say("\001The knife round is stopped \005- \003" . $this->getStatusText());
                 $this->rcon->send("mp_restartgame 1");
@@ -1570,9 +1662,9 @@ class Match implements Taskable {
                 $this->currentMap->setStatus(Map::STATUS_KNIFE, true);
 
                 // FIX for warmup
-                $this->rcon->send("mp_warmuptime 0; mp_do_warmup_period 0; mp_warmup_pausetimer 0;");
-
                 $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_restartgame 3");
+                $this->rcon->send("mp_warmuptime 0; mp_do_warmup_period 0; mp_warmup_pausetimer 0;");
+                
                 $this->say("KNIFE ROUND !");
                 $this->say("KNIFE ROUND !");
                 $this->say("KNIFE ROUND !");
@@ -1633,6 +1725,10 @@ class Match implements Taskable {
 
             $this->ready['ct'] = false;
             $this->ready['t'] = false;
+            $this->pause["ct"] = false;
+            $this->pause["t"] = false;
+            $this->unpause["ct"] = false;
+            $this->unpause["t"] = false;
         }
     }
 
@@ -1706,6 +1802,9 @@ class Match implements Taskable {
         $this->addMatchLog("Match stopped by admin");
         $this->say("#redMatch stopped by admin");
 
+        $this->rcon->send("exec server.cfg");
+        $this->rcon->send("mp_teamname_1 \"\"; mp_teamname_2 \"\"; mp_teamflag_1 \"\"; mp_teamflag_1 \"\"");
+
         mysql_query("UPDATE `matchs` SET enable = 0 WHERE id = '" . $this->match_id . "'");
         $this->needDel = true;
     }
@@ -1716,6 +1815,9 @@ class Match implements Taskable {
         $this->say("#redMatch stopped by admin");
 
         $this->rcon->send("mp_restartgame 1");
+
+        $this->rcon->send("exec server.cfg");
+        $this->rcon->send("mp_teamname_1 \"\"; mp_teamname_2 \"\"; mp_teamflag_1 \"\"; mp_teamflag_1 \"\"");
 
         mysql_query("UPDATE `matchs` SET enable = 0 WHERE id = '" . $this->match_id . "'");
         $this->needDel = true;
@@ -1759,6 +1861,31 @@ class Match implements Taskable {
             $this->startMatch();
         }
     }
+    
+    public function adminPauseUnpause() {
+        if ($this->isMatchRound() && $this->isPaused) {
+            $this->isPaused = false;
+            $this->say("Match is unpaused by admin, live !");
+            $this->addMatchLog("Unpausing match by admin");
+            $this->rcon->send("pause");
+
+            $this->pause["ct"] = false;
+            $this->pause["t"] = false;
+            $this->unpause["ct"] = false;
+            $this->unpause["t"] = false;
+        } elseif ($this->isMatchRound() && !$this->isPaused) {
+            $this->isPaused = true;
+            $this->say("Match is paused by admin, live !");
+            $this->addMatchLog("Pausing match by admin");
+            $this->rcon->send("pause");
+
+            $this->pause["ct"] = false;
+            $this->pause["t"] = false;
+            $this->unpause["ct"] = false;
+            $this->unpause["t"] = false;
+        }
+    }
+
 
     public function adminStopBack() {
         if (!$this->isWarmupRound()) {
