@@ -1697,6 +1697,7 @@ class Match implements Taskable {
                         $fichier = $this->matchData["rules"] . ".cfg";
 
                         // NEW
+                        $this->wait3rs = false; 
                         $this->rcon->send("mp_halftime_pausetimer 0");
                         break;
                     case Map::STATUS_WU_OT_1_SIDE :
@@ -1714,6 +1715,7 @@ class Match implements Taskable {
                         $fichier = $this->matchData["rules"] . "_overtime.cfg";
 
                         // NEW
+                        $this->wait3rs = false; 
                         $this->rcon->send("mp_halftime_pausetimer 0");
                         break;
                 }
