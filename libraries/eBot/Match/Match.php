@@ -1314,8 +1314,8 @@ class Match implements Taskable {
             \mysql_query("INSERT INTO player_kill 
                 (`match_id`,`map_id`,`killer_name`,`killer_id`,`killed_name`,`killed_id`,`weapon`,`headshot`,`round_id`) 
                 VALUES 
-                ('" . $this->match_id . "','" . $this->currentMap->getMapId() . "', '" . $killer_name . "', " . (($killer_id != null) ? $killer_id : "NULL") . ", '" . $killed_name . "', " . (($killed_id != null) ? $killed_id : "NULL") . ", '" . $message->weapon . "', '" . $message->headshot . "','" . $this->getNbRound() . "')
-                    ") or $this->addLog("Can't insert player_kill", Logger::ERROR);
+                ('" . $this->match_id . "','" . $this->currentMap->getMapId() . "', '" . addslashes($killer_name) . "', " . (($killer_id != null) ? $killer_id : "NULL") . ", '" . addslashes($killed_name) . "', " . (($killed_id != null) ? $killed_id : "NULL") . ", '" . $message->weapon . "', '" . $message->headshot . "','" . $this->getNbRound() . "')
+                    ") or $this->addLog("Can't insert player_kill ".mysql_error(), Logger::ERROR);
 
             if ($killer) {
                 $killer->saveScore();
