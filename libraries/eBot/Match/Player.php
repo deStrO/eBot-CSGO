@@ -45,6 +45,7 @@ class Player {
     private $k5 = 0;
     private $firstSide = "";
     private $checkBDD = false;
+    private $gotFirstKill = false;
 
     public function __construct($match_id, $map_id, $steamid) {
         $this->map_id = $map_id;
@@ -114,6 +115,9 @@ class Player {
     public function roundStart() {
         $this->killRound = 0;
         $this->alive = true;
+        $this->gotFirstKill = false;
+        
+        // Snapshotting player
     }
 
     public function getId() {
