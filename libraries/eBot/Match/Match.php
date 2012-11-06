@@ -1543,6 +1543,14 @@ class Match implements Taskable {
         $this->countPlayers();
 
         $this->watchForSpecialSituation();
+
+        // Feedback from players
+        $this->pause["ct"] = false;
+        $this->pause["t"] = false;
+        $this->unpause["ct"] = false;
+        $this->unpause["t"] = false;
+        $this->stop["ct"] = false;
+        $this->stop["t"] = false;
     }
 
     private function processPlayer($user_id, $user_name, $team, $steamid) {
