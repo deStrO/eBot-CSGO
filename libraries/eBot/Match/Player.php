@@ -1,4 +1,5 @@
 <?php
+
 /**
  * eBot - A bot for match management for CS:GO
  * @license     http://creativecommons.org/licenses/by/3.0/ Creative Commons 3.0
@@ -21,6 +22,7 @@ class Player {
     private $ip = "";
     private $online = true;
     private $kill = 0;
+    private $assist = 0;
     private $death = 0;
     private $hs = 0;
     private $bombe = 0;
@@ -116,7 +118,7 @@ class Player {
         $this->killRound = 0;
         $this->alive = true;
         $this->gotFirstKill = false;
-        
+
         // Snapshotting player
     }
 
@@ -170,12 +172,15 @@ class Player {
         } else {
             $this->currentSide = "other";
         }
-        
+
         $this->setTeam($this->currentSide);
     }
 
     public function setUserName($name) {
-        $this->name = $name;
+        if ($this->name != $name) {
+            Logger::log("Changing {$this->name} to $name");
+            $this->name = $name;
+        }
     }
 
     public function getSteamid() {
@@ -190,6 +195,7 @@ class Player {
         $query = "UPDATE players SET
                     nb_kill = '" . $this->kill . "',
                     death = '" . $this->death . "',
+                    assist = '" . $this->assist . "',
                     hs = '" . $this->hs . "',
                     defuse = '" . $this->defuse . "',
                     bombe = '" . $this->bombe . "',

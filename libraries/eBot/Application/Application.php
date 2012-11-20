@@ -134,6 +134,7 @@ class Application extends AbstractApplication {
                     $line = substr($data, 7);
 
                     if (\eBot\Manager\MatchManager::getInstance()->getMatch($ip)) {
+                        file_put_contents("logs/$ip", $line, FILE_APPEND);
                         $line = trim(substr($line, 23));
                         \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->processMessage($line);
                     }

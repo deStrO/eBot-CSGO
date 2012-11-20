@@ -1,4 +1,5 @@
 <?php
+
 /**
  * eBot - A bot for match management for CS:GO
  * @license     http://creativecommons.org/licenses/by/3.0/ Creative Commons 3.0
@@ -22,13 +23,15 @@ class EventDispatcher extends Singleton {
     const EVENT_BOMB_DEFUSING = "eBot\Events\Event\BombDebusing";
     const EVENT_BOMB_PLANTING = "eBot\Events\Event\BombPlanting";
     const EVENT_KILL = "eBot\Events\Event\Kill";
+    const EVENT_ROUNDSCORED = "eBot\Events\Event\RoundScored";
 
     public function __construct() {
         $this->listeners[self::EVENT_SAY] = array();
         $this->listeners[self::EVENT_BOMB_DEFUSING] = array();
         $this->listeners[self::EVENT_BOMB_PLANTING] = array();
         $this->listeners[self::EVENT_KILL] = array();
-        
+        $this->listeners[self::EVENT_ROUNDSCORED] = array();
+
         $this->listeners["RoundScored"] = array();
         $this->listeners["RoundEnd"] = array();
         $this->listeners["RoundStart"] = array();

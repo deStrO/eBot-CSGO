@@ -235,7 +235,7 @@ class Map {
 			$this->current_side = $current_side;
 
 			if ($save) {
-				mysql_query("UPDATE `maps` SET current_side='" . $current_side . "' WHERE id='" . $this->map_id . "'");
+				mysql_query("UPDATE `maps` SET current_side='" . $current_side . "' WHERE id='" . $this->map_id . "'") or Logger::error("Error while updating current side ".mysql_error());
 			}
 		}
 	}
