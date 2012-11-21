@@ -1462,15 +1462,15 @@ class Match implements Taskable {
 
     private function processKillAssist(\eBot\Message\Type\KillAssist $message) {
         $killer = $this->processPlayer($message->getUserId(), $message->getUserName(), $message->getUserTeam(), $message->getUserSteamid());
-        $killed = $this->processPlayer($message->getKilledUserId(), $message->getKilledUserName(), $message->getKilledUserTeam(), $message->getKilledUserSteamid());
+//        $killed = $this->processPlayer($message->getKilledUserId(), $message->getKilledUserName(), $message->getKilledUserTeam(), $message->getKilledUserSteamid());
 
         if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
             $killer->inc("assist");
             $killer->save();
         }
 
-        $this->addLog($message->userName . " assisted the kill of " . $message->killedUserName);
-        $this->addMatchLog($this->getColoredUserNameHTML($message->userName, $message->userTeam) . " assisted the kill of " . $this->getColoredUserNameHTML($message->killedUserName, $message->killedUserTeam));
+//        $this->addLog($message->userName . " assisted the kill of " . $message->killedUserName);
+//        $this->addMatchLog($this->getColoredUserNameHTML($message->userName, $message->userTeam) . " assisted the kill of " . $this->getColoredUserNameHTML($message->killedUserName, $message->killedUserTeam));
     }
 
     private function processKill(\eBot\Message\Type\Kill $message) {
@@ -1675,7 +1675,6 @@ class Match implements Taskable {
         $player = $this->findPlayer($user_id, $steamid);
         if ($player == null) {
             $player = new Player($this->match_id, $this->currentMap->getMapId(), $steamid);
-            $player->setUserName($user_name);
             $this->players[$user_id] = $player;
             $this->countPlayers();
         }
@@ -1684,6 +1683,7 @@ class Match implements Taskable {
             $player->setIp($this->userToEnter[$user_id]);
         }
 
+        $player->setUserName($user_name);
         $player->setOnline(true);
         $player->setCurrentTeam($team);
         $player->save();
