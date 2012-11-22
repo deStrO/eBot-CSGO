@@ -919,7 +919,7 @@ class Match implements Taskable {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say ready");
 
                 if ($message->getUserTeam() == "CT") {
-                    if (($this->getStatus() == self::STATUS_WU_2_SIDE) || ($this->getStatus() == self::STATUS_WU_OT_2_SIDE))  {
+                    if (($this->getStatus() == self::STATUS_WU_2_SIDE) || ($this->getStatus() == self::STATUS_WU_OT_2_SIDE)) {
                         $team = ($this->side['team_a'] == "ct") ? $this->matchData['team_b'] : $this->matchData['team_a'];
                     } else {
                         $team = ($this->side['team_a'] == "ct") ? $this->matchData['team_a'] : $this->matchData['team_b'];
@@ -932,12 +932,12 @@ class Match implements Taskable {
                         $this->say($team . " (CT) \003is already \004ready");
                     }
                 } elseif ($message->getUserTeam() == "TERRORIST") {
-                    if (($this->getStatus() == self::STATUS_WU_2_SIDE) || ($this->getStatus() == self::STATUS_WU_OT_2_SIDE))  {
+                    if (($this->getStatus() == self::STATUS_WU_2_SIDE) || ($this->getStatus() == self::STATUS_WU_OT_2_SIDE)) {
                         $team = ($this->side['team_a'] == "t") ? $this->matchData['team_b'] : $this->matchData['team_a'];
                     } else {
                         $team = ($this->side['team_a'] == "t") ? $this->matchData['team_a'] : $this->matchData['team_b'];
                     }
-                    
+
 
                     if (!$this->ready['t']) {
                         $this->ready['t'] = true;
@@ -1638,7 +1638,7 @@ class Match implements Taskable {
         }
 
         if ($this->waitRoundStartRecord) {
-            $record_name = "match_" . $this->match_id . "_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_a']) . "_vs_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_b']);
+            $record_name = "match_" . $this->match_id . "_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_a']) . "_vs_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_b']) . "_" . $this->currentMap->getMapName();
             Logger::log("Launching record $record_name;");
             $this->rcon->send("tv_record $record_name");
             $this->waitRoundStartRecord = false;
@@ -1677,6 +1677,11 @@ class Match implements Taskable {
                         VALUES 
                     ('" . $this->match_id . "', '" . $this->currentMap->getMapId() . "', 'round_start', '" . $this->getRoundTime() . "', '" . $this->getNbRound() . "', NOW(), NOW())
                         ");
+        
+        // Preventing old data
+        mysql_query("DELETE FROM player_kill WHERE round_id >= " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+        mysql_query("DELETE FROM round WHERE round_id >= " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+        mysql_query("DELETE FROM round_summary WHERE round_id >= " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
     }
 
     private function processPlayer($user_id, $user_name, $team, $steamid) {
@@ -1892,11 +1897,13 @@ class Match implements Taskable {
             // Sending roundbackup format file
             $this->rcon->send("mp_backup_round_file \"ebot_" . $this->match_id . "\"");
 
-            if ($this->getNbRound() == $this->maxRound + 1) {
-                $this->addLog("Swapping teams for fixing bug rr");
-                $this->rcon->send("steamu_switchall");
-                sleep(1);
-            }
+//            if ($this->getNbRound() == $this->maxRound + 1) {
+//                $this->addLog("Swapping teams for fixing bug rr");
+//                $this->rcon->send("steamu_switchall");
+//                sleep(1);
+//            }
+
+            $this->rcon->send("mp_halftime_pausetimer 0");
 
             // Sending restore
             $this->rcon->send("mp_backup_restore_load_file " . $this->backupFile);
@@ -1937,6 +1944,11 @@ class Match implements Taskable {
                     $this->rcon->send("mp_backup_round_file \"ebot_paused_" . $this->match_id . "\"");
                     $this->rcon->send("mp_restartgame 1");
                     \mysql_query("UPDATE `matchs` SET ingame_enable = 0 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
+
+                    if ($this->getNbRound() == $this->maxRound + 1) {
+                        $this->rcon->send("mp_swapteams");
+                        $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
+                    }
 
                     mysql_query("DELETE FROM player_kill WHERE round_id >= " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
                     mysql_query("DELETE FROM round WHERE round_id >= " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
