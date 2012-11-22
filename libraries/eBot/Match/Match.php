@@ -919,7 +919,11 @@ class Match implements Taskable {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say ready");
 
                 if ($message->getUserTeam() == "CT") {
-                    $team = ($this->side['team_a'] == "ct") ? $this->matchData['team_a'] : $this->matchData['team_b'];
+                    if (($this->getStatus() == self::STATUS_WU_2_SIDE) || ($this->getStatus() == self::STATUS_WU_OT_2_SIDE))  {
+                        $team = ($this->side['team_a'] == "ct") ? $this->matchData['team_b'] : $this->matchData['team_a'];
+                    } else {
+                        $team = ($this->side['team_a'] == "ct") ? $this->matchData['team_a'] : $this->matchData['team_b'];
+                    }
 
                     if (!$this->ready['ct']) {
                         $this->ready['ct'] = true;
@@ -928,7 +932,12 @@ class Match implements Taskable {
                         $this->say($team . " (CT) \003is already \004ready");
                     }
                 } elseif ($message->getUserTeam() == "TERRORIST") {
-                    $team = ($this->side['team_a'] == "t") ? $this->matchData['team_a'] : $this->matchData['team_b'];
+                    if (($this->getStatus() == self::STATUS_WU_2_SIDE) || ($this->getStatus() == self::STATUS_WU_OT_2_SIDE))  {
+                        $team = ($this->side['team_a'] == "t") ? $this->matchData['team_b'] : $this->matchData['team_a'];
+                    } else {
+                        $team = ($this->side['team_a'] == "t") ? $this->matchData['team_a'] : $this->matchData['team_b'];
+                    }
+                    
 
                     if (!$this->ready['t']) {
                         $this->ready['t'] = true;
@@ -1353,10 +1362,10 @@ class Match implements Taskable {
                 }
             } elseif ($this->getStatus() == self::STATUS_OT_SECOND_SIDE) {
                 $scoreToReach = $this->oldMaxround * 2 + $this->maxRound * 2 + ($this->maxRound * 2 * ($this->nbOT - 1));
-                $scoreToReach2 = $this->oldMaxround * 2 + $this->maxRound + ($this->maxRound * 2 * ($this->nbOT - 1));
+                $scoreToReach2 = $this->oldMaxround + $this->maxRound + ($this->maxRound * ($this->nbOT - 1));
 
-                $this->addLog("Score to read $scoreToReach");
-                $this->addLog("Score to read $scoreToReach2");
+                $this->addLog("Score to reach $scoreToReach");
+                $this->addLog("Score to reach $scoreToReach2");
 
                 if (($this->score["team_a"] + $this->score["team_b"] == $scoreToReach)
                         || ($this->score["team_a"] > $scoreToReach2)
@@ -2015,7 +2024,7 @@ class Match implements Taskable {
                     case Map::STATUS_WU_OT_1_SIDE :
                         $this->currentMap->setStatus(Map::STATUS_OT_FIRST_SIDE, true);
                         $this->setStatus(self::STATUS_OT_FIRST_SIDE, true);
-                        $fichier = $this->matchData["rules"] . "_overtime.cfg; mp_maxrounds " . ($this->maxRound * 2);
+                        $fichier = $this->matchData["rules"] . "_overtime.cfg; mp_maxrounds " . (($this->maxRound * 2) + 1);
 
                         // NEW
                         $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_do_warmup_period 0; mp_restartgame 3; mp_halftime_pausetimer 1");
