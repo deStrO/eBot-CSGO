@@ -89,6 +89,7 @@ class Match implements Taskable {
     private $isPaused;
     private $backupFile;
     private $timeRound = null;
+    private $roundEndEvent;
     private $pause = array("ct" => false, "t" => false);
     private $unpause = array("ct" => false, "t" => false);
     private $continue = array("ct" => false, "t" => false);
@@ -836,7 +837,7 @@ class Match implements Taskable {
             }
         } elseif ($text == "!restart") {
             $this->addLog($message->getUserName() . " say restart");
-            if ($this->getStatus() == self::STATUS_KNIFE) {
+            if (($this->getStatus() == self::STATUS_KNIFE) || ($this->getStatus() == self::STATUS_END_KNIFE)) {
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->matchData['team_a'] : $this->matchData['team_b'];
 
@@ -1397,6 +1398,8 @@ class Match implements Taskable {
             $event->setStatus($this->getStatus());
             \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);
         }
+
+        $this->roundEndEvent = true;
     }
 
     private function lookEndingMatch() {
@@ -1542,7 +1545,7 @@ class Match implements Taskable {
             \mysql_query("INSERT INTO player_kill 
                 (`match_id`,`map_id`, `killer_team`,`killer_name`,`killer_id`,`killed_team`,`killed_name`,`killed_id`,`weapon`,`headshot`,`round_id`) 
                 VALUES 
-                ('" . $this->match_id . "','" . $this->currentMap->getMapId() . "', '" . $message->userTeam . "', '" . addslashes($killer_name) . "', " . (($killer_id != null) ? $killer_id : "NULL") . ", '" . $message->killedUserTeam . "' ,'" . addslashes($killed_name) . "', " . (($killed_id != null) ? $killed_id : "NULL") . ", '" . $message->weapon . "', '" . $message->headshot . "','" . $this->getNbRound() . "')
+                ('" . $this->match_id . "','" . $this->currentMap->getMapId() . "', '" . $message->userTeam . "', '" . addslashes($killer_name) . "', " . (($killer_id != null) ? $killer_id : "NULL") . ", '" . $message->killedUserTeam . "' ,'" . addslashes($killed_name) . "', " . (($killed_id != null) ? $killed_id : "NULL") . ", '" . $message->weapon . "', '" . $message->headshot . "','" . (($this->roundEndEvent) ? $this->getNbRound() - 1 : $this->getNbRound() ) . "')
                     ") or $this->addLog("Can't insert player_kill " . mysql_error(), Logger::ERROR);
 
             // Round Event
@@ -1553,14 +1556,14 @@ class Match implements Taskable {
                     INSERT INTO `round` 
                     (`match_id`,`map_id`,`event_name`,`event_time`,`kill_id`,`round_id`,`created_at`,`updated_at`) 
                         VALUES 
-                    ('" . $this->match_id . "', '" . $this->currentMap->getMapId() . "', 'kill', '" . $this->getRoundTime() . "', $id, '" . $this->getNbRound() . "', NOW(), NOW())
+                    ('" . $this->match_id . "', '" . $this->currentMap->getMapId() . "', 'kill', '" . $this->getRoundTime() . "', $id, '" . (($this->roundEndEvent) ? $this->getNbRound() - 1 : $this->getNbRound() ) . "', NOW(), NOW())
                         ");
             }
 
             // HeatMap !
             \mysql_query("INSERT INTO `players_heatmap` 
                             (`match_id`,`map_id`,`event_name`,`event_x`,`event_y`,`event_z`,`player_name`,`player_id`,`player_team`,`attacker_x`,`attacker_y`,`attacker_z`,`attacker_name`,`attacker_id`,`attacker_team`,`round_id`,`round_time`,`created_at`,`updated_at`) VALUES
-                            (" . $this->match_id . ", " . $this->currentMap->getMapId() . ", 'kill', '" . $message->killedPosX . "', '" . $message->killedPosY . "', '" . $message->killedPosZ . "','" . addslashes($message->killedUserName) . "', '" . $killed_id . "', '" . $message->killedUserTeam . "', '" . $message->killerPosX . "', '" . $message->killerPosY . "', '" . $message->killerPosZ . "', '" . $message->userName . "', '" . $killer_id . "', '" . $message->userTeam . "', '" . $this->getNbRound() . "', '" . $this->getRoundTime() . "', NOW(), NOW())
+                            (" . $this->match_id . ", " . $this->currentMap->getMapId() . ", 'kill', '" . $message->killedPosX . "', '" . $message->killedPosY . "', '" . $message->killedPosZ . "','" . addslashes($message->killedUserName) . "', '" . $killed_id . "', '" . $message->killedUserTeam . "', '" . $message->killerPosX . "', '" . $message->killerPosY . "', '" . $message->killerPosZ . "', '" . $message->userName . "', '" . $killer_id . "', '" . $message->userTeam . "', '" . (($this->roundEndEvent) ? $this->getNbRound() - 1 : $this->getNbRound() ) . "', '" . $this->getRoundTime() . "', NOW(), NOW())
                             ");
 
             if ($killer) {
@@ -1638,7 +1641,7 @@ class Match implements Taskable {
         }
 
         if ($this->waitRoundStartRecord) {
-            $record_name = "match_" . $this->match_id . "_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_a']) . "_vs_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_b']) . "_" . $this->currentMap->getMapName();
+            $record_name = $this->match_id . "_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_a']) . "-" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_b']) . "_" . $this->currentMap->getMapName();
             Logger::log("Launching record $record_name;");
             $this->rcon->send("tv_record $record_name");
             $this->waitRoundStartRecord = false;
@@ -1657,6 +1660,8 @@ class Match implements Taskable {
 
         foreach ($this->players as $k => &$v) {
             $v->roundStart();
+//            if ($this->getNbRound() > 1)
+//                $v->snapshot($this->getNbRound() - 1);
         }
 
         $this->countPlayers();
@@ -1677,11 +1682,13 @@ class Match implements Taskable {
                         VALUES 
                     ('" . $this->match_id . "', '" . $this->currentMap->getMapId() . "', 'round_start', '" . $this->getRoundTime() . "', '" . $this->getNbRound() . "', NOW(), NOW())
                         ");
-        
+
         // Preventing old data
-        mysql_query("DELETE FROM player_kill WHERE round_id >= " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
-        mysql_query("DELETE FROM round WHERE round_id >= " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
-        mysql_query("DELETE FROM round_summary WHERE round_id >= " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+        mysql_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+        mysql_query("DELETE FROM round WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+        mysql_query("DELETE FROM round_summary WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+
+        $this->roundEndEvent = false;
     }
 
     private function processPlayer($user_id, $user_name, $team, $steamid) {
@@ -1897,12 +1904,7 @@ class Match implements Taskable {
             // Sending roundbackup format file
             $this->rcon->send("mp_backup_round_file \"ebot_" . $this->match_id . "\"");
 
-//            if ($this->getNbRound() == $this->maxRound + 1) {
-//                $this->addLog("Swapping teams for fixing bug rr");
-//                $this->rcon->send("steamu_switchall");
-//                sleep(1);
-//            }
-
+            // Prevent the halftime pausetimer
             $this->rcon->send("mp_halftime_pausetimer 0");
 
             // Sending restore
@@ -1950,9 +1952,9 @@ class Match implements Taskable {
                         $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
                     }
 
-                    mysql_query("DELETE FROM player_kill WHERE round_id >= " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
-                    mysql_query("DELETE FROM round WHERE round_id >= " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
-                    mysql_query("DELETE FROM round_summary WHERE round_id >= " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+                    mysql_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+                    mysql_query("DELETE FROM round WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+                    mysql_query("DELETE FROM round_summary WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
                 }
 
                 $this->ready["ct"] = false;
@@ -2261,7 +2263,7 @@ class Match implements Taskable {
     }
 
     public function getIdentifier() {
-        return $this->matchData["identifier_id"];
+        return @$this->matchData["identifier_id"];
     }
 
     public function getCurrentMapId() {
