@@ -1543,9 +1543,9 @@ class Match implements Taskable {
 
             //getNbRound
             \mysql_query("INSERT INTO player_kill 
-                (`match_id`,`map_id`, `killer_team`,`killer_name`,`killer_id`,`killed_team`,`killed_name`,`killed_id`,`weapon`,`headshot`,`round_id`) 
+                (`match_id`,`map_id`, `killer_team`,`killer_name`,`killer_id`,`killed_team`,`killed_name`,`killed_id`,`weapon`,`headshot`,`round_id`,`created_at`,`updated_at`) 
                 VALUES 
-                ('" . $this->match_id . "','" . $this->currentMap->getMapId() . "', '" . $message->userTeam . "', '" . addslashes($killer_name) . "', " . (($killer_id != null) ? $killer_id : "NULL") . ", '" . $message->killedUserTeam . "' ,'" . addslashes($killed_name) . "', " . (($killed_id != null) ? $killed_id : "NULL") . ", '" . $message->weapon . "', '" . $message->headshot . "','" . (($this->roundEndEvent) ? $this->getNbRound() - 1 : $this->getNbRound() ) . "')
+                ('" . $this->match_id . "','" . $this->currentMap->getMapId() . "', '" . $message->userTeam . "', '" . addslashes($killer_name) . "', " . (($killer_id != null) ? $killer_id : "NULL") . ", '" . $message->killedUserTeam . "' ,'" . addslashes($killed_name) . "', " . (($killed_id != null) ? $killed_id : "NULL") . ", '" . $message->weapon . "', '" . $message->headshot . "','" . (($this->roundEndEvent) ? $this->getNbRound() - 1 : $this->getNbRound() ) . "', NOW(), NOW())
                     ") or $this->addLog("Can't insert player_kill " . mysql_error(), Logger::ERROR);
 
             // Round Event
@@ -1676,17 +1676,17 @@ class Match implements Taskable {
         $this->stop["ct"] = false;
         $this->stop["t"] = false;
 
+        // Preventing old data
+        mysql_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+        mysql_query("DELETE FROM round WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+        mysql_query("DELETE FROM round_summary WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+
         \mysql_query("
                     INSERT INTO `round` 
                     (`match_id`,`map_id`,`event_name`,`event_time`,`round_id`,`created_at`,`updated_at`) 
                         VALUES 
                     ('" . $this->match_id . "', '" . $this->currentMap->getMapId() . "', 'round_start', '" . $this->getRoundTime() . "', '" . $this->getNbRound() . "', NOW(), NOW())
                         ");
-
-        // Preventing old data
-        mysql_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
-        mysql_query("DELETE FROM round WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
-        mysql_query("DELETE FROM round_summary WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
 
         $this->roundEndEvent = false;
     }
@@ -1909,6 +1909,10 @@ class Match implements Taskable {
 
             // Sending restore
             $this->rcon->send("mp_backup_restore_load_file " . $this->backupFile);
+            
+            // Prevent a bug for double stop
+            $this->rcon->send("mp_backup_round_file_last " . $this->backupFile);
+            
             $this->say("Round restored, going live !");
             $this->enable = true;
             \mysql_query("UPDATE `matchs` SET ingame_enable = 1 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
