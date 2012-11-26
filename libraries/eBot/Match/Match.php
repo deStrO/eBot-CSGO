@@ -523,7 +523,9 @@ class Match implements Taskable {
                         break;
                 }
 
-                $messages [] = "\003$message - \005" . $this->matchData['team_a'] . " \001($teamA\001) \001VS \001($teamB\001) \005" . $this->matchData['team_b'];
+                if ($message)
+                    $messages [] = "\003$message - \005" . $this->matchData['team_a'] . " \001($teamA\001) \001VS \001($teamB\001) \005" . $this->matchData['team_b'];
+                
                 $messages [] = "\003Available commands: !help, !rules, !ready, !notready";
                 foreach (\eBot\Config\Config::getInstance()->getPubs() as $pub) {
                     $messages [] = "\003$pub";
@@ -1909,10 +1911,10 @@ class Match implements Taskable {
 
             // Sending restore
             $this->rcon->send("mp_backup_restore_load_file " . $this->backupFile);
-            
+
             // Prevent a bug for double stop
             $this->rcon->send("mp_backup_round_file_last " . $this->backupFile);
-            
+
             $this->say("Round restored, going live !");
             $this->enable = true;
             \mysql_query("UPDATE `matchs` SET ingame_enable = 1 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
@@ -1954,6 +1956,14 @@ class Match implements Taskable {
                     if ($this->getNbRound() == $this->maxRound + 1) {
                         $this->rcon->send("mp_swapteams");
                         $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
+                    }
+
+                    if ($this->getStatus() > self::STATUS_WU_OT_1_SIDE) {
+                        $round = $this->getNbRound() - ($this->oldMaxround * 2);
+                        if ($round % ($this->maxRound * 2) == $this->maxRound + 1) {
+                            $this->rcon->send("mp_swapteams");
+                            $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
+                        }
                     }
 
                     mysql_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
@@ -2037,7 +2047,10 @@ class Match implements Taskable {
 
                         // NEW
                         $this->waitForRestart = false;
-                        $this->rcon->send("mp_halftime_pausetimer 0");
+                        $this->rcon->send("mp_halftime_pausetimer 0; ");
+                        if ($this->config_full_score) {
+                            $this->rcon->send("mp_can_clintch 0");
+                        }
                         break;
                     case Map::STATUS_WU_OT_1_SIDE :
                         $this->currentMap->setStatus(Map::STATUS_OT_FIRST_SIDE, true);
@@ -2057,6 +2070,9 @@ class Match implements Taskable {
                         // NEW
                         $this->waitForRestart = false;
                         $this->rcon->send("mp_halftime_pausetimer 0");
+                        if ($this->config_full_score) {
+                            $this->rcon->send("mp_can_clintch 0");
+                        }
                         break;
                 }
 
