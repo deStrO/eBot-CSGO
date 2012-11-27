@@ -438,7 +438,7 @@ class Match implements Taskable {
 
             // Warmup
             $this->rcon->send("mp_warmuptime 1");
-            $this->rcon->send("mp_warmup_pausetimer");
+            $this->rcon->send("mp_warmup_pausetimer 1; mp_halftime_duration 5;");
 
             // Changing map
             $this->addLog("Changing map to " . $this->currentMap->getMapName());
@@ -2012,7 +2012,7 @@ class Match implements Taskable {
 
                 // FIX for warmup
                 $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_restartgame 3");
-                $this->rcon->send("mp_warmuptime 0; mp_do_warmup_period 0; mp_warmup_pausetimer 0;");
+                $this->rcon->send("mp_warmuptime 0; mp_warmup_pausetimer 0;");
 
                 $this->say("KNIFE ROUND !");
                 $this->say("KNIFE ROUND !");
@@ -2036,7 +2036,7 @@ class Match implements Taskable {
                         $fichier = $this->matchData["rules"] . ".cfg; mp_maxrounds " . ($this->maxRound * 2);
 
                         // NEW
-                        $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_do_warmup_period 0; mp_restartgame 3; mp_halftime_pausetimer 1");
+                        $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_restartgame 3; mp_halftime_pausetimer 1");
                         $this->rcon->send("mp_halftime_duration 1");
                         $this->say("Going live !!!");
                         break;
@@ -2058,7 +2058,7 @@ class Match implements Taskable {
                         $fichier = $this->matchData["rules"] . "_overtime.cfg; mp_maxrounds " . (($this->maxRound * 2) + 1);
 
                         // NEW
-                        $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_do_warmup_period 0; mp_restartgame 3; mp_halftime_pausetimer 1");
+                        $this->rcon->send("exec $fichier; mp_warmuptime 0;  mp_restartgame 3; mp_halftime_pausetimer 1");
                         $this->rcon->send("mp_halftime_duration 1");
                         $this->say("Going live !!!");
                         break;
