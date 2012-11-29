@@ -439,6 +439,9 @@ class Match implements Taskable {
             // Warmup
             $this->rcon->send("mp_warmuptime 1");
             $this->rcon->send("mp_warmup_pausetimer 1; mp_halftime_duration 5;");
+            if ($this->config_full_score) {
+                $this->rcon->send("mp_can_clintch 0;");
+            }
 
             // Changing map
             $this->addLog("Changing map to " . $this->currentMap->getMapName());
@@ -525,7 +528,7 @@ class Match implements Taskable {
 
                 if ($message)
                     $messages [] = "\003$message - \005" . $this->matchData['team_a'] . " \001($teamA\001) \001VS \001($teamB\001) \005" . $this->matchData['team_b'];
-                
+
                 $messages [] = "\003Available commands: !help, !rules, !ready, !notready";
                 foreach (\eBot\Config\Config::getInstance()->getPubs() as $pub) {
                     $messages [] = "\003$pub";
@@ -559,7 +562,7 @@ class Match implements Taskable {
             if (!$this->pluginCsay) {
                 $message = str_replace(array("\001", "\002", "\003", "\004", "\005", "\006", "\007"), array("", "", "", "", "", "", ""), $message);
                 $message = str_replace(";", ",", $message);
-                $this->rcon->send('say "eBot: ' . addslashes($message) . '"');
+                $this->rcon->send('say eBot: ' . addslashes($message) . '');
             } else {
                 $this->rcon->send('csay_all "' . "e\004Bot\001: " . addslashes($message) . '"');
             }
@@ -1340,6 +1343,7 @@ class Match implements Taskable {
                         $this->addLog("Going to overtime");
                         $this->say("Going to overtime");
                         $this->rcon->send("mp_restartgame 1");
+                        $this->sendTeamNames();
                     } else {
                         $this->currentMap->setStatus(Map::STATUS_MAP_ENDED, true);
 
@@ -1871,6 +1875,7 @@ class Match implements Taskable {
         if ($this->pause["ct"] && $this->pause["t"] && $this->isMatchRound() && !$this->isPaused) {
             $this->isPaused = true;
             $this->say("Match is paused");
+            $this->say("Write !unpause to remove the pause when ready");
             $this->addMatchLog("Pausing match");
             $this->rcon->send("pause");
 
@@ -2235,7 +2240,8 @@ class Match implements Taskable {
             $this->unpause["t"] = false;
         } elseif ($this->isMatchRound() && !$this->isPaused) {
             $this->isPaused = true;
-            $this->say("Match is paused by admin, live !");
+            $this->say("Match is paused by admin");
+            $this->say("Write !unpause to remove the pause when ready");
             $this->addMatchLog("Pausing match by admin");
             $this->rcon->send("pause");
 
