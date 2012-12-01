@@ -510,6 +510,7 @@ class Match implements Taskable {
                 if ($this->ready[$this->side['team_b']])
                     $teamB = "\004$teamB\001";
 
+                $message = "";
                 // Récupération du texte
                 switch ($this->getStatus()) {
                     case self::STATUS_WU_KNIFE: $message = "Warmup Knife Round";
@@ -1712,7 +1713,23 @@ class Match implements Taskable {
 
         $player->setUserName($user_name);
         $player->setOnline(true);
-        $player->setCurrentTeam($team);
+
+        $teamToSet = null;
+        if (strtolower($team) == "ct") {
+            if (($this->side["team_a"] == "ct")) {
+                $teamToSet = "a";
+            } elseif (($this->side["team_b"] == "ct")) {
+                $teamToSet = "b";
+            }
+        } elseif ((strtolower($team) == "terrorist") || (strtolower($team) == "t")) {
+            if (($this->side["team_a"] == "t")) {
+                $teamToSet = "a";
+            } elseif (($this->side["team_b"] == "t")) {
+                $teamToSet = "b";
+            }
+        }
+
+        $player->setCurrentTeam($team, $teamToSet);
         $player->save();
 
         return $player;

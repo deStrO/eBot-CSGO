@@ -92,18 +92,23 @@ class Player {
 
     private $team = null;
 
-    public function setTeam($team) {
+    public function setTeam($team, $teamDefault = null) {
         if ($this->team == null) {
-            if ($team == "CT") {
-                $this->team = "a";
-            } elseif ($team == "TERRORIST") {
-                $this->team = "b";
-            } elseif ($team == "ct") {
-                $this->team = "a";
-            } elseif ($team == "t") {
-                $this->team = "b";
+            if (($teamDefault != null) && ($teamDefault == "a") || ($teamDefault == "b")) {
+                Logger::debug("Already got the team");
+                $this->team = $teamDefault;
             } else {
-                $this->team = null;
+                if ($team == "CT") {
+                    $this->team = "a";
+                } elseif ($team == "TERRORIST") {
+                    $this->team = "b";
+                } elseif ($team == "ct") {
+                    $this->team = "a";
+                } elseif ($team == "t") {
+                    $this->team = "b";
+                } else {
+                    $this->team = null;
+                }
             }
 
             if ($this->team != null) {
@@ -160,7 +165,7 @@ class Player {
         mysql_query("UPDATE `player` SET ip='{$ip}' WHERE id='{$this->mysql_id}'");
     }
 
-    public function setCurrentTeam($team) {
+    public function setCurrentTeam($team, $teamDefault = null) {
         if ($team == "CT") {
             $this->currentSide = "ct";
         } elseif ($team == "TERRORIST") {
@@ -173,7 +178,7 @@ class Player {
             $this->currentSide = "other";
         }
 
-        $this->setTeam($this->currentSide);
+        $this->setTeam($this->currentSide, $teamDefault);
     }
 
     public function setUserName($name) {
