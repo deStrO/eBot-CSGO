@@ -565,7 +565,8 @@ class Match implements Taskable {
                 $message = str_replace(";", ",", $message);
                 $this->rcon->send('say eBot: ' . addslashes($message) . '');
             } else {
-                $this->rcon->send('csay_all "' . "e\004Bot\001: " . addslashes($message) . '"');
+                $message = str_replace('"', '\\"', $message);
+                $this->rcon->send('csay_all "' . "e\004Bot\001: " . $message . '"');
             }
         } catch (\Exception $ex) {
             Logger::error("Say failed - " . $ex->getMessage());
@@ -624,6 +625,8 @@ class Match implements Taskable {
                     return $this->processSay($message);
                 case "eBot\Message\Type\ThrewStuff":
                     return $this->processThrewStuff($message);
+                case "eBot\Message\Type\Purchased":
+                    return $this->processPurchased($message);
                 default:
                     $this->addLog("Message non traité: " . get_class($message));
                     break;
@@ -723,14 +726,34 @@ class Match implements Taskable {
     private function processThrewStuff(\eBot\Message\Type\ThrewStuff $message) {
         Logger::debug("Processing ThrewStuff Message");
 
-        $user = $this->processPlayer($message->getUserId(), $message->getUserName(), $message->getUserTeam(), $message->getUserSteamid());
+        if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
+            $user = $this->processPlayer($message->getUserId(), $message->getUserName(), $message->getUserTeam(), $message->getUserSteamid());
 
-        \mysql_query("INSERT INTO `players_heatmap` (`match_id`,`map_id`,`event_name`,`event_x`,`event_y`,`event_z`,`player_name`,`player_id`,`player_team`,`round_id`,`round_time`, `created_at`,`updated_at`) 
+            \mysql_query("INSERT INTO `players_heatmap` (`match_id`,`map_id`,`event_name`,`event_x`,`event_y`,`event_z`,`player_name`,`player_id`,`player_team`,`round_id`,`round_time`, `created_at`,`updated_at`) 
                 VALUES
                 (" . $this->match_id . ", " . $this->currentMap->getMapId() . ", '" . $message->stuff . "', '" . $message->posX . "', '" . $message->posY . "', '" . $message->posZ . "', '" . addslashes($message->userName) . "', '" . $user->getId() . "', '" . $message->userTeam . "', '" . $this->getNbRound() . "', '" . $this->getRoundTime() . "', NOW(), NOW())
                 ");
 
-        $this->addLog($message->userName . " (" . $message->userTeam . ") threw " . $message->stuff . " at [" . $message->posX . " " . $message->posY . " " . $message->posZ . "]");
+            $this->addLog($message->userName . " (" . $message->userTeam . ") threw " . $message->stuff . " at [" . $message->posX . " " . $message->posY . " " . $message->posZ . "]");
+        }
+    }
+
+    private function processPurchased(\eBot\Message\Type\Purchased $message) {
+        Logger::debug("Processing Purchased Message");
+        if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
+            $user = $this->processPlayer($message->getUserId(), $message->getUserName(), $message->getUserTeam(), $message->getUserSteamid());
+
+            $text = \addslashes(\serialize(array("item" => $message->object, "player" => $user->getId(), "playerName" => $user->get("name"))));
+
+            \mysql_query("
+                        INSERT INTO `round` 
+                        (`match_id`,`map_id`,`event_name`,`event_text`,`event_time`,`round_id`,`created_at`,`updated_at`) 
+                            VALUES 
+                        ('" . $this->match_id . "', '" . $this->currentMap->getMapId() . "', 'purchased', '$text', '" . $this->getRoundTime() . "', '" . $this->getNbRound() . "', NOW(), NOW())
+                            ");
+
+            $this->addLog($message->userName . " (" . $message->userTeam . ") purchased " . $message->object);
+        }
     }
 
     /**

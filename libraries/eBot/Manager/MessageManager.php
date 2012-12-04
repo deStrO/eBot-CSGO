@@ -51,7 +51,7 @@ class MessageManager {
     }
 
     public function addMessage(Message $message) {
-        Logger::debug("Adding message " . get_class($message) . " to " . $this->name);
+        Logger::log("Adding message " . get_class($message) . " to " . $this->name);
         $this->messages[] = $message;
     }
 
