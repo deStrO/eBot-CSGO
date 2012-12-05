@@ -29,4 +29,5 @@ You can copy, distribute, modify the source code, but you have to keep the licen
 ## See also
 
 * [eSport-tools.net website](http://www.esport-tools.net/)
+* [eBot-CSGO web panel](http://www.github.com/deStrO/eBot-CSGO-Web)
 * [Steam Condenser home](https://koraktor.de/steam-condenser)
