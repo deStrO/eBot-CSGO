@@ -1,0 +1,39 @@
+TODO V3.1
+
+--- FRENCH ---
+- Gestion du BO3, BO2 et BO5
+- Meilleur gestion du backup/restore de round
+- Amélioration des performances SQL
+- Création de snapshot des joueurs à la fin des rounds pour garder une logique dans les scores
+- Création d'équipe (pour pouvoir faire des stats par équipe, mais pour faciliter la création de match)
+- Regroupement des tables player_kill, round et player_heatmap en une seul table
+- Pour les positions des kills/stuffs, les enregistrés dans un tableau PHP/format particulier, stocké dans un champs chaque valeur n'est pas nécessaire
+- Meilleur gestion de l'OverTime: configuration via le panel (maxrounds + money)
+- Comparaison des stats joueurs
+- LiveMap
+- Statistique d'équipe
+- Traduction du bot INGAME (pouvoir définir une langue)
+- stats.esport-tools.net (platforme de statistique commune pour tous les tournois)
+- Temporiser l'achats des armes et les enregistrés après l'event du round start (tout ce qui est acheté après le round start est enregistré directement
+- GUI de confiugration pour Linux/Windows (C++/Qt or Java/NetBeans RCP)
+
+--- ENGLISH ---
+- BO3, BO2 and BO5 management
+- Better recovery/restore management for a round
+- Performance improvement for SQL query
+- Create a snapshot for players at the end of the rounds to keep a logic for players stats
+- Create "teams" (to make stats and make the match creation more easier)
+- Grouping player_kill, round and player_heatmap in only one table
+- For the position of the kill/stuff, record in it PHP format instead in a row format
+- Bettter overtime management: configuration via the panel (maxrounds + money)
+- Compare players stats
+- LiveMap
+- Teams statistics
+- Translation for the ingame BOT
+- stats.esport-tools.net (platform for all tournaments who use the eBot, to collect all datas and keep it for a long time !)
+- Delay the purchase event and record the data after the round start (all bought stuff is directly inserted after the round start)
+- GUI for Linux/Windows (C++/Qt or Java/NetBeans RCP)
+
+
+
+Contact destro@esport-tools.net if you want to make something
