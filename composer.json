@@ -1,0 +1,16 @@
+{
+    "name": "ebot/ebot-csgo",
+    "description": "The eBot version for CS:GO.",
+    "authors": [
+        {
+            "name": "Julien Pardons",
+            "email": "destro@esport-tools.net"
+        }
+    ],
+    "require": {
+        "koraktor/steam-condenser": "dev-master"
+    },
+    "autoload": {
+        "psr-0": { "": "src/" }
+    }
+}
