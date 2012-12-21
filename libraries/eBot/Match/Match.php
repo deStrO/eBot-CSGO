@@ -1673,7 +1673,7 @@ class Match implements Taskable {
         if ($this->waitRoundStartRecord) {
             $record_name = $this->match_id . "_" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_a']) . "-" . \eTools\Utils\Slugify::cleanTeamName($this->matchData['team_b']) . "_" . $this->currentMap->getMapName();
             Logger::log("Stopping running records (tv_autorecord)");
-            $this->rcon->send("tv_stoprecord");
+            $this->rcon->send("tv_autorecord 0; tv_stoprecord");
             Logger::log("Launching record $record_name;");
             $this->rcon->send("tv_record $record_name");
             $this->waitRoundStartRecord = false;
