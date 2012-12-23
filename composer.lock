@@ -1,0 +1,60 @@
+{
+    "hash": "8fae1a64e52206c42b2998f685edff6c",
+    "packages": [
+        {
+            "name": "koraktor/steam-condenser",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/koraktor/steam-condenser-php",
+                "reference": "3b5b4c892df37ef20d472cedf781ffb889174db6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/koraktor/steam-condenser-php/archive/3b5b4c892df37ef20d472cedf781ffb889174db6.zip",
+                "reference": "3b5b4c892df37ef20d472cedf781ffb889174db6",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.0.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": ">=3.7,<3.8"
+            },
+            "time": "2012-11-09 10:54:01",
+            "type": "library",
+            "installation-source": "source",
+            "notification-url": "https://packagist.org/downloads/",
+            "include-path": [
+                "lib/"
+            ],
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Sebastian Staudt",
+                    "email": "koraktor@gmail.com"
+                }
+            ],
+            "description": "The Steam Condenser is a multi-language library for querying the Steam Community, Source and GoldSrc game servers",
+            "homepage": "http://koraktor.de/steam-condenser",
+            "keywords": [
+                "source",
+                "query",
+                "steam",
+                "goldsrc",
+                "community",
+                "webapi"
+            ]
+        }
+    ],
+    "packages-dev": null,
+    "aliases": [
+
+    ],
+    "minimum-stability": "stable",
+    "stability-flags": {
+        "koraktor/steam-condenser": 20
+    }
+}

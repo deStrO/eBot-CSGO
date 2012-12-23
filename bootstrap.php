@@ -54,16 +54,14 @@ if (!ini_get('date.timezone')) {
     date_default_timezone_set($timezone);
 }
 
-include __DIR__ . DIRECTORY_SEPARATOR . 'libraries' . DIRECTORY_SEPARATOR . 'steamCondenser' . DIRECTORY_SEPARATOR . 'steam-condenser.php';
-
 // enable error reporting
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 gc_enable();
 
 define('EBOT_DIRECTORY', __DIR__);
+define('APP_ROOT', __DIR__ . DIRECTORY_SEPARATOR);
 
-require_once __DIR__ . DIRECTORY_SEPARATOR . 'libraries' . DIRECTORY_SEPARATOR . 'autoload.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 
 \eBot\Application\Application::getInstance()->run();
-?>
