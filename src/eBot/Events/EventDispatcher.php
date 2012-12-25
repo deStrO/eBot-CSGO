@@ -24,6 +24,7 @@ class EventDispatcher extends Singleton {
     const EVENT_BOMB_PLANTING = "eBot\Events\Event\BombPlanting";
     const EVENT_KILL = "eBot\Events\Event\Kill";
     const EVENT_ROUNDSCORED = "eBot\Events\Event\RoundScored";
+    const EVENT_MATCH_END = "eBot\Events\Event\MatchEnd";
 
     public function __construct() {
         $this->listeners[self::EVENT_SAY] = array();
@@ -31,15 +32,16 @@ class EventDispatcher extends Singleton {
         $this->listeners[self::EVENT_BOMB_PLANTING] = array();
         $this->listeners[self::EVENT_KILL] = array();
         $this->listeners[self::EVENT_ROUNDSCORED] = array();
+        $this->listeners[self::EVENT_MATCH_END] = array();
 
-        $this->listeners["RoundScored"] = array();
+        /*$this->listeners["RoundScored"] = array();
         $this->listeners["RoundEnd"] = array();
         $this->listeners["RoundStart"] = array();
         $this->listeners["MatchStart"] = array();
         $this->listeners["MatchEnd"] = array();
         $this->listeners["SideEnd"] = array();
         $this->listeners["KnifeStart"] = array();
-        $this->listeners["KnifeEnd"] = array();
+        $this->listeners["KnifeEnd"] = array();*/
     }
 
     public function addListener(Plugin $plugin, $name) {

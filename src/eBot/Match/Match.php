@@ -1458,6 +1458,12 @@ class Match implements Taskable {
             $this->rcon->send("mp_teamname_1 \"\"; mp_teamflag_1 \"\";");
             $this->rcon->send("mp_teamname_2 \"\"; mp_teamflag_2 \"\";");
             $this->rcon->send("exec server.cfg;");
+            
+            $event = new \eBot\Events\Event\MatchEnd();
+            $event->setMatch($this);
+            $event->setScore1($this->score["team_a"]);
+            $event->setScore2($this->score["team_a"]);
+            \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);
         } else {
             // manage second map
             if ($this->score["team_a"] > $this->score["team_b"]) {
