@@ -1,14 +1,19 @@
 {
     "name": "ebot/ebot-csgo",
     "description": "The eBot version for CS:GO.",
+    "keywords": ["ebot","csgo","counter-strike global offensive","bot"],
+    "homepage": "http://github.com/deStrO/eBot-CSGO",
+    "license": "Apache Commons 3.0",
     "authors": [
         {
             "name": "Julien Pardons",
-            "email": "destro@esport-tools.net"
+            "email": "destro@esport-tools.net",
+            "homepage": "http://www.esport-tools.net"
         }
     ],
     "require": {
-        "koraktor/steam-condenser": "dev-master"
+        "koraktor/steam-condenser": "dev-master",
+        "php": ">=5.3.0"
     },
     "autoload": {
         "psr-0": { "": "src/" }
