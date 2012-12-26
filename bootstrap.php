@@ -63,5 +63,7 @@ define('EBOT_DIRECTORY', __DIR__);
 define('APP_ROOT', __DIR__ . DIRECTORY_SEPARATOR);
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+// Include SteamCondenser
+require_once 'steam-condenser.php';
 
 \eBot\Application\Application::getInstance()->run();
