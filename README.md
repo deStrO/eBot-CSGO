@@ -29,7 +29,7 @@ You can copy, distribute, modify the source code, but you have to keep the licen
 ## Thanks
 
 * Loic Peron (RegnaM)
-* Bassert 
+* Basert
 * Ph3nol
 
 ## See also
