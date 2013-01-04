@@ -16,6 +16,7 @@ TODO V3.1
 - stats.esport-tools.net (platforme de statistique commune pour tous les tournois)
 - Temporiser l'achats des armes et les enregistrés après l'event du round start (tout ce qui est acheté après le round start est enregistré directement
 - GUI de confiugration pour Linux/Windows (C++/Qt or Java/NetBeans RCP)
+- Passer en PDO plutot que mysql
 
 --- ENGLISH ---
 - BO3, BO2 and BO5 management
@@ -33,7 +34,6 @@ TODO V3.1
 - stats.esport-tools.net (platform for all tournaments who use the eBot, to collect all datas and keep it for a long time !)
 - Delay the purchase event and record the data after the round start (all bought stuff is directly inserted after the round start)
 - GUI for Linux/Windows (C++/Qt or Java/NetBeans RCP)
-
-
+- Switch on PDO instead of mysql for all query
 
 Contact destro@esport-tools.net if you want to make something
