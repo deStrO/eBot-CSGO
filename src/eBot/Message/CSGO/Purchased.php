@@ -25,7 +25,7 @@ class Purchased extends Message {
         $o->setUserName($this->datas['user_name']);
         $o->setUserTeam($this->datas['user_team']);
         $o->setUserSteamid($this->datas['steam_id']);
-        $o->setObject($this->datas['object']);
+        $o->setObject(strtolower($this->datas['object']));
 
         return $o;
     }
