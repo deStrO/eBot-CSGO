@@ -29,11 +29,7 @@ You can copy, distribute, modify the source code, but you have to keep the licen
 ## Thanks
 
 * Loic Peron (RegnaM)
-<<<<<<< HEAD
 * Basert
-=======
-* Basert 
->>>>>>> upstream/master
 * Ph3nol
 
 ## See also
