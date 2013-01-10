@@ -1030,8 +1030,8 @@ class Match implements Taskable {
                 $this->setStatus(self::STATUS_WU_1_SIDE, true);
                 $this->currentMap->setStatus(Map::STATUS_WU_1_SIDE, true);
 
-				$this->rcon->send("mp_do_warmup_period 1; mp_warmuptime 30; mp_warmup_pausetimer 1");
-				$this->rcon->send("mp_warmup_start");
+                $this->rcon->send("mp_do_warmup_period 1; mp_warmuptime 30; mp_warmup_pausetimer 1");
+                $this->rcon->send("mp_warmup_start");
                 $this->say("nothing change, going to warmup");
             }
         } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!switch")) {
@@ -1043,8 +1043,8 @@ class Match implements Taskable {
 
                 $this->swapSides();
 
-				$this->rcon->send("mp_do_warmup_period 1; mp_warmuptime 30; mp_warmup_pausetimer 1");
-				$this->rcon->send("mp_warmup_start");
+                $this->rcon->send("mp_do_warmup_period 1; mp_warmuptime 30; mp_warmup_pausetimer 1");
+                $this->rcon->send("mp_warmup_start");
                 $this->say("swaping teams");
                 $this->rcon->send("mp_swapteams");
                 $this->sendTeamNames();
@@ -2075,9 +2075,9 @@ class Match implements Taskable {
 
                 // FIX for warmup
                 $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_warmuptime 0; mp_halftime_pausetimer 1; mp_warmup_pausetimer 0;");
-				$this->rcon->send("mp_halftime_duration 1");
-				$this->rcon->send("mp_warmup_end");
-				$this->rcon->send("mp_restartgame 3");
+                $this->rcon->send("mp_halftime_duration 1");
+                $this->rcon->send("mp_warmup_end");
+                $this->rcon->send("mp_restartgame 3");
 
                 $this->say("KNIFE ROUND !");
                 $this->say("KNIFE ROUND !");
