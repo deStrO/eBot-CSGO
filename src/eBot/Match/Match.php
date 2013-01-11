@@ -1124,6 +1124,7 @@ class Match implements Taskable {
 
             $this->say("\005$team won the knife, !stay or !switch");
 
+            $this->rcon->send("mp_warmup_start;");
             return;
         }
 
@@ -1902,7 +1903,7 @@ class Match implements Taskable {
 
     private function saveScore() {
         foreach ($this->players as $player) {
-
+            
         }
     }
 
@@ -1965,6 +1966,9 @@ class Match implements Taskable {
 
             $this->addMatchLog("Getting back to the match");
             $this->addLog("Getting back to the match");
+            
+            // Stopping warmup
+            $this->rcon->send("mp_warmup_end");
 
             // Sending roundbackup format file
             $this->rcon->send("mp_backup_round_file \"ebot_" . $this->match_id . "\"");
@@ -1997,12 +2001,16 @@ class Match implements Taskable {
                     mysql_query("DELETE FROM player_kill WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
                     mysql_query("DELETE FROM round WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
                     mysql_query("DELETE FROM round_summary WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
+                    
+                    $this->rcon->send("mp_restartgame 1; mp_warmup_start;");
+                    $this->say("going to warmup !");
                 } else {
                     // Getting file to restore
                     $data = $this->rcon->send("mp_backup_round_file_last");
                     if (preg_match('!"mp_backup_round_file_last" = "(?<backup>[a-zA-Z0-9\-_\.]+)"!', $data, $match)) {
                         $this->backupFile = $match["backup"];
                     } else {
+                        // need to catch the backup file on the database
                         $this->addLog("Backup file not found, simulating one ");
                         $this->backupFile = "ebot_" . $this->match_id . "_round" . sprintf("%02s", $this->getNbRound()) . ".txt";
                     }
@@ -2028,6 +2036,9 @@ class Match implements Taskable {
                             $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
                         }
                     }
+                    
+                    $this->rcon->send("mp_warmup_start;");
+                    $this->say("Round is cancelled, going to warmup. This round will be restored when you are ready");
 
                     mysql_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
                     mysql_query("DELETE FROM round WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
@@ -2331,7 +2342,7 @@ class Match implements Taskable {
     }
 
     public function adminGoBackRounds() {
-
+        
     }
 
     private function sendTeamNames() {
