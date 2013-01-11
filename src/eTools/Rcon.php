@@ -22,7 +22,7 @@ abstract class Rcon {
         $this->rcon = $rcon;
 
         if (!$this->auth()) {
-            throw new \eBot\Exception\Match_Exception("rcon failed");
+            throw new \eBot\Exception\MatchException("rcon failed");
         }
     }
 
@@ -33,7 +33,7 @@ abstract class Rcon {
     public function getPort() {
         return $this->port;
     }
-    
+
     public function getRcon() {
         return $this->rcon;
     }
