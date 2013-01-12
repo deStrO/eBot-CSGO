@@ -12,7 +12,7 @@ namespace eBot\Plugins\Official;
 
 use eBot\Plugins\Plugin;
 use eTools\Utils\Logger;
-use eBot\Exception\Plugin_Exception;
+use eBot\Exception\PluginException;
 
 /**
  * Description of PluginMatchScoreNotifier
@@ -27,7 +27,7 @@ class PluginMatchScoreNotifier implements Plugin {
         Logger::log("Init PluginMatchScoreNotifier");
         $this->url = $config["url"];
         if ($this->url == "") {
-            throw new Plugin_Exception("url null");
+            throw new PluginException("url null");
         }
 
         Logger::log("URL to perform: " . $this->url);

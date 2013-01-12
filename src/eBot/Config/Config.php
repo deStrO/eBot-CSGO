@@ -29,6 +29,8 @@ class Config extends Singleton {
     private $delay_busy_server = 90;
     private $nb_max_matchs = 0;
     private $pubs;
+    private $lo3_method;
+    private $ko3_method;
 
     public function getNbRoundOvertime() {
         return 3;
@@ -51,6 +53,9 @@ class Config extends Singleton {
             $this->delay_busy_server = $config["DELAY_BUSY_SERVER"];
 
             $this->pubs = $config["PUB"];
+            
+            $this->lo3_method = $config["LO3_METHOD"];
+            $this->ko3_method = $config["KO3_METHOD"];
             
             $encrypt = \eTools\Utils\Encryption::getInstance();
             $encrypt->setCRYPT_CKEY($config["CRYPT_KEY"]);
@@ -175,6 +180,24 @@ class Config extends Singleton {
     public function setPubs($pubs) {
         $this->pubs = $pubs;
     }
+    
+    public function getLo3Method() {
+        return $this->lo3_method;
+    }
+
+    public function setLo3Method($lo3_method) {
+        $this->lo3_method = $lo3_method;
+    }
+
+    public function getKo3Method() {
+        return $this->ko3_method;
+    }
+
+    public function setKo3Method($ko3_method) {
+        $this->ko3_method = $ko3_method;
+    }
+
+
 
 }
 

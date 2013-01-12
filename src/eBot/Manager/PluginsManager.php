@@ -13,7 +13,7 @@ namespace eBot\Manager;
 use eTools\Utils\Singleton;
 use eTools\Utils\Logger;
 use eBot\Plugins\Plugin;
-use eBot\Exception\Plugin_Exception;
+use eBot\Exception\PluginException;
 use eBot\Events\EventDispatcher;
 
 class PluginsManager extends Singleton {
@@ -59,7 +59,7 @@ class PluginsManager extends Singleton {
             Logger::debug("Calling init");
             $plugin->init($data);
             $this->plugins[get_class($plugin)] = $plugin;
-        } catch (Plugin_Exception $ex) {
+        } catch (PluginException $ex) {
             Logger::error("Error while init plugin");
         }
     }

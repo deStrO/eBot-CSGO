@@ -1966,7 +1966,7 @@ class Match implements Taskable {
 
             $this->addMatchLog("Getting back to the match");
             $this->addLog("Getting back to the match");
-            
+
             // Stopping warmup
             $this->rcon->send("mp_warmup_end");
 
@@ -2001,7 +2001,7 @@ class Match implements Taskable {
                     mysql_query("DELETE FROM player_kill WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
                     mysql_query("DELETE FROM round WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
                     mysql_query("DELETE FROM round_summary WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
-                    
+
                     $this->rcon->send("mp_restartgame 1; mp_warmup_start; mp_warmup_pausetimer 1;");
                     $this->say("going to warmup !");
                 } else {
@@ -2036,7 +2036,7 @@ class Match implements Taskable {
                             $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
                         }
                     }
-                    
+
                     $this->rcon->send("mp_warmup_start; mp_warmup_pausetimer 1;");
                     $this->say("Round is cancelled, going to warmup. This round will be restored when you are ready");
 
@@ -2088,7 +2088,11 @@ class Match implements Taskable {
                 $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_warmuptime 0; mp_halftime_pausetimer 1; mp_warmup_pausetimer 0;");
                 $this->rcon->send("mp_halftime_duration 1");
                 $this->rcon->send("mp_warmup_end");
-                $this->rcon->send("mp_restartgame 3");
+                if (\eBot\Config\Config::getInstance()->getKo3Method() == "csay") {
+                    $this->rcon->send("csay_ko3");
+                } else {
+                    $this->rcon->send("mp_restartgame 3");
+                }
 
                 $this->say("KNIFE ROUND !");
                 $this->say("KNIFE ROUND !");
@@ -2115,7 +2119,11 @@ class Match implements Taskable {
                         $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_halftime_pausetimer 1;");
                         $this->rcon->send("mp_halftime_duration 1");
                         $this->rcon->send("mp_warmup_end");
-                        $this->rcon->send("mp_restartgame 3");
+                        if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay") {
+                            $this->rcon->send("csay_lo3");
+                        } else {
+                            $this->rcon->send("mp_restartgame 3");
+                        }
                         $this->say("Going live !!!");
                         break;
                     case Map::STATUS_WU_2_SIDE :
@@ -2139,7 +2147,11 @@ class Match implements Taskable {
                         $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_halftime_pausetimer 1;");
                         $this->rcon->send("mp_halftime_duration 1");
                         $this->rcon->send("mp_warmup_end");
-                        $this->rcon->send("mp_restartgame 3");
+                        if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay") {
+                            $this->rcon->send("csay_lo3");
+                        } else {
+                            $this->rcon->send("mp_restartgame 3");
+                        }
                         $this->say("Going live !!!");
                         break;
                     case Map::STATUS_WU_OT_2_SIDE :

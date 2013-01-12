@@ -8,7 +8,7 @@ use eTools\Task\Task;
 use eTools\Task\TaskManager;
 use eTools\Utils\Logger;
 use eBot\Match\Match;
-use eBot\Exception\Match_Exception;
+use eBot\Exception\MatchException;
 
 class MatchManager extends Singleton implements Taskable {
 
@@ -53,7 +53,7 @@ class MatchManager extends Singleton implements Taskable {
                 try {
                     Logger::log("New match detected - " . $req['team_a'] . " vs " . $req['team_b'] . " on " . $req['server_ip']);
                     $this->newMatch($req["match_id"], $req['server_ip'], $req['server_rcon']);
-                } catch (Match_Exception $ex) {
+                } catch (MatchException $ex) {
                     Logger::error("Error while creating the match");
                     mysql_query("UPDATE `matchs` SET enable=0 WHERE id = '" . $req['match_id'] . "'") or die(mysql_error());
                 } catch (\Exception $ex) {
