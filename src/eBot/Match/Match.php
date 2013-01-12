@@ -1031,7 +1031,7 @@ class Match implements Taskable {
                 $this->currentMap->setStatus(Map::STATUS_WU_1_SIDE, true);
 
                 $this->rcon->send("mp_do_warmup_period 1; mp_warmuptime 30; mp_warmup_pausetimer 1");
-                $this->rcon->send("mp_warmup_start");
+                $this->rcon->send("mp_warmup_start;");
                 $this->say("nothing change, going to warmup");
             }
         } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!switch")) {
@@ -1044,7 +1044,7 @@ class Match implements Taskable {
                 $this->swapSides();
 
                 $this->rcon->send("mp_do_warmup_period 1; mp_warmuptime 30; mp_warmup_pausetimer 1");
-                $this->rcon->send("mp_warmup_start");
+                $this->rcon->send("mp_warmup_start;");
                 $this->say("swaping teams");
                 $this->rcon->send("mp_swapteams");
                 $this->sendTeamNames();
@@ -1124,7 +1124,7 @@ class Match implements Taskable {
 
             $this->say("\005$team won the knife, !stay or !switch");
 
-            $this->rcon->send("mp_warmup_start;");
+            $this->rcon->send("mp_warmup_start; mp_warmup_pausetimer 1;");
             return;
         }
 
@@ -2002,7 +2002,7 @@ class Match implements Taskable {
                     mysql_query("DELETE FROM round WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
                     mysql_query("DELETE FROM round_summary WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
                     
-                    $this->rcon->send("mp_restartgame 1; mp_warmup_start;");
+                    $this->rcon->send("mp_restartgame 1; mp_warmup_start; mp_warmup_pausetimer 1;");
                     $this->say("going to warmup !");
                 } else {
                     // Getting file to restore
@@ -2037,7 +2037,7 @@ class Match implements Taskable {
                         }
                     }
                     
-                    $this->rcon->send("mp_warmup_start;");
+                    $this->rcon->send("mp_warmup_start; mp_warmup_pausetimer 1;");
                     $this->say("Round is cancelled, going to warmup. This round will be restored when you are ready");
 
                     mysql_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
