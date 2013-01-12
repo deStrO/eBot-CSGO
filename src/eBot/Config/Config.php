@@ -54,7 +54,7 @@ class Config extends Singleton {
 
             $this->pubs = $config["PUB"];
             
-            $this->lo3_method = $config["LO3_METHOD"];
+            $this->lo3_method = $config["LO3_METHOD"];            
             $this->ko3_method = $config["KO3_METHOD"];
             
             $encrypt = \eTools\Utils\Encryption::getInstance();

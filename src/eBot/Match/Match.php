@@ -2088,7 +2088,7 @@ class Match implements Taskable {
                 $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_warmuptime 0; mp_halftime_pausetimer 1; mp_warmup_pausetimer 0;");
                 $this->rcon->send("mp_halftime_duration 1");
                 $this->rcon->send("mp_warmup_end");
-                if (\eBot\Config\Config::getInstance()->getKo3Method() == "csay") {
+                if (\eBot\Config\Config::getInstance()->getKo3Method() == "csay" && $this->pluginCsay) {
                     $this->rcon->send("csay_ko3");
                 } else {
                     $this->rcon->send("mp_restartgame 3");
@@ -2119,7 +2119,7 @@ class Match implements Taskable {
                         $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_halftime_pausetimer 1;");
                         $this->rcon->send("mp_halftime_duration 1");
                         $this->rcon->send("mp_warmup_end");
-                        if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay") {
+                        if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay" && $this->pluginCsay) {
                             $this->rcon->send("csay_lo3");
                         } else {
                             $this->rcon->send("mp_restartgame 3");
@@ -2147,7 +2147,7 @@ class Match implements Taskable {
                         $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_halftime_pausetimer 1;");
                         $this->rcon->send("mp_halftime_duration 1");
                         $this->rcon->send("mp_warmup_end");
-                        if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay") {
+                        if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay" && $this->pluginCsay) {
                             $this->rcon->send("csay_lo3");
                         } else {
                             $this->rcon->send("mp_restartgame 3");
