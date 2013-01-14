@@ -1903,7 +1903,7 @@ class Match implements Taskable {
 
     private function saveScore() {
         foreach ($this->players as $player) {
-            
+
         }
     }
 
@@ -2354,7 +2354,7 @@ class Match implements Taskable {
     }
 
     public function adminGoBackRounds() {
-        
+
     }
 
     private function sendTeamNames() {
