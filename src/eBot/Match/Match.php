@@ -11,7 +11,7 @@
 namespace eBot\Match;
 
 use eTools\Utils\Logger;
-use eBot\Exception\Match_Exception;
+use eBot\Exception\MatchException;
 use eBot\Match\Map;
 use eTools\Task\TaskManager;
 use eTools\Task\Task;
@@ -108,7 +108,7 @@ class Match implements Taskable {
 
         $query = \mysql_query("SELECT * FROM `matchs` WHERE id = '" . $match_id . "'");
         if (!$query) {
-            throw new Match_Exception();
+            throw new MatchException();
         }
 
         $this->matchData = \mysql_fetch_assoc($query);
@@ -130,7 +130,7 @@ class Match implements Taskable {
             $this->needDel = true;
             Logger::error("Rcon failed - " . $ex->getMessage());
             $this->addMatchLog("RCON Failed - " . $ex->getMessage(), false, false);
-            throw new Match_Exception();
+            throw new MatchException();
         }
 
         TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 30));
@@ -183,7 +183,7 @@ class Match implements Taskable {
         Logger::debug("Loading maps");
         $query = \mysql_query("SELECT * FROM `maps` WHERE match_id = '" . $match_id . "'");
         if (!$query) {
-            throw new Match_Exception();
+            throw new MatchException();
         }
 
         while ($data = \mysql_fetch_assoc($query)) {
@@ -207,14 +207,14 @@ class Match implements Taskable {
                 $this->currentMap = $this->maps[$this->matchData["current_map"]];
             } else {
                 $this->addLog("Can't find the map #" . $this->matchData["current_map"], Logger::ERROR);
-                throw new Match_Exception();
+                throw new MatchException();
             }
         }
 
         if ($this->currentMap == null) {
             $this->addLog("No map found, exiting matchs", Logger::ERROR);
             mysql_query("UPDATE `matchs` SET enable='0', status='" . self::STATUS_END_MATCH . "' WHERE id='" . $this->match_id . "'");
-            throw new Match_Exception();
+            throw new MatchException();
         }
 
         $this->addLog("Maps selected: #" . $this->currentMap->getMapId() . " - " . $this->currentMap->getMapName() . " - " . $this->currentMap->getStatusText());
@@ -1903,7 +1903,7 @@ class Match implements Taskable {
 
     private function saveScore() {
         foreach ($this->players as $player) {
-            
+
         }
     }
 
@@ -2354,7 +2354,7 @@ class Match implements Taskable {
     }
 
     public function adminGoBackRounds() {
-        
+
     }
 
     private function sendTeamNames() {
