@@ -31,11 +31,12 @@ class Config extends Singleton {
     private $pubs;
     private $lo3_method;
     private $ko3_method;
+    private $crypt_key;
 
     public function getNbRoundOvertime() {
         return 3;
     }
-    
+
     public function __construct() {
         Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
         if (file_exists(APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini")) {
@@ -49,16 +50,15 @@ class Config extends Singleton {
 
             $this->bot_ip = $config["BOT_IP"];
             $this->bot_port = $config["BOT_PORT"];
-            
+
             $this->delay_busy_server = $config["DELAY_BUSY_SERVER"];
 
             $this->pubs = $config["PUB"];
-            
-            $this->lo3_method = $config["LO3_METHOD"];            
+
+            $this->lo3_method = $config["LO3_METHOD"];
             $this->ko3_method = $config["KO3_METHOD"];
-            
-            $encrypt = \eTools\Utils\Encryption::getInstance();
-            $encrypt->setCRYPT_CKEY($config["CRYPT_KEY"]);
+
+            $this->crypt_key = $config["CRYPT_KEY"];
 
             Logger::log("Configuration loaded");
         }
@@ -172,7 +172,7 @@ class Config extends Singleton {
     public function setPerf_link_on_update($perf_link_on_update) {
         $this->perf_link_on_update = $perf_link_on_update;
     }
-    
+
     public function getPubs() {
         return $this->pubs;
     }
@@ -180,7 +180,7 @@ class Config extends Singleton {
     public function setPubs($pubs) {
         $this->pubs = $pubs;
     }
-    
+
     public function getLo3Method() {
         return $this->lo3_method;
     }
@@ -197,8 +197,9 @@ class Config extends Singleton {
         $this->ko3_method = $ko3_method;
     }
 
-
-
+    public function getCryptKey() {
+        return $this->crypt_key;
+    }
 }
 
 ?>

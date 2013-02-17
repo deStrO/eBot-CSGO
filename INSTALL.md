@@ -40,7 +40,7 @@ screen -dmS ebotv3 php bootstrap.php
 ------------------------
 | eBot v3
 | By Julien Pardons <destro@esport-tools.net>
-| Special thanks to RegnaM, Ph3nol and Bassert
+| Special thanks to RegnaM, Ph3nol and Basert
 | https://github.com/deStrO/eBot-CSGO
 | https://github.com/deStrO/eBot-CSGO-Web
 | http://www.esport-tools.net

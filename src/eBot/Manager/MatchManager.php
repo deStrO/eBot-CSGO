@@ -8,11 +8,11 @@ use eTools\Task\Task;
 use eTools\Task\TaskManager;
 use eTools\Utils\Logger;
 use eBot\Match\Match;
-use eBot\Exception\MatchException;
+use eBot\Exception\Match_Exception;
 
 class MatchManager extends Singleton implements Taskable {
 
-    const VERSION = "1.0";
+    const VERSION = "1.1";
     const CHECK_NEW_MATCH = "check";
 
     private $matchs = array();
@@ -47,11 +47,14 @@ class MatchManager extends Singleton implements Taskable {
     private function check() {
         Logger::debug("Checking for new match (current matchs: " . count($this->matchs) . ")");
 
-        $sql = mysql_query("SELECT m.id as match_id, m.team_a as team_a, m.team_b as team_b, s.id as server_id, s.ip as server_ip, s.rcon as server_rcon  FROM `matchs` m LEFT JOIN `servers` s ON s.id = m.server_id WHERE m.`status` >= " . Match::STATUS_STARTING . " AND m.`status` < " . Match::STATUS_END_MATCH . " AND m.`enable` = 1") or die(mysql_error());
+//        $sql = mysql_query("SELECT m.id as match_id, m.team_a as team_a, m.team_b as team_b, s.id as server_id, s.ip as server_ip, s.rcon as server_rcon  FROM `matchs` m LEFT JOIN `servers` s ON s.id = m.server_id WHERE m.`status` >= " . Match::STATUS_STARTING . " AND m.`status` < " . Match::STATUS_END_MATCH . " AND m.`enable` = 1") or die(mysql_error());
+        $sql = mysql_query("SELECT m.team_a_name as team_a_name, m.team_b_name as team_b_name, m.id as match_id, t_a.name as team_a, t_b.name as team_b, s.id as server_id, s.ip as server_ip, s.rcon as server_rcon FROM `matchs` m LEFT JOIN `servers` s ON s.id = m.server_id LEFT JOIN `teams` t_a ON t_a.id = m.team_a LEFT JOIN `teams` t_b ON t_b.id = m.team_b WHERE m.`status` >= " . Match::STATUS_STARTING . " AND m.`status` < " . Match::STATUS_END_MATCH . " AND m.`enable` = 1") or die(mysql_error());
         while ($req = mysql_fetch_assoc($sql)) {
             if (!@$this->matchs[$req['server_ip']]) {
                 try {
-                    Logger::log("New match detected - " . $req['team_a'] . " vs " . $req['team_b'] . " on " . $req['server_ip']);
+                    $teamA = $this->getTeamDetails($req['team_a'], 'a', $req);
+                    $teamB = $this->getTeamDetails($req['team_a'], 'a', $req);
+                    Logger::log("New match detected - " . $teamA['name'] . " vs " . $teamB['name'] . " on " . $req['server_ip']);
                     $this->newMatch($req["match_id"], $req['server_ip'], $req['server_rcon']);
                 } catch (MatchException $ex) {
                     Logger::error("Error while creating the match");
@@ -115,6 +118,19 @@ class MatchManager extends Singleton implements Taskable {
             return $this->matchs[$ip];
         } else {
             return null;
+        }
+    }
+
+    private function getTeamDetails($id, $t, $data) {
+        if (is_numeric($id) && $id > 0) {
+            $ds = mysql_fetch_array(mysql_query("SELECT * FROM `teams` WHERE `id` = '$id'"));
+            return $ds;
+        } else {
+            if ($t == "a") {
+                return array("name" => $data['team_a_name']);
+            } elseif ($t == "b") {
+                return array("name" => $data['team_b_name']);
+            }
         }
     }
 

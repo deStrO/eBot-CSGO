@@ -10,7 +10,6 @@ TODO V3.1
 - Pour les positions des kills/stuffs, les enregistrés dans un tableau PHP/format particulier, stocké dans un champs chaque valeur n'est pas nécessaire
 - Meilleur gestion de l'OverTime: configuration via le panel (maxrounds + money)
 - Comparaison des stats joueurs
-- LiveMap
 - Statistique d'équipe
 - Traduction du bot INGAME (pouvoir définir une langue)
 - stats.esport-tools.net (platforme de statistique commune pour tous les tournois)
@@ -28,7 +27,6 @@ TODO V3.1
 - For the position of the kill/stuff, record in it PHP format instead in a row format
 - Bettter overtime management: configuration via the panel (maxrounds + money)
 - Compare players stats
-- LiveMap
 - Teams statistics
 - Translation for the ingame BOT
 - stats.esport-tools.net (platform for all tournaments who use the eBot, to collect all datas and keep it for a long time !)

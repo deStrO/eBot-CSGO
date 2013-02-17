@@ -9,8 +9,8 @@
 
 namespace eTools\Socket;
 
-use \eTools\Exception\Socket_Exception;
-use \eTools\Utils\Logger;
+use eTools\Exception\Socket_Exception;
+use eTools\Utils\Logger;
 
 class UDPSocket {
     private $socket = null;
@@ -44,7 +44,6 @@ class UDPSocket {
     public function sendto($mess, $ip, $port) {
         return socket_sendto($this->socket, $mess, strlen($mess), 0, $ip, $port);
     }
-
 }
 
 ?>
