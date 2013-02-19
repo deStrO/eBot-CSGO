@@ -28,14 +28,11 @@ class Config extends Singleton {
     private $record_name = "ebot";
     private $delay_busy_server = 90;
     private $nb_max_matchs = 0;
+    private $ot_rounds;
     private $pubs;
     private $lo3_method;
     private $ko3_method;
     private $crypt_key;
-
-    public function getNbRoundOvertime() {
-        return 3;
-    }
 
     public function __construct() {
         Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
@@ -52,6 +49,7 @@ class Config extends Singleton {
             $this->bot_port = $config["BOT_PORT"];
 
             $this->delay_busy_server = $config["DELAY_BUSY_SERVER"];
+            $this->ot_rounds = $config["OT_ROUNDS"];
 
             $this->pubs = $config["PUB"];
 
@@ -155,6 +153,14 @@ class Config extends Singleton {
 
     public function setNb_max_matchs($nb_max_matchs) {
         $this->nb_max_matchs = $nb_max_matchs;
+    }
+
+    public function getNbRoundOvertime() {
+        return $this->ot_rounds;
+    }
+
+    public function setNbRoundOvertime($ot_rounds) {
+        $this->ot_rounds = $ot_rounds;
     }
 
     public function getPerf_link() {
