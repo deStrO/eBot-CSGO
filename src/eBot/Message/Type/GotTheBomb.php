@@ -7,9 +7,15 @@
  * @date        21/10/2012
  */
 
-namespace eBot\Exception;
+namespace eBot\Message\Type;
 
-class PluginException extends \Exception {
+use eBot\Message\Type;
+
+class GotTheBomb extends Type {
+
+    public function __construct() {
+        $this->setName("GotTheBomb");
+    }
 
 }
 

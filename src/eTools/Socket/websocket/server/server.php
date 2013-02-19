@@ -18,5 +18,6 @@ $server->registerApplication('match', \WebSocket\Application\match::getInstance(
 $server->registerApplication('rcon', \WebSocket\Application\rcon::getInstance());
 $server->registerApplication('logger', \WebSocket\Application\logger::getInstance());
 $server->registerApplication('livemap', \WebSocket\Application\livemap::getInstance());
+$server->registerApplication('alive', \WebSocket\Application\aliveCheck::getInstance());
 
 $server->run();
