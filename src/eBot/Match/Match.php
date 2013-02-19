@@ -1507,6 +1507,8 @@ class Match implements Taskable {
             $this->rcon->send("mp_teamname_2 \"\"; mp_teamflag_2 \"\";");
             $this->rcon->send("exec server.cfg;");
 
+            $this->websocket['match']->sendData(json_encode(array('status', $this->getStatusText(), $this->match_id)));
+
             $event = new \eBot\Events\Event\MatchEnd();
             $event->setMatch($this);
             $event->setScore1($this->score["team_a"]);
