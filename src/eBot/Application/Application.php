@@ -68,6 +68,8 @@ class Application extends AbstractApplication {
             $this->websocket['logger']->connect(Config::getInstance()->getBot_ip(), (Config::getInstance()->getBot_port()), '/logger');
             $this->websocket['livemap'] = new WebSocket;
             $this->websocket['livemap']->connect(Config::getInstance()->getBot_ip(), (Config::getInstance()->getBot_port()), '/livemap');
+            $this->websocket['aliveCheck'] = new WebSocket;
+            $this->websocket['aliveCheck']->connect(Config::getInstance()->getBot_ip(), (Config::getInstance()->getBot_port()), '/alive');
         } catch (Exception $ex) {
             Logger::error("Unable to create Websocket.");
             die();
@@ -83,6 +85,8 @@ class Application extends AbstractApplication {
                         $this->clientsConnected = true;
                     } elseif ($data == '__false__') {
                         $this->clientsConnected = false;
+                    } elseif ($data == '__aliveCheck__') {
+                        $this->websocket['aliveCheck']->sendData('__isAlive__');
                     } else {
                         $text = \eTools\Utils\Encryption::decrypt($data, utf8_encode(Config::getInstance()->getCryptKey()), 256);
                         if ($text) {
