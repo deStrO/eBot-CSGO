@@ -387,8 +387,8 @@ class Match implements Taskable {
 
     public function setStatus($newStatus, $save = false) {
         $this->status = $newStatus;
-        $this->websocket['match']->sendData('status_' . $this->getStatusText() . '_' . $this->match_id);
-        $this->websocket['match']->sendData('button_' . $this->getStatus() . '_' . $this->match_id);
+        $this->websocket['match']->sendData(json_encode(array('status', $this->getStatusText(), $this->match_id)));
+        $this->websocket['match']->sendData(json_encode(array('button', $this->getStatus(), $this->match_id)));
         if ($save) {
             $this->message = 0;
             Logger::debug("Updating status to " . $this->getStatusText() . " in database");
@@ -1463,9 +1463,9 @@ class Match implements Taskable {
 
             // Dispatching to Websocket
 
-            $this->websocket['match']->sendData('status_' . $this->getStatusText() . '_' . $this->match_id);
-            $this->websocket['match']->sendData('button_' . $this->getStatus() . '_' . $this->match_id);
-            $this->websocket['match']->sendData('score_' . $this->score['team_a'] . '_' . $this->score['team_b'] . '_' . $this->match_id);
+            $this->websocket['match']->sendData(json_encode(array('status', $this->getStatusText(), $this->match_id)));
+            $this->websocket['match']->sendData(json_encode(array('button', $this->getStatus(), $this->match_id)));
+            $this->websocket['match']->sendData(json_encode(array('score', $this->score['team_a'], $this->score['team_b'], $this->match_id)));
 
             // Dispatching events
             $event = new \eBot\Events\Event\RoundScored();
@@ -1787,7 +1787,7 @@ class Match implements Taskable {
                         VALUES
                     ('" . $this->match_id . "', '" . $this->currentMap->getMapId() . "', 'round_start', '" . $this->getRoundTime() . "', '" . $this->getNbRound() . "', NOW(), NOW())
                         ");
-        
+
         $this->websocket['livemap']->sendData($this->match_id."_newRound_".$this->getNbRound());
 
         $this->roundEndEvent = false;
@@ -1956,7 +1956,7 @@ class Match implements Taskable {
 
     private function saveScore() {
         foreach ($this->players as $player) {
-            
+
         }
     }
 
@@ -2437,7 +2437,7 @@ class Match implements Taskable {
     }
 
     public function adminGoBackRounds() {
-        
+
     }
 
     private function sendTeamNames() {

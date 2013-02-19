@@ -90,8 +90,10 @@ class Application extends AbstractApplication {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
                                     $reply = $match->adminStopNoRs();
-                                    if ($reply)
-                                        $this->websocket['match']->sendData('button_stop_' . $preg["id"]);
+                                    if ($reply) {
+                                        $send = json_encode(array('button', 'stop', $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
@@ -99,8 +101,10 @@ class Application extends AbstractApplication {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
                                     $reply = $match->adminStop();
-                                    if ($reply)
-                                        $this->websocket['match']->sendData('button_stop_' . $preg["id"]);
+                                    if ($reply) {
+                                        $send = json_encode(array('button', 'stop', $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
@@ -108,8 +112,10 @@ class Application extends AbstractApplication {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
                                     $reply = $match->adminExecuteCommand($preg["command"]);
-                                    if ($reply)
-                                        $this->websocket['rcon']->sendData($reply . '_' . $preg["id"] . '__');
+                                    if ($reply) {
+                                        $send = json_encode(array($preg["id"], $reply));
+                                        $this->websocket['rcon']->sendData($send);
+                                    }
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
@@ -117,8 +123,10 @@ class Application extends AbstractApplication {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
                                     $reply = $match->adminPassKnife();
-                                    if ($reply)
-                                        $this->websocket['match']->sendData('button_' . $match->getStatus() . '_' . $preg["id"]);
+                                    if ($reply) {
+                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
@@ -126,8 +134,10 @@ class Application extends AbstractApplication {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
                                     $reply = $match->adminForceKnife();
-                                    if ($reply)
-                                        $this->websocket['match']->sendData('button_' . $match->getStatus() . '_' . $preg["id"]);
+                                    if ($reply) {
+                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
@@ -135,8 +145,10 @@ class Application extends AbstractApplication {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
                                     $reply = $match->adminForceKnifeEnd();
-                                    if ($reply)
-                                        $this->websocket['match']->sendData('button_' . $match->getStatus() . '_' . $preg["id"]);
+                                    if ($reply) {
+                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
@@ -145,7 +157,8 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminForceStart();
                                     if ($reply) {
-                                        $this->websocket['match']->sendData('button_' . $match->getStatus() . '_' . $preg["id"]);
+                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
                                     }
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
@@ -154,8 +167,10 @@ class Application extends AbstractApplication {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
                                     $reply = $match->adminStopBack();
-                                    if ($reply)
-                                        $this->websocket['match']->sendData('button_' . $match->getStatus() . '_' . $preg["id"]);
+                                    if ($reply) {
+                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
@@ -163,8 +178,10 @@ class Application extends AbstractApplication {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
                                     $reply = $match->adminPauseUnpause();
-                                    if ($reply)
-                                        $this->websocket['match']->sendData('button_' . $match->getStatus() . '_' . $preg["id"]);
+                                    if ($reply) {
+                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
@@ -172,8 +189,10 @@ class Application extends AbstractApplication {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
                                     $reply = $match->adminFixSides();
-                                    if ($reply)
-                                        $this->websocket['match']->sendData('button_' . $match->getStatus() . '_' . $preg["id"]);
+                                    if ($reply) {
+                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
@@ -181,8 +200,10 @@ class Application extends AbstractApplication {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
                                     $reply = $match->adminGoBackRounds();
-                                    if ($reply)
-                                        $this->websocket['match']->sendData('button_' . $match->getStatus() . '_' . $preg["id"]);
+                                    if ($reply) {
+                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
@@ -200,7 +221,8 @@ class Application extends AbstractApplication {
                         \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->processMessage($line);
                         if ($this->clientsConnected) {
                             $line = substr($data, 7, strlen($data)-8);
-                            $this->websocket['logger']->sendData($line . '_' . \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId() . '__');
+                            $send = json_encode(array(\eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), $line));
+                            $this->websocket['logger']->sendData($send);
                         }
                     }
                 }
