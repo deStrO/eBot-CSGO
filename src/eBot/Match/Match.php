@@ -1411,7 +1411,6 @@ class Match implements Taskable {
                         $this->sendTeamNames();
                     } else {
                         $this->currentMap->setStatus(Map::STATUS_MAP_ENDED, true);
-
                         $this->lookEndingMatch();
                     }
 
