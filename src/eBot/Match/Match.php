@@ -2180,7 +2180,7 @@ class Match implements Taskable {
                         $this->waitForRestart = false;
                         $this->rcon->send("mp_halftime_pausetimer 0; ");
                         if ($this->config_full_score) {
-                            $this->rcon->send("mp_can_clintch 0");
+                            $this->rcon->send("mp_match_can_clintch 0");
                         }
                         break;
                     case Map::STATUS_WU_OT_1_SIDE :
