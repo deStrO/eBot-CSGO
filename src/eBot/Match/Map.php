@@ -50,6 +50,7 @@ class Map {
 		$this->setCurrentSide($mapData["current_side"]);
 		$this->setStatus($mapData["status"]);
 		$this->setMapsFor($mapData["maps_for"]);
+        $this->setNbOt($mapData["nb_ot"]);
 
 		Logger::log("Maps loaded " . $this->getMapName() . " (score: " . $this->getScore1() . " - " . $this->getScore2() . ") - Current left side: " . $this->getCurrentSide() . " - Current status: " . $this->getStatusText());
 

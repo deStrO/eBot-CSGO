@@ -559,6 +559,8 @@ class Match implements Taskable {
                     case self::STATUS_WU_OT_2_SIDE: $message = "Warmup Second Side OverTime";
                         break;
                 }
+                
+                $messages [] = "\003Please write \006!ready \003when your team is ready !";
 
                 if ($message)
                     $messages [] = "\003$message - \005" . $this->teamAName . " \001($teamA\001) \001VS \001($teamB\001) \005" . $this->teamBName;
@@ -566,6 +568,8 @@ class Match implements Taskable {
                 $messages [] = "\003Available commands: !help, !rules, !ready, !notready";
                 foreach (\eBot\Config\Config::getInstance()->getPubs() as $pub) {
                     $messages [] = "\003$pub";
+                    if ($message)
+                        $messages [] = "\003$message - \005" . $this->teamAName . " \001($teamA\001) \001VS \001($teamB\001) \005" . $this->teamBName;
                 }
 
                 $message = $messages[$this->message++ % count($messages)];
@@ -681,6 +685,8 @@ class Match implements Taskable {
             if ($this->matchData["config_password"] != "") {
                 $this->rcon->send("sv_password \"" . $this->matchData["config_password"] . "\"");
             }
+            
+            $this->rcon->send("mp_warmup_pausetimer 1");
 
             $this->sendTeamNames();
         } catch (\Exception $ex) {
@@ -1383,6 +1389,14 @@ class Match implements Taskable {
                                                                     )") or $this->addLog("Can't insert round summary match " . $this->match_id . " - " . mysql_error(), Logger::ERROR);
             // END ROUND SUMMARY
 
+            // Prevent the OverTime bug
+            if ($this->config_ot) {
+                if ($this->score['team_a'] + $this->score['team_b'] == ($this->maxRound * 2) - 1) {
+                    $this->rcon->send("mp_match_restart_delay 1");
+                    $this->rcon->send("mp_match_end_changelevel 0");
+                    $this->rcon->send("mp_match_end_restart 1");
+                }
+            }
 
             $this->resetSpecialSituation();
             if ($this->getStatus() == self::STATUS_FIRST_SIDE) {
@@ -1417,8 +1431,10 @@ class Match implements Taskable {
                     $this->saveScore();
                 }
             } elseif ($this->getStatus() == self::STATUS_OT_FIRST_SIDE) {
-                $scoreToReach = $this->oldMaxround * 2 + $this->maxRound + ($this->maxRound * 2 * ($this->nbOT - 1));
-
+                $scoreToReach = $this->oldMaxround * 2 
+                                    + \eBot\Config\Config::getInstance()->getNbRoundOvertime() 
+                                        + (\eBot\Config\Config::getInstance()->getNbRoundOvertime() * 2 * ($this->nbOT - 1));
+                
                 if ($this->score["team_a"] + $this->score["team_b"] == $scoreToReach) {
                     $this->setStatus(self::STATUS_WU_OT_2_SIDE, true);
                     $this->currentMap->setStatus(Map::STATUS_WU_OT_2_SIDE, true);
@@ -1430,25 +1446,21 @@ class Match implements Taskable {
                     // $this->rcon->send("mp_restartgame 1");
 
                     $this->rcon->send("mp_halftime_pausetimer 1");
-                } else {
-                    $this->rcon->say("bug");
                 }
             } elseif ($this->getStatus() == self::STATUS_OT_SECOND_SIDE) {
-                $scoreToReach = $this->oldMaxround * 2 + $this->maxRound * 2 + ($this->maxRound * 2 * ($this->nbOT - 1));
-                $scoreToReach2 = $this->oldMaxround + $this->maxRound + ($this->maxRound * ($this->nbOT - 1));
-
-                $this->addLog("Score to reach $scoreToReach");
-                $this->addLog("Score to reach $scoreToReach2");
+                $scoreToReach = $this->oldMaxround * 2 + \eBot\Config\Config::getInstance()->getNbRoundOvertime() * 2 + (\eBot\Config\Config::getInstance()->getNbRoundOvertime() * 2 * ($this->nbOT - 1));
+                $scoreToReach2 = $this->oldMaxround * 2 + \eBot\Config\Config::getInstance()->getNbRoundOvertime() + (\eBot\Config\Config::getInstance()->getNbRoundOvertime() * ($this->nbOT - 1));
 
                 if (($this->score["team_a"] + $this->score["team_b"] == $scoreToReach)
-                        || ($this->score["team_a"] > $scoreToReach2)
-                        || ($this->score["team_b"] > $scoreToReach2)) {
+                        || ($this->score["team_a"] >= $scoreToReach2)
+                        || ($this->score["team_b"] >= $scoreToReach2)) {
 
                     if ($this->score["team_a"] == $this->score["team_b"]) {
                         $this->setStatus(self::STATUS_WU_OT_1_SIDE, true);
                         $this->currentMap->setStatus(Map::STATUS_WU_OT_1_SIDE, true);
                         $this->maxRound = \eBot\Config\Config::getInstance()->getNbRoundOvertime();
                         $this->currentMap->addOvertime();
+                        $this->nbOT++;
                         $this->addLog("Going to overtime");
                         $this->rcon->send("mp_restartgame 1");
                     } else {
@@ -1461,7 +1473,6 @@ class Match implements Taskable {
             }
 
             // Dispatching to Websocket
-
             $this->websocket['match']->sendData(json_encode(array('status', $this->getStatusText(), $this->match_id)));
             $this->websocket['match']->sendData(json_encode(array('button', $this->getStatus(), $this->match_id)));
             $this->websocket['match']->sendData(json_encode(array('score', $this->score['team_a'], $this->score['team_b'], $this->match_id)));
@@ -1559,15 +1570,15 @@ class Match implements Taskable {
 
     private function processKillAssist(\eBot\Message\Type\KillAssist $message) {
         $killer = $this->processPlayer($message->getUserId(), $message->getUserName(), $message->getUserTeam(), $message->getUserSteamid());
-//        $killed = $this->processPlayer($message->getKilledUserId(), $message->getKilledUserName(), $message->getKilledUserTeam(), $message->getKilledUserSteamid());
+        //$killed = $this->processPlayer($message->getKilledUserId(), $message->getKilledUserName(), $message->getKilledUserTeam(), $message->getKilledUserSteamid());
 
         if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
             $killer->inc("assist");
             $killer->save();
         }
 
-//        $this->addLog($message->userName . " assisted the kill of " . $message->killedUserName);
-//        $this->addMatchLog($this->getColoredUserNameHTML($message->userName, $message->userTeam) . " assisted the kill of " . $this->getColoredUserNameHTML($message->killedUserName, $message->killedUserTeam));
+        $this->addLog($message->userName . " assisted the kill of " . $message->killedUserName);
+        $this->addMatchLog($this->getColoredUserNameHTML($message->userName, $message->userTeam) . " assisted the kill of " . $this->getColoredUserNameHTML($message->killedUserName, $message->killedUserTeam));
     }
 
     private function processKill(\eBot\Message\Type\Kill $message) {
@@ -1789,7 +1800,7 @@ class Match implements Taskable {
                     ('" . $this->match_id . "', '" . $this->currentMap->getMapId() . "', 'round_start', '" . $this->getRoundTime() . "', '" . $this->getNbRound() . "', NOW(), NOW())
                         ");
 
-        $this->websocket['livemap']->sendData($this->match_id."_newRound_".$this->getNbRound());
+        $this->websocket['livemap']->sendData($this->match_id . "_newRound_" . $this->getNbRound());
 
         $this->roundEndEvent = false;
     }
@@ -1957,7 +1968,7 @@ class Match implements Taskable {
 
     private function saveScore() {
         foreach ($this->players as $player) {
-
+            
         }
     }
 
@@ -2187,7 +2198,7 @@ class Match implements Taskable {
                     case Map::STATUS_WU_OT_1_SIDE :
                         $this->currentMap->setStatus(Map::STATUS_OT_FIRST_SIDE, true);
                         $this->setStatus(self::STATUS_OT_FIRST_SIDE, true);
-                        $fichier = $this->matchData["rules"] . "_overtime.cfg; mp_maxrounds " . (($this->maxRound * 2) + 1);
+                        $fichier = $this->matchData["rules"] . "_overtime.cfg; mp_maxrounds " . (($this->maxRound * 2));
 
                         // NEW
                         $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_halftime_pausetimer 1;");
@@ -2438,7 +2449,7 @@ class Match implements Taskable {
     }
 
     public function adminGoBackRounds() {
-
+        
     }
 
     private function sendTeamNames() {

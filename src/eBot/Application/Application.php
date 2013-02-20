@@ -225,6 +225,8 @@ class Application extends AbstractApplication {
                         \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->processMessage($line);
                         if ($this->clientsConnected) {
                             $line = substr($data, 7, strlen($data)-8);
+                            file_put_contents(Logger::getInstance()->getLogPathAdmin()."/logs_".\eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), $line, FILE_APPEND);
+
                             $send = json_encode(array(\eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), $line));
                             $this->websocket['logger']->sendData($send);
                         }

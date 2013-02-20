@@ -65,6 +65,11 @@ class Config extends Singleton {
     public function printConfig() {
         Logger::log("MySQL: " . $this->mysql_ip . ":" . $this->mysql_port . " " . $this->mysql_user . ":" . \str_repeat("*", \strlen($this->mysql_pass)) . "@" . $this->mysql_base);
         Logger::log("Socket: " . $this->bot_ip . ":" . $this->bot_port);
+        Logger::log("OverTime rounds: " . $this->ot_rounds);
+        Logger::log("Pub's set:");
+        foreach($this->pubs as $pub) {
+            Logger::log($pub);
+        }
     }
 
     public function getMysql_ip() {

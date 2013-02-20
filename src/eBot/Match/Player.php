@@ -183,7 +183,11 @@ class Player {
 
     public function setUserName($name) {
         if ($this->name != $name) {
-            Logger::log("Changing {$this->name} to $name");
+            if ($this->name == "") {
+                Logger::log("Setting nickname to $name");
+            } else {
+                Logger::log("Changing nickname from {$this->name} to $name");
+            }
             $this->name = $name;
         }
     }
