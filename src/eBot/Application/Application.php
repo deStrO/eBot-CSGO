@@ -60,16 +60,16 @@ class Application extends AbstractApplication {
         }
 
         try {
-            $this->websocket['match'] = new WebSocket;
-            $this->websocket['match']->connect(Config::getInstance()->getBot_ip(), (Config::getInstance()->getBot_port()), '/match');
-            $this->websocket['rcon'] = new WebSocket;
-            $this->websocket['rcon']->connect(Config::getInstance()->getBot_ip(), (Config::getInstance()->getBot_port()), '/rcon');
-            $this->websocket['logger'] = new WebSocket;
-            $this->websocket['logger']->connect(Config::getInstance()->getBot_ip(), (Config::getInstance()->getBot_port()), '/logger');
-            $this->websocket['livemap'] = new WebSocket;
-            $this->websocket['livemap']->connect(Config::getInstance()->getBot_ip(), (Config::getInstance()->getBot_port()), '/livemap');
-            $this->websocket['aliveCheck'] = new WebSocket;
-            $this->websocket['aliveCheck']->connect(Config::getInstance()->getBot_ip(), (Config::getInstance()->getBot_port()), '/alive');
+            $this->websocket['match'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/match");
+            $this->websocket['match']->open();
+            $this->websocket['rcon'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/rcon");
+            $this->websocket['rcon']->open();
+            $this->websocket['logger'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/logger");
+            $this->websocket['logger']->open();
+            $this->websocket['livemap'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/livemap");
+            $this->websocket['livemap']->open();
+            $this->websocket['aliveCheck'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/alive");
+            $this->websocket['aliveCheck']->open();
         } catch (Exception $ex) {
             Logger::error("Unable to create Websocket.");
             die();
@@ -77,6 +77,7 @@ class Application extends AbstractApplication {
 
         PluginsManager::getInstance()->startAll();
 
+        $time = time();
         while (true) {
             $data = $this->socket->recvfrom($ip);
             if ($data) {
@@ -235,13 +236,21 @@ class Application extends AbstractApplication {
                         $line = trim(substr($line, 23));
                         \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->processMessage($line);
                         if ($this->clientsConnected) {
-                            $line = substr($data, 7, strlen($data)-8);
-                            file_put_contents(Logger::getInstance()->getLogPathAdmin()."/logs_".\eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), $line, FILE_APPEND);
+                            $line = substr($data, 7, strlen($data) - 8);
+                            file_put_contents(Logger::getInstance()->getLogPathAdmin() . "/logs_" . \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), $line, FILE_APPEND);
                             $send = json_encode(array('id' => \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), 'content' => $line));
                             $this->websocket['logger']->sendData($send);
                         }
                     }
                 }
+            }
+            if ($time + 5 < time()) {
+                $time = time();
+                $this->websocket['match']->send(json_encode(array("message" => "ping")));
+                $this->websocket['logger']->send(json_encode(array("message" => "ping")));
+                $this->websocket['rcon']->send(json_encode(array("message" => "ping")));
+                $this->websocket['livemap']->send(json_encode(array("message" => "ping")));
+                $this->websocket['aliveCheck']->send(json_encode(array("message" => "ping")));
             }
 
             \eBot\Manager\MatchManager::getInstance()->sendPub();
