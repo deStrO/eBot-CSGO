@@ -80,7 +80,7 @@ if (PHP_OS == "Linux") {
         1 => array("pipe", "w"),
         2 => array("pipe", "w")
     );
-    $webSocketProcess = proc_open('php ' . __DIR__ . '/websocket_server.php', $descriptorspec, $pipes);
+    $webSocketProcess = proc_open('node ' . __DIR__ . '/websocket_server.js', $descriptorspec, $pipes);
     if (is_resource($webSocketProcess)) {
         fclose($pipes[0]);
         usleep(50000);
@@ -98,10 +98,11 @@ if (PHP_OS == "Linux") {
 }
 echo '-----------------------------------------------------' . PHP_EOL;
 
-
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 // Include SteamCondenser
 require_once 'steam-condenser.php';
+
+require_once("phpws/websocket.client.php");
 
 error_reporting(E_ERROR);
 \eBot\Application\Application::getInstance()->run();
