@@ -32,6 +32,7 @@ class Config extends Singleton {
     private $pubs;
     private $lo3_method;
     private $ko3_method;
+    private $pause_method;
     private $crypt_key;
 
     public function __construct() {
@@ -55,6 +56,8 @@ class Config extends Singleton {
 
             $this->lo3_method = $config["LO3_METHOD"];
             $this->ko3_method = $config["KO3_METHOD"];
+
+            $this->pause_method = $config["PAUSE_METHOD"];
 
             $this->crypt_key = $config["CRYPT_KEY"];
 
@@ -198,6 +201,14 @@ class Config extends Singleton {
 
     public function setLo3Method($lo3_method) {
         $this->lo3_method = $lo3_method;
+    }
+
+    public function getPauseMethod() {
+        return $this->pause_method;
+    }
+
+    public function setPauseMethod($pause_method) {
+        $this->pause_method = $pause_method;
     }
 
     public function getKo3Method() {

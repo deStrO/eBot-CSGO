@@ -95,7 +95,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminStopNoRs();
                                     if ($reply) {
-                                        $send = json_encode(array('button', 'stop', $preg["id"]));
+                                        $send = json_encode(array('message' => 'button', 'content' => 'stop', 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
@@ -106,7 +106,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminStop();
                                     if ($reply) {
-                                        $send = json_encode(array('button', 'stop', $preg["id"]));
+                                        $send = json_encode(array('message' => 'button', 'content' => 'stop', 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
@@ -117,7 +117,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminExecuteCommand($preg["command"]);
                                     if ($reply) {
-                                        $send = json_encode(array($preg["id"], $reply));
+                                        $send = json_encode(array('id' => $preg["id"], 'content' => $reply));
                                         $this->websocket['rcon']->sendData($send);
                                     }
                                 } else {
@@ -128,7 +128,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminPassKnife();
                                     if ($reply) {
-                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
@@ -139,7 +139,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminForceKnife();
                                     if ($reply) {
-                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
@@ -150,7 +150,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminForceKnifeEnd();
                                     if ($reply) {
-                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
@@ -161,7 +161,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminForceStart();
                                     if ($reply) {
-                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
@@ -172,7 +172,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminStopBack();
                                     if ($reply) {
-                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
@@ -183,7 +183,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminPauseUnpause();
                                     if ($reply) {
-                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
@@ -194,7 +194,18 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminFixSides();
                                     if ($reply) {
-                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }
+                                } else {
+                                    Logger::error($preg["ip"] . " is not managed !");
+                                }
+                            } elseif (preg_match("!^(?<id>\d+) streamerready (?<ip>\d+\.\d+\.\d+\.\d+\:\d+)$!", $text, $preg)) {
+                                $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
+                                if ($match) {
+                                    $reply = $match->adminStreamerReady();
+                                    if ($reply) {
+                                        $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
@@ -205,7 +216,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminGoBackRounds();
                                     if ($reply) {
-                                        $send = json_encode(array('button', $match->getStatus(), $preg["id"]));
+                                        $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
@@ -226,8 +237,7 @@ class Application extends AbstractApplication {
                         if ($this->clientsConnected) {
                             $line = substr($data, 7, strlen($data)-8);
                             file_put_contents(Logger::getInstance()->getLogPathAdmin()."/logs_".\eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), $line, FILE_APPEND);
-
-                            $send = json_encode(array(\eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), $line));
+                            $send = json_encode(array('id' => \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), 'content' => $line));
                             $this->websocket['logger']->sendData($send);
                         }
                     }

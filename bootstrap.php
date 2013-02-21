@@ -9,10 +9,12 @@
  */
 $check["php"] = (function_exists('version_compare') && version_compare(phpversion(), '5.3.1', '>='));
 $check["php5.4"] = (function_exists('version_compare') && version_compare(phpversion(), '5.4', '>='));
-$check["mcrypt"] = extension_loaded('mcrypt');
 $check["mysql"] = extension_loaded('mysql');
 $check["spl"] = extension_loaded('spl');
 $check["sockets"] = extension_loaded("sockets");
+
+define('EBOT_DIRECTORY', __DIR__);
+define('APP_ROOT', __DIR__ . DIRECTORY_SEPARATOR);
 
 echo "
       ____        _
@@ -29,7 +31,6 @@ echo "| PHP 5.3.1 or newer    -> required  -> " . ($check["php"] ? ("[\033[0;32m
 echo "| Standard PHP Library  -> required  -> " . ($check["spl"] ? "[\033[0;32m Yes \033[0m]" : "[\033[0;31m No \033[0m]") . PHP_EOL;
 echo "| MySQL                 -> required  -> " . ($check["mysql"] ? "[\033[0;32m Yes \033[0m]" : "[\033[0;31m No \033[0m]") . PHP_EOL;
 echo "| Sockets               -> required  -> " . ($check["sockets"] ? "[\033[0;32m Yes \033[0m]" : "[\033[0;31m No \033[0m]") . PHP_EOL;
-echo "| MCrypt                -> required  -> " . ($check["mcrypt"] ? "[\033[0;32m Yes \033[0m]" : "[\033[0;31m No \033[0m]") . PHP_EOL;
 echo "-----------------------------------------------------" . PHP_EOL;
 
 if (!$check["php5.4"]) {
@@ -62,13 +63,15 @@ gc_enable();
 function handleShutdown() {
     $error = error_get_last();
     if (!empty($error)) {
-        $info = "[SHUTDOWN] date: " . date("m.d.y H:m", time()) . " file: " . $error['file'] . " | ln: " . $error['line'] . " | msg: " . $error['message'] . PHP_EOL;
-        file_put_contents('/home/ebot/eBot-CSGO/logs/error.log', $info, FILE_APPEND);
+        $info = "[SHUTDOWN] date: " . date("d.m.y H:m", time()) . " file: " . $error['file'] . " | ln: " . $error['line'] . " | msg: " . $error['message'] . PHP_EOL;
+        file_put_contents(APP_ROOT . 'logs' . DIRECTORY_SEPARATOR . 'error.log', $info, FILE_APPEND);
     }
 }
 
 echo "| Registerung Shutdown function !" . PHP_EOL;
 register_shutdown_function('handleShutdown');
+
+
 // Starting ebot Websocket Server
 if (PHP_OS == "Linux") {
     echo "| Starting eBot Websocket-Server !" . PHP_EOL;
@@ -95,8 +98,6 @@ if (PHP_OS == "Linux") {
 }
 echo '-----------------------------------------------------' . PHP_EOL;
 
-define('EBOT_DIRECTORY', __DIR__);
-define('APP_ROOT', __DIR__ . DIRECTORY_SEPARATOR);
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 // Include SteamCondenser

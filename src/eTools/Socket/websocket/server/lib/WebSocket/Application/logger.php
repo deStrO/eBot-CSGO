@@ -22,7 +22,7 @@ class logger extends Application {
     }
     public function onDisconnect($client) {
         $id = $client->getClientId();
-        unset($this->_clients[$id]);
+        unset($this->_clients[$id], $this->_matchs[$id]);
         if (count($this->_clients) == 1) {
             $data = '__false__';
             socket_sendto($this->_socket, $data, strlen($data), 0, Config::getInstance()->getBot_ip(), Config::getInstance()->getBot_port());
@@ -38,8 +38,8 @@ class logger extends Application {
                 socket_sendto($this->_socket, $data, strlen($data), 0, Config::getInstance()->getBot_ip(), Config::getInstance()->getBot_port());
             $this->_sendByServer = false;
         } else {
-            $matchid = json_decode($data);
-            $matchid = $matchid[0];
+            $matchid = json_decode($data, true);
+            $matchid = $matchid['id'];
             $this->_sendByServer = true;
         }
 
