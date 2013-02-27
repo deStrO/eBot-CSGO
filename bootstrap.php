@@ -71,19 +71,21 @@ function handleShutdown() {
 echo "| Registerung Shutdown function !" . PHP_EOL;
 register_shutdown_function('handleShutdown');
 
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 
 // Starting ebot Websocket Server
 if (PHP_OS == "Linux") {
     echo "| Starting eBot Websocket-Server !" . PHP_EOL;
     $descriptorspec = array(
         0 => array("pipe", "r"),
-        1 => array("pipe", "w"),
-        2 => array("pipe", "w")
+        1 => array("file", "websocket.log", "a"),
+        2 => array("file", "websocket.error", "a")
     );
-    $webSocketProcess = proc_open('node ' . __DIR__ . '/websocket_server.js', $descriptorspec, $pipes);
+    
+    $webSocketProcess = proc_open('node ' . __DIR__ . '/websocket_server.js ' . \eBot\Config\Config::getInstance()->getBot_ip() . ' ' . \eBot\Config\Config::getInstance()->getBot_port(), $descriptorspec, $pipes);
     if (is_resource($webSocketProcess)) {
         fclose($pipes[0]);
-        usleep(50000);
+        usleep(500000);
         $status = proc_get_status($webSocketProcess);
         if (!$status['running']) {
             echo '| WebSocket server crashed' . PHP_EOL;
@@ -98,7 +100,6 @@ if (PHP_OS == "Linux") {
 }
 echo '-----------------------------------------------------' . PHP_EOL;
 
-require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 // Include SteamCondenser
 require_once 'steam-condenser.php';
 
