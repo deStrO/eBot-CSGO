@@ -1475,11 +1475,11 @@ class Match implements Taskable {
                 }
             } elseif ($this->getStatus() == self::STATUS_OT_SECOND_SIDE) {
                 $scoreToReach = $this->oldMaxround * 2 + \eBot\Config\Config::getInstance()->getNbRoundOvertime() * 2 + (\eBot\Config\Config::getInstance()->getNbRoundOvertime() * 2 * ($this->nbOT - 1));
-                $scoreToReach2 = $this->oldMaxround * 2 + \eBot\Config\Config::getInstance()->getNbRoundOvertime() + (\eBot\Config\Config::getInstance()->getNbRoundOvertime() * ($this->nbOT - 1));
-
+                $scoreToReach2 = $this->oldMaxround + \eBot\Config\Config::getInstance()->getNbRoundOvertime() + (\eBot\Config\Config::getInstance()->getNbRoundOvertime() * ($this->nbOT - 1));
+                
                 if (($this->score["team_a"] + $this->score["team_b"] == $scoreToReach)
-                        || ($this->score["team_a"] >= $scoreToReach2)
-                        || ($this->score["team_b"] >= $scoreToReach2)) {
+                        || ($this->score["team_a"] > $scoreToReach2)
+                        || ($this->score["team_b"] > $scoreToReach2)) {
 
                     if ($this->score["team_a"] == $this->score["team_b"]) {
                         $this->setStatus(self::STATUS_WU_OT_1_SIDE, true);
