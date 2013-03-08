@@ -15,6 +15,9 @@ $check["sockets"] = extension_loaded("sockets");
 
 define('EBOT_DIRECTORY', __DIR__);
 define('APP_ROOT', __DIR__ . DIRECTORY_SEPARATOR);
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+require_once 'steam-condenser.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'websocket' . DIRECTORY_SEPARATOR . 'websocket.client.php';
 
 echo "
       ____        _
@@ -61,6 +64,11 @@ error_reporting(E_ALL);
 gc_enable();
 
 function handleShutdown() {
+    global $webSocketProcess;
+    
+    if (PHP_OS == "Linux")
+        proc_terminate($webSocketProcess,9);
+    
     $error = error_get_last();
     if (!empty($error)) {
         $info = "[SHUTDOWN] date: " . date("d.m.y H:m", time()) . " file: " . $error['file'] . " | ln: " . $error['line'] . " | msg: " . $error['message'] . PHP_EOL;
@@ -71,7 +79,6 @@ function handleShutdown() {
 echo "| Registerung Shutdown function !" . PHP_EOL;
 register_shutdown_function('handleShutdown');
 
-require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 
 // Starting ebot Websocket Server
 if (PHP_OS == "Linux") {
@@ -81,11 +88,10 @@ if (PHP_OS == "Linux") {
         1 => array("file", "websocket.log", "a"),
         2 => array("file", "websocket.error", "a")
     );
-    
     $webSocketProcess = proc_open('node ' . __DIR__ . '/websocket_server.js ' . \eBot\Config\Config::getInstance()->getBot_ip() . ' ' . \eBot\Config\Config::getInstance()->getBot_port(), $descriptorspec, $pipes);
     if (is_resource($webSocketProcess)) {
         fclose($pipes[0]);
-        usleep(500000);
+        usleep(400000);
         $status = proc_get_status($webSocketProcess);
         if (!$status['running']) {
             echo '| WebSocket server crashed' . PHP_EOL;
@@ -98,12 +104,8 @@ if (PHP_OS == "Linux") {
     echo "| You are under windows, please run websocket_server.bat before starting ebot" . PHP_EOL;
     sleep(5);
 }
+
 echo '-----------------------------------------------------' . PHP_EOL;
-
-// Include SteamCondenser
-require_once 'steam-condenser.php';
-
-require_once("phpws/websocket.client.php");
 
 error_reporting(E_ERROR);
 \eBot\Application\Application::getInstance()->run();

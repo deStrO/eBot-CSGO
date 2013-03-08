@@ -13,7 +13,6 @@ namespace eBot\Application;
 use eTools\Utils\Logger;
 use eTools\Application\AbstractApplication;
 use eTools\Socket\UDPSocket as Socket;
-use eTools\Socket\websocket\client\WebSocket as WebSocket;
 use eBot\Manager\MessageManager;
 use eBot\Manager\PluginsManager;
 use eBot\Manager\MatchManager;
@@ -89,7 +88,9 @@ class Application extends AbstractApplication {
                     } elseif ($data == '__aliveCheck__') {
                         $this->websocket['aliveCheck']->sendData('__isAlive__');
                     } else {
-                        $text = \eTools\Utils\Encryption::decrypt($data, utf8_encode(Config::getInstance()->getCryptKey()), 256);
+                        $data = json_decode($data, true);
+                        $authkey = \eBot\Manager\MatchManager::getInstance()->getAuthkey($data[1]);
+                        $text = \eTools\Utils\Encryption::decrypt($data[0], $authkey, 256);
                         if ($text) {
                             if (preg_match("!^(?<id>\d+) stopNoRs (?<ip>\d+\.\d+\.\d+\.\d+\:\d+)$!", $text, $preg)) {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);

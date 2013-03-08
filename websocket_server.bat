@@ -1,2 +1,2 @@
 @echo off
-php websocket_server.php
+node websocket_server.js <BOT_IP> <BOT_PORT>

@@ -16,6 +16,7 @@ class MatchManager extends Singleton implements Taskable {
     const CHECK_NEW_MATCH = "check";
 
     private $matchs = array();
+    private $authkeys = array();
     private $busyServers = array();
 
     public function __construct() {
@@ -28,6 +29,7 @@ class MatchManager extends Singleton implements Taskable {
             if ($match->getStatus() == Match::STATUS_END_MATCH) {
                 $this->matchs[$k]->destruct();
                 unset($this->matchs[$k]);
+                unset($this->authkeys[$k]);
             } else {
                 if (is_object($match)) {
                     if ($match->getNeedDel()) {
@@ -47,15 +49,14 @@ class MatchManager extends Singleton implements Taskable {
     private function check() {
         Logger::debug("Checking for new match (current matchs: " . count($this->matchs) . ")");
 
-//        $sql = mysql_query("SELECT m.id as match_id, m.team_a as team_a, m.team_b as team_b, s.id as server_id, s.ip as server_ip, s.rcon as server_rcon  FROM `matchs` m LEFT JOIN `servers` s ON s.id = m.server_id WHERE m.`status` >= " . Match::STATUS_STARTING . " AND m.`status` < " . Match::STATUS_END_MATCH . " AND m.`enable` = 1") or die(mysql_error());
-        $sql = mysql_query("SELECT m.team_a_name as team_a_name, m.team_b_name as team_b_name, m.id as match_id, t_a.name as team_a, t_b.name as team_b, s.id as server_id, s.ip as server_ip, s.rcon as server_rcon FROM `matchs` m LEFT JOIN `servers` s ON s.id = m.server_id LEFT JOIN `teams` t_a ON t_a.id = m.team_a LEFT JOIN `teams` t_b ON t_b.id = m.team_b WHERE m.`status` >= " . Match::STATUS_STARTING . " AND m.`status` < " . Match::STATUS_END_MATCH . " AND m.`enable` = 1") or die(mysql_error());
+        $sql = mysql_query("SELECT m.team_a_name as team_a_name, m.team_b_name as team_b_name, m.id as match_id, m.config_authkey as config_authkey, t_a.name as team_a, t_b.name as team_b, s.id as server_id, s.ip as server_ip, s.rcon as server_rcon FROM `matchs` m LEFT JOIN `servers` s ON s.id = m.server_id LEFT JOIN `teams` t_a ON t_a.id = m.team_a LEFT JOIN `teams` t_b ON t_b.id = m.team_b WHERE m.`status` >= " . Match::STATUS_STARTING . " AND m.`status` < " . Match::STATUS_END_MATCH . " AND m.`enable` = 1") or die(mysql_error());
         while ($req = mysql_fetch_assoc($sql)) {
             if (!@$this->matchs[$req['server_ip']]) {
                 try {
                     $teamA = $this->getTeamDetails($req['team_a'], 'a', $req);
-                    $teamB = $this->getTeamDetails($req['team_a'], 'a', $req);
+                    $teamB = $this->getTeamDetails($req['team_a'], 'b', $req);
                     Logger::log("New match detected - " . $teamA['name'] . " vs " . $teamB['name'] . " on " . $req['server_ip']);
-                    $this->newMatch($req["match_id"], $req['server_ip'], $req['server_rcon']);
+                    $this->newMatch($req["match_id"], $req['server_ip'], $req['server_rcon'], $req['config_authkey']);
                 } catch (MatchException $ex) {
                     Logger::error("Error while creating the match");
                     mysql_query("UPDATE `matchs` SET enable=0 WHERE id = '" . $req['match_id'] . "'") or die(mysql_error());
@@ -70,6 +71,7 @@ class MatchManager extends Singleton implements Taskable {
         }
 
         TaskManager::getInstance()->addTask(new Task($this, self::CHECK_NEW_MATCH, microtime(true) + 3), true);
+        Logger::debug("End checking (current matchs: " . count($this->matchs) . ")");
     }
 
     private function busyIp($ip) {
@@ -89,7 +91,7 @@ class MatchManager extends Singleton implements Taskable {
         }
     }
 
-    private function newMatch($match_id, $ip, $rcon) {
+    private function newMatch($match_id, $ip, $rcon, $authkey) {
         if (@$this->busyServers[$ip]) {
             if (time() > $this->busyServers[$ip]) {
                 unset($this->busyServers[$ip]);
@@ -99,6 +101,7 @@ class MatchManager extends Singleton implements Taskable {
         if (!@$this->busyServers[$ip]) {
             if (!@$this->matchs[$ip]) {
                 $this->matchs[$ip] = new Match($match_id, $ip, $rcon);
+                $this->authkeys[$ip] = $authkey;
             } else {
                 throw new \Exception("MATCH_ALREADY_PLAY_ON_THIS_SERVER");
             }
@@ -116,6 +119,14 @@ class MatchManager extends Singleton implements Taskable {
     public function getMatch($ip) {
         if (@$this->matchs[$ip]) {
             return $this->matchs[$ip];
+        } else {
+            return null;
+        }
+    }
+
+    public function getAuthkey($ip) {
+        if (@$this->authkeys[$ip]) {
+            return $this->authkeys[$ip];
         } else {
             return null;
         }

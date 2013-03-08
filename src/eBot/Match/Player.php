@@ -236,8 +236,7 @@ class Player {
         \mysql_query("INSERT INTO players_snapshot 
             (`player_id`,`nb_kill`,`death`,`assist`,`point`,`hs`,`defuse`,`bombe`,`tk`,`nb1`,`nb2`,`nb3`,`nb4`,`nb5`,`nb1kill`,`nb2kill`,`nb3kill`,`nb4kill`,`nb5kill`,`firstkill`,`round_id`,`created_at`,`updated_at`)
             VALUES
-            ({$this->mysql_id}, {$this->kill}, {$this->death}, {$this->assist}, {$this->point}, {$this->hs}, {$this->defuse}, {$this->bombe}, {$this->tk}, {$this->v1}, {$this->v2}, {$this->v3}, {$this->v4}, {$this->v5}, {$this->k1}, {$this->k2}, {$this->k3}, {$this->k4}, {$this->k5}, {$this->firstKill}, {$round}, NOW(), NOW())")
-                or Logger::error("Error while snapshoting");
+            ({$this->mysql_id}, {$this->kill}, {$this->death}, {$this->assist}, {$this->point}, {$this->hs}, {$this->defuse}, {$this->bombe}, {$this->tk}, {$this->v1}, {$this->v2}, {$this->v3}, {$this->v4}, {$this->v5}, {$this->k1}, {$this->k2}, {$this->k3}, {$this->k4}, {$this->k5}, {$this->firstKill}, {$round}, NOW(), NOW())") or Logger::error("Error while snapshoting");
     }
 
 }

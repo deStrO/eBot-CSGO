@@ -33,7 +33,6 @@ class Config extends Singleton {
     private $lo3_method;
     private $ko3_method;
     private $pause_method;
-    private $crypt_key;
 
     public function __construct() {
         Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
@@ -59,9 +58,7 @@ class Config extends Singleton {
 
             $this->pause_method = $config["PAUSE_METHOD"];
 
-            $this->crypt_key = $config["CRYPT_KEY"];
-
-            Logger::log("Configuration loaded");
+            Logger::debug("Configuration loaded");
         }
     }
 

@@ -3,7 +3,10 @@ eBot-CSGO V3.0
 
 eBot is a part of eSport-tools.net. It's a full managed bot written in PHP for managing CS:GO match.
 
-This tools use [steamCondenser](https://github.com/koraktor/steam-condenser-php) for the RCOn tools.
+This tools use:
+
+* [steamCondenser](https://github.com/koraktor/steam-condenser-php)
+* [phpws](https://github.com/Devristo/phpws) (only websocket client)
 
 ## Requirements
 
@@ -14,7 +17,6 @@ The following extensions are required:
 
 * `MySQL`
 * `Sockets`
-* `mcrypt`
 
 ## License
 

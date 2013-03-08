@@ -17,12 +17,17 @@
 ------------------------
 - Put the content into a directory
 - Download or install composer.phar (http://getcomposer.org/download/)
+- Download and install NodeJS and npm
+- Install NPM websocket
+   - npm install websocket
 - Install the package and requirements:
    Windows: composer install
    Linux: php composer.phar install
 - Configure the following file:
   config/config.ini
   config/logger.ini
+  Windows: websocket_server.bat
+    - BOT_IP and BOT_PORT
 - Don't forget to edit the BOT_IP and BOT_PORT, or it will not work
 ------------------------
 | About the database
