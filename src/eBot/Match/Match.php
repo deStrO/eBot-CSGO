@@ -2220,7 +2220,7 @@ class Match implements Taskable {
                     $this->rcon->send("mp_restartgame 1");
                     \mysql_query("UPDATE `matchs` SET ingame_enable = 0 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
 
-                    if ($this->getNbRound() == $this->maxRound + 1) {
+                    /*if ($this->getNbRound() == $this->maxRound + 1) {
                         $this->rcon->send("mp_swapteams");
                         $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
                     }
@@ -2231,7 +2231,7 @@ class Match implements Taskable {
                             $this->rcon->send("mp_swapteams");
                             $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
                         }
-                    }
+                    }*/
 
                     mysql_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
                     mysql_query("DELETE FROM round WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
