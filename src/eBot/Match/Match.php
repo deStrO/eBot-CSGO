@@ -39,6 +39,7 @@ class Match implements Taskable {
     const CHANGE_HOSTNAME = "changeHostname";
     const TEST_RCON = "testRcon";
     const REINIT_RCON = "rconReinit";
+    const SET_LIVE = "setLive";
 
     // Variable calculable (pas en BDD)
     private $players = array();
@@ -447,7 +448,10 @@ class Match implements Taskable {
     }
 
     public function taskExecute($name) {
-        if ($name == self::TASK_ENGAGE_MAP) {
+        if ($name == self::SET_LIVE) {
+            $this->addLog("Setting live");
+            $this->enable = true;
+        } elseif ($name == self::TASK_ENGAGE_MAP) {
             $this->engageMap();
         } elseif ($name == self::CHANGE_HOSTNAME) {
             if ($this->rcon->getState()) {
@@ -563,7 +567,7 @@ class Match implements Taskable {
                 if ($this->getStatus() == self::STATUS_STARTING && $this->timeEngageMap > 0) {
                     $time = ceil(microtime(true) - $this->timeEngageMap);
                     $this->lastMessage = time();
-                    $this->say("The next map will be start in #lighgreen".$time." #defaultseconds, be patient !");
+                    $this->say("The next map will be start in #lighgreen" . $time . " #defaultseconds, be patient !");
                 } else {
                     // Récupération du SIDE de l'équipe
                     $teamA = strtoupper($this->side['team_a']);
@@ -721,11 +725,11 @@ class Match implements Taskable {
             }
 
             $this->rcon->send("mp_warmup_pausetimer 1");
-            
+
             if ($this->config_ot) {
                 $this->rcon->send("mp_overtime_enable 1");
-                $this->rcon->send("mp_overtime_maxrounds ".($this->ot_maxround*2));
-                $this->rcon->send("mp_overtime_startmoney ".$this->ot_startmoney);
+                $this->rcon->send("mp_overtime_maxrounds " . ($this->ot_maxround * 2));
+                $this->rcon->send("mp_overtime_startmoney " . $this->ot_startmoney);
                 $this->rcon->send("mp_overtime_halftime_pausetimer 1");
             }
 
@@ -1443,8 +1447,8 @@ class Match implements Taskable {
             if ($this->config_ot) {
                 if ($this->score['team_a'] + $this->score['team_b'] == ($this->maxRound * 2) - 1) {
                     $this->rcon->send("mp_overtime_enable 1");
-                    $this->rcon->send("mp_overtime_maxrounds ".($this->ot_maxround*2));
-                    $this->rcon->send("mp_overtime_startmoney ".$this->ot_startmoney);
+                    $this->rcon->send("mp_overtime_maxrounds " . ($this->ot_maxround * 2));
+                    $this->rcon->send("mp_overtime_startmoney " . $this->ot_startmoney);
                     $this->rcon->send("mp_overtime_halftime_pausetimer 1");
                 }
             }
@@ -2183,8 +2187,8 @@ class Match implements Taskable {
             $this->rcon->send("mp_backup_round_file_last " . $this->backupFile);
 
             $this->say("Round restored, going live !");
-            $this->enable = true;
             \mysql_query("UPDATE `matchs` SET ingame_enable = 1 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
+            TaskManager::getInstance()->addTask(new Task($this, self::SET_LIVE, microtime(true) + 2));
         }
     }
 
@@ -2220,18 +2224,18 @@ class Match implements Taskable {
                     $this->rcon->send("mp_restartgame 1");
                     \mysql_query("UPDATE `matchs` SET ingame_enable = 0 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
 
-                    /*if ($this->getNbRound() == $this->maxRound + 1) {
-                        $this->rcon->send("mp_swapteams");
-                        $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
-                    }
+                    /* if ($this->getNbRound() == $this->maxRound + 1) {
+                      $this->rcon->send("mp_swapteams");
+                      $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
+                      }
 
-                    if ($this->getStatus() > self::STATUS_WU_OT_1_SIDE) {
-                        $round = $this->getNbRound() - ($this->oldMaxround * 2);
-                        if ($round % ($this->maxRound * 2) == $this->maxRound + 1) {
-                            $this->rcon->send("mp_swapteams");
-                            $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
-                        }
-                    }*/
+                      if ($this->getStatus() > self::STATUS_WU_OT_1_SIDE) {
+                      $round = $this->getNbRound() - ($this->oldMaxround * 2);
+                      if ($round % ($this->maxRound * 2) == $this->maxRound + 1) {
+                      $this->rcon->send("mp_swapteams");
+                      $this->say("\001Don't panic, to prevent a bug from backup system, you are switched. You will be switched when you continue the match");
+                      }
+                      } */
 
                     mysql_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
                     mysql_query("DELETE FROM round WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
@@ -2341,22 +2345,22 @@ class Match implements Taskable {
                         $this->currentMap->setStatus(Map::STATUS_OT_FIRST_SIDE, true);
                         $this->setStatus(self::STATUS_OT_FIRST_SIDE, true);
                         // NEW
-                        /*$this->rcon->send("mp_warmuptime 0; mp_halftime_pausetimer 1; mp_startmoney " . $this->ot_startmoney . "; mp_maxrounds " . ($this->maxRound * 2));
-                        $this->rcon->send("mp_halftime_duration 1");
-                        $this->rcon->send("mp_warmup_end");
-                        if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay" && $this->pluginCsay) {
-                            $this->rcon->send("csay_lo3");
-                            $this->say("\004OVERTIME live!");
-                        } elseif (\eBot\Config\Config::getInstance()->getLo3Method() == "esl" && $this->pluginESL) {
-                            $this->rcon->send("esl_lo3");
-                            $this->say("\004OVERTIME live!");
-                        } else {
-                            $this->rcon->send("mp_restartgame 3");
-                            $this->say("\004OVERTIME live!");
-                            $this->say("LIVE!");
-                            $this->say("LIVE!");
-                        }*/
-                        
+                        /* $this->rcon->send("mp_warmuptime 0; mp_halftime_pausetimer 1; mp_startmoney " . $this->ot_startmoney . "; mp_maxrounds " . ($this->maxRound * 2));
+                          $this->rcon->send("mp_halftime_duration 1");
+                          $this->rcon->send("mp_warmup_end");
+                          if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay" && $this->pluginCsay) {
+                          $this->rcon->send("csay_lo3");
+                          $this->say("\004OVERTIME live!");
+                          } elseif (\eBot\Config\Config::getInstance()->getLo3Method() == "esl" && $this->pluginESL) {
+                          $this->rcon->send("esl_lo3");
+                          $this->say("\004OVERTIME live!");
+                          } else {
+                          $this->rcon->send("mp_restartgame 3");
+                          $this->say("\004OVERTIME live!");
+                          $this->say("LIVE!");
+                          $this->say("LIVE!");
+                          } */
+
                         $this->rcon->send("mp_halftime_pausetimer 0; ");
                         $this->waitForRestart = false;
                         break;
