@@ -1,4 +1,5 @@
 <?php
+
 /**
  * eBot - A bot for match management for CS:GO
  * @license     http://creativecommons.org/licenses/by/3.0/ Creative Commons 3.0
@@ -16,6 +17,7 @@ class Logger extends Singleton {
     private $log_enabled = false;
     private $log_path;
     private $log_path_admin;
+    private $name = "";
 
     const DEBUG = 1;
     const LOG = 2;
@@ -75,15 +77,21 @@ class Logger extends Singleton {
         if (self::$level > Logger::LOG)
             return;
 
+        $name = "";
+        if (self::getInstance()->getName() != "") {
+            $name = " [" . self::getInstance()->getName() . "] ";
+        }
+
         $d = debug_backtrace();
         if (@$d[1]) {
             if ($d[1]['class']) {
-                echo date('Y-m-d H:i:s') . " - LOG    [" . $d[1]['class'] . "] $content\r\n";
+                echo date('Y-m-d H:i:s') . $name . " - LOG    [" . $d[1]['class'] . "] $content\r\n";
             } else {
-                echo date('Y-m-d H:i:s') . " - LOG    [" . $d[1]['function'] . "] $content\r\n";
+                echo date('Y-m-d H:i:s') . $name . " - LOG    [" . $d[1]['function'] . "] $content\r\n";
             }
-        } else
-            echo date('Y-m-d H:i:s') . " - LOG    " . $content . "\r\n";
+        }
+        else
+            echo date('Y-m-d H:i:s') . $name . " - LOG    " . $content . "\r\n";
     }
 
     public static function error($content) {
@@ -93,15 +101,21 @@ class Logger extends Singleton {
         if (self::$level > Logger::ERROR)
             return;
 
+        $name = "";
+        if (self::getInstance()->getName() != "") {
+            $name = " [" . self::getInstance()->getName() . "] ";
+        }
+
         $d = debug_backtrace();
         if (@$d[1]) {
             if ($d[1]['class']) {
-                echo date('Y-m-d H:i:s') . " - ERROR  [" . $d[1]['class'] . "] $content\r\n";
+                echo date('Y-m-d H:i:s') . $name . " - ERROR  [" . $d[1]['class'] . "] $content\r\n";
             } else {
-                echo date('Y-m-d H:i:s') . " - ERROR  [" . $d[1]['function'] . "] $content\r\n";
+                echo date('Y-m-d H:i:s') . $name . " - ERROR  [" . $d[1]['function'] . "] $content\r\n";
             }
-        } else
-            echo date('Y-m-d H:i:s') . " - ERROR  " . $content . "\r\n";
+        }
+        else
+            echo date('Y-m-d H:i:s') . $name . " - ERROR  " . $content . "\r\n";
     }
 
     public static function debug($content) {
@@ -111,16 +125,30 @@ class Logger extends Singleton {
         if (self::$level > Logger::DEBUG)
             return;
 
+        $name = "";
+        if (self::getInstance()->getName() != "") {
+            $name = " [" . self::getInstance()->getName() . "] ";
+        }
+
         $d = debug_backtrace();
         if (@$d[1]) {
             if ($d[1]['class']) {
                 if (strpos($d[1]['class'], "Task") === false)
-                    echo date('Y-m-d H:i:s') . " - DEBUG  [" . $d[1]['class'] . "] $content\r\n";
+                    echo date('Y-m-d H:i:s') . $name . " - DEBUG  [" . $d[1]['class'] . "] $content\r\n";
             } else {
-                echo date('Y-m-d H:i:s') . " - DEBUG  [" . $d[1]['function'] . "] $content\r\n";
+                echo date('Y-m-d H:i:s') . $name . " - DEBUG  [" . $d[1]['function'] . "] $content\r\n";
             }
-        } else
-            echo date('Y-m-d H:i:s') . " - DEBUG  " . $content . "\r\n";
+        }
+        else
+            echo date('Y-m-d H:i:s') . $name . " - DEBUG  " . $content . "\r\n";
+    }
+
+    public function getName() {
+        return $this->name;
+    }
+
+    public function setName($name) {
+        $this->name = $name;
     }
 
 }

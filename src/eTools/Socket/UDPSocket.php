@@ -9,7 +9,7 @@
 
 namespace eTools\Socket;
 
-use eTools\Exception\Socket_Exception;
+use eTools\Exception\SocketException;
 use eTools\Utils\Logger;
 
 class UDPSocket {
@@ -21,13 +21,13 @@ class UDPSocket {
         if ($this->socket) {
             if (socket_bind($this->socket, $bot_ip, $bot_port)) {
                 if (!socket_set_nonblock($this->socket)) {
-                    throw new Socket_Exception("Can't set non-block mode !");
+                    throw new SocketException("Can't set non-block mode !");
                 }
             } else {
-                throw new Socket_Exception("Can't bind the socket");
+                throw new SocketException("Can't bind the socket");
             }
         } else {
-            throw new Socket_Exception("Can't create the socket");
+            throw new SocketException("Can't create the socket");
         }
     }
 
