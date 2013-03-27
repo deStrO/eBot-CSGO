@@ -13,7 +13,7 @@ use eBot\Exception\Match_Exception;
 class MatchManagerClient extends Singleton implements Taskable {
 
     const VERSION = "1.1";
-    const CHECK_NEW_MATCH = "check";
+    const CHECK_SQL = "check";
 
     private $matchs = array();
     private $authkeys = array();
@@ -21,6 +21,7 @@ class MatchManagerClient extends Singleton implements Taskable {
 
     public function __construct() {
         Logger::log("Creating MatchManager version " . self::VERSION);
+        TaskManager::getInstance()->addTask(new Task($this, self::CHECK_SQL, microtime(true) + 5), true);
     }
 
     public function sendPub() {
@@ -142,7 +143,8 @@ class MatchManagerClient extends Singleton implements Taskable {
 
     public function taskExecute($name) {
         if ($name == "check") {
-            $this->check();
+            mysql_query("SELECT 1;");
+            TaskManager::getInstance()->addTask(new Task($this, self::CHECK_SQL, microtime(true) + 5), true);
         }
     }
 
