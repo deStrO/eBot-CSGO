@@ -106,6 +106,17 @@ class Map {
         return $team;
     }
 
+    public function getCurrentScore() {
+        end($this->scores);
+        $score = current($this->scores);
+        if ($score) {
+            return $score;
+        } else {
+            Logger::error("Can't find score");
+            return null;
+        }
+    }
+
     public function removeLastScore() {
         end($this->scores);
         $score = current($this->scores);

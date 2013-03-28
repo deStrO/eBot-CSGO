@@ -15,7 +15,7 @@ use eBot\Message\Type\GotTheBomb as Object;
 class GotTheBomb extends Message {
 
     public function __construct() {
-        parent::__construct('/triggered "Got_The_Bomb"/');
+        parent::__construct('/triggered \"Got\_The\_Bomb\"/');
     }
 
     public function process() {

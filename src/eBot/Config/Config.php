@@ -30,6 +30,7 @@ class Config extends Singleton {
     private $nb_max_matchs = 0;
     private $ot_rounds;
     private $pubs;
+    private $maps;
     private $lo3_method;
     private $ko3_method;
     private $pause_method;
@@ -52,6 +53,8 @@ class Config extends Singleton {
             $this->ot_rounds = $config["OT_ROUNDS"];
 
             $this->pubs = $config["PUB"];
+
+            $this->maps = $config["MAP"];
 
             $this->lo3_method = $config["LO3_METHOD"];
             $this->ko3_method = $config["KO3_METHOD"];
@@ -190,6 +193,14 @@ class Config extends Singleton {
 
     public function setPubs($pubs) {
         $this->pubs = $pubs;
+    }
+
+    public function getMaps() {
+        return $this->maps;
+    }
+
+    public function setMaps($maps) {
+        $this->maps = $maps;
     }
 
     public function getLo3Method() {
