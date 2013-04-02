@@ -229,7 +229,7 @@ class ApplicationClient extends AbstractApplication {
                             } elseif (preg_match("!^(?<id>\d+) goBackRounds (?<ip>\d+\.\d+\.\d+\.\d+\:\d+) (?<round>\d+)$!", $text, $preg)) {
                                 $match = \eBot\Manager\MatchManagerClient::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
-                                    $reply = $match->adminGoBackRounds();
+                                    $reply = $match->adminGoBackRounds($preg['round']);
                                     if ($reply) {
                                         $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
                                         Application::getInstance()->websocket['match']->sendData($send);

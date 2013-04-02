@@ -1068,7 +1068,7 @@ class Match implements Taskable {
                     $this->startMatch();
                 }
             }
-        } elseif ($text == "!stop") {
+        } elseif (($text == "!stop") && !\eBot\Config\Config::getInstance()->getConfigStopDisabled()) {
             if ($this->isMatchRound() && $this->enable) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say stop");
 
@@ -1969,7 +1969,11 @@ class Match implements Taskable {
     private $waitRoundStartRecord = false;
 
     private function processRoundRestart(\eBot\Message\Type\RoundRestart $message) {
-        if ($this->waitForRestart && $this->getStatus() == self::STATUS_FIRST_SIDE) {
+        if ($this->waitForRestart && $this->getStatus() == self::STATUS_FIRST_SIDE && \eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "matchstart") {
+            $this->waitRoundStartRecord = true;
+        }
+        
+        if ($this->waitForRestart && $this->getStatus() == self::STATUS_KNIFE && \eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "knifestart") {
             $this->waitRoundStartRecord = true;
         }
     }
@@ -2448,6 +2452,8 @@ class Match implements Taskable {
                     $this->say("KNIFE!");
                     $this->say("KNIFE!");
                 }
+                
+                $this->waitForRestart = true;
             } else {
                 // FIX for warmup
                 $this->rcon->send("mp_warmup_pausetimer 0;");
