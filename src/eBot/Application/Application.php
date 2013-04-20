@@ -236,9 +236,9 @@ class Application extends AbstractApplication {
                         file_put_contents(APP_ROOT . "/logs/$ip", $line, FILE_APPEND);
                         $line = trim(substr($line, 23));
                         \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->processMessage($line);
+                        $line = substr($data, 7, strlen($data) - 8);
+                        file_put_contents(Logger::getInstance()->getLogPathAdmin() . "/logs_" . \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), $line, FILE_APPEND);
                         if ($this->clientsConnected) {
-                            $line = substr($data, 7, strlen($data) - 8);
-                            file_put_contents(Logger::getInstance()->getLogPathAdmin() . "/logs_" . \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), $line, FILE_APPEND);
                             $send = json_encode(array('id' => \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), 'content' => $line));
                             $this->websocket['logger']->sendData($send);
                         }
