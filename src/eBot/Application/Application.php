@@ -273,7 +273,7 @@ class Application extends AbstractApplication {
     }
 
     public function getName() {
-        return "eBot CS:Go version " . $this->getVersion();
+        return "eBot CS:GO version " . $this->getVersion();
     }
 
     public function getVersion() {

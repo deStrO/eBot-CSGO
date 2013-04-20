@@ -65,14 +65,14 @@ gc_enable();
 
 function handleShutdown() {
     global $webSocketProcess;
-    
+
     if (PHP_OS == "Linux") {
         proc_terminate($webSocketProcess,9);
-		foreach (\eBot\Application\ApplicationServer::getInstance()->instance as $proc) {
-			proc_terminate($proc,9);
-		}
-	}
-    
+        foreach (\eBot\Application\ApplicationServer::getInstance()->instance as $proc) {
+            proc_terminate($proc,9);
+        }
+    }
+
     $error = error_get_last();
     if (!empty($error)) {
         $info = "[SHUTDOWN] date: " . date("d.m.y H:m", time()) . " file: " . $error['file'] . " | ln: " . $error['line'] . " | msg: " . $error['message'] . PHP_EOL;
@@ -111,5 +111,5 @@ if (PHP_OS == "Linux") {
 
 echo '-----------------------------------------------------' . PHP_EOL;
 
-error_reporting(E_ERROR);
+error_reporting(E_ALL);
 \eBot\Application\ApplicationServer::getInstance()->run();

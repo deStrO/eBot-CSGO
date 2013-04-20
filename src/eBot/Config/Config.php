@@ -63,7 +63,7 @@ class Config extends Singleton {
             $this->ko3_method = $config["KO3_METHOD"];
 
             $this->pause_method = $config["PAUSE_METHOD"];
-            
+
             $this->config_stop_disabled = (bool) $config['COMMAND_STOP_DISABLED'];
             $this->config_knife_method = ($config['RECORD_METHOD'] == "knifestart") ? "knifestart" : "matchstart";
 
@@ -77,7 +77,11 @@ class Config extends Singleton {
         Logger::log("OverTime rounds: " . $this->ot_rounds);
         Logger::log("Pub's set:");
         foreach ($this->pubs as $pub) {
-            Logger::log($pub);
+            Logger::log("-> ".$pub);
+        }
+        Logger::log("Maps set:");
+        foreach ($this->maps as $map) {
+            Logger::log("-> ".$map);
         }
     }
 
@@ -236,7 +240,7 @@ class Config extends Singleton {
     public function getCryptKey() {
         return $this->crypt_key;
     }
-    
+
     public function getConfigStopDisabled() {
         return $this->config_stop_disabled;
     }
