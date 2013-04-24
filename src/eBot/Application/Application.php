@@ -24,19 +24,19 @@ class Application extends AbstractApplication {
 
     private $socket = null;
     public $websocket = null;
-    private $clientsConnected = false;
 
     public function run() {
         // Loading Logger instance
         Logger::getInstance();
         Logger::log($this->getName());
 
-        // Loading eBot configuration
-        Logger::log("Loading config");
-        Config::getInstance()->printConfig();
-
         // Initializing database
         $this->initDatabase();
+
+        // Loading eBot configuration
+        Logger::log("Loading config");
+        Config::getInstance()->scanAdvertising();
+        Config::getInstance()->printConfig();
 
         // Registring components
         Logger::log("Registering MatchManager");
@@ -81,11 +81,7 @@ class Application extends AbstractApplication {
             $data = $this->socket->recvfrom($ip);
             if ($data) {
                 if (!preg_match("/L+\s+\d+\/\d+\/\d+/", $data)) {
-                    if ($data == '__true__') {
-                        $this->clientsConnected = true;
-                    } elseif ($data == '__false__') {
-                        $this->clientsConnected = false;
-                    } elseif ($data == '__aliveCheck__') {
+                    if ($data == '__aliveCheck__') {
                         $this->websocket['aliveCheck']->sendData('__isAlive__');
                     } else {
                         $data = json_decode($data, true);
@@ -237,11 +233,9 @@ class Application extends AbstractApplication {
                         $line = trim(substr($line, 23));
                         \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->processMessage($line);
                         $line = substr($data, 7, strlen($data) - 8);
-                        file_put_contents(Logger::getInstance()->getLogPathAdmin() . "/logs_" . \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), $line, FILE_APPEND);
-                        if ($this->clientsConnected) {
-                            $send = json_encode(array('id' => \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), 'content' => $line));
-                            $this->websocket['logger']->sendData($send);
-                        }
+                        file_put_contents(Logger::getInstance()->getLogPathAdmin() . "/logs_" . \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId() . ".log", $line, FILE_APPEND);
+                        $send = json_encode(array('id' => \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), 'content' => $line));
+                        $this->websocket['logger']->sendData($send);
                     }
                 }
             }

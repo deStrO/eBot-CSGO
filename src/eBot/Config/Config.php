@@ -30,7 +30,7 @@ class Config extends Singleton {
     private $delay_busy_server = 90;
     private $nb_max_matchs = 0;
     private $ot_rounds;
-    private $pubs;
+    private $advertising = array();
     private $maps;
     private $lo3_method;
     private $ko3_method;
@@ -55,8 +55,6 @@ class Config extends Singleton {
             $this->delay_busy_server = $config["DELAY_BUSY_SERVER"];
             $this->ot_rounds = $config["OT_ROUNDS"];
 
-            $this->pubs = $config["PUB"];
-
             $this->maps = $config["MAP"];
 
             $this->lo3_method = $config["LO3_METHOD"];
@@ -71,15 +69,29 @@ class Config extends Singleton {
         }
     }
 
+    public function scanAdvertising() {
+        $q = \mysql_query("SELECT a.`season_id`, a.`message`, s.`name` FROM `advertising` a LEFT JOIN `seasons` s ON a.`season_id` = s.`id` WHERE a.`active` = 1");
+        while ($row = mysql_fetch_array($q, MYSQL_ASSOC)) {
+            $this->advertising['message'][] = $row['message'];
+            if ($row['season_id'] == null) {
+                $row['season_id'] = 0;
+                $row['name'] = "General";
+            }
+            $this->advertising['season_id'][] = intval($row['season_id']);
+            $this->advertising['season_name'][] = $row['name'];
+        }
+        array_multisort($this->advertising['season_id'], SORT_ASC, $this->advertising['season_name'], $this->advertising['message']);
+    }
+
     public function printConfig() {
         Logger::log("MySQL: " . $this->mysql_ip . ":" . $this->mysql_port . " " . $this->mysql_user . ":" . \str_repeat("*", \strlen($this->mysql_pass)) . "@" . $this->mysql_base);
         Logger::log("Socket: " . $this->bot_ip . ":" . $this->bot_port);
         Logger::log("OverTime rounds: " . $this->ot_rounds);
-        Logger::log("Pub's set:");
-        foreach ($this->pubs as $pub) {
-            Logger::log("-> ".$pub);
+        Logger::log("Advertising by Season:");
+        for ($i=0; $i<count($this->advertising['message']); $i++) {
+            Logger::log("-> ".$this->advertising['season_name'][$i].": ".$this->advertising['message'][$i]);
         }
-        Logger::log("Maps set:");
+        Logger::log("Maps:");
         foreach ($this->maps as $map) {
             Logger::log("-> ".$map);
         }
@@ -197,12 +209,19 @@ class Config extends Singleton {
         $this->perf_link_on_update = $perf_link_on_update;
     }
 
-    public function getPubs() {
-        return $this->pubs;
+    public function getAdvertising($seasonID) {
+        for ($i=0;$i<count($this->advertising['season_id']);$i++) {
+            if (($this->advertising['season_id'][$i] == $seasonID) || ($this->advertising['season_id'][$i] == 0)) {
+                $output['season_id'][] = $this->advertising['season_id'][$i];
+                $output['season_name'][] = $this->advertising['season_name'][$i];
+                $output['message'][] = $this->advertising['message'][$i];
+            }
+        }
+        return $output;
     }
 
-    public function setPubs($pubs) {
-        $this->pubs = $pubs;
+    public function setAdvertising($pubs) {
+        $this->advertising = $pubs;
     }
 
     public function getMaps() {
