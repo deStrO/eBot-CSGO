@@ -26,7 +26,7 @@ class ApplicationClient extends AbstractApplication {
     private $websocket = null;
     private $clientsConnected = false;
     private $portMain = 0;
-    
+
     public function getPortMain() {
         return $this->portMain;
     }
@@ -70,11 +70,11 @@ class ApplicationClient extends AbstractApplication {
             Logger::error("Unable to create Websocket.");
             die();
         }
-        
+
         // Starting application
         Logger::log("Starting eBot Application");
         $this->portMain = Config::getInstance()->getBot_port();
-        
+
         Config::getInstance()->setBot_port(Config::getInstance()->getBot_port()+$argv[1]);
         Logger::log("New port : ".Config::getInstance()->getBot_port());
 

@@ -31,12 +31,13 @@ class Application extends AbstractApplication {
         Logger::getInstance();
         Logger::log($this->getName());
 
-        // Loading eBot configuration
-        Logger::log("Loading config");
-        Config::getInstance()->printConfig();
-
         // Initializing database
         $this->initDatabase();
+
+        // Loading eBot configuration
+        Logger::log("Loading config");
+        Config::getInstance()->scanAdvertising();
+        Config::getInstance()->printConfig();
 
         // Registring components
         Logger::log("Registering MatchManager");
@@ -224,6 +225,17 @@ class Application extends AbstractApplication {
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
+                            } elseif (preg_match("!^(?<id>\d+) skipmap (?<ip>\d+\.\d+\.\d+\.\d+\:\d+)$!", $text, $preg)) {
+                                $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
+                                if ($match) {
+                                    $reply = $match->adminSkipMap();
+                                    /*if ($reply) {
+                                        $send = json_encode(array('message' => 'button', 'content' => 'stop', 'id' => $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }*/
+                                } else {
+                                    Logger::error($preg["ip"] . " is not managed !");
+                                }
                             } else {
                                 Logger::error($text . " not managed");
                             }
@@ -236,9 +248,9 @@ class Application extends AbstractApplication {
                         file_put_contents(APP_ROOT . "/logs/$ip", $line, FILE_APPEND);
                         $line = trim(substr($line, 23));
                         \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->processMessage($line);
+                        $line = substr($data, 7, strlen($data) - 8);
+                        file_put_contents(Logger::getInstance()->getLogPathAdmin() . "/logs_" . \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId() . ".log", $line, FILE_APPEND);
                         if ($this->clientsConnected) {
-                            $line = substr($data, 7, strlen($data) - 8);
-                            file_put_contents(Logger::getInstance()->getLogPathAdmin() . "/logs_" . \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), $line, FILE_APPEND);
                             $send = json_encode(array('id' => \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), 'content' => $line));
                             $this->websocket['logger']->sendData($send);
                         }
@@ -273,7 +285,7 @@ class Application extends AbstractApplication {
     }
 
     public function getName() {
-        return "eBot CS:Go version " . $this->getVersion();
+        return "eBot CS:GO version " . $this->getVersion();
     }
 
     public function getVersion() {

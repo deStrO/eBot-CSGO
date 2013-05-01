@@ -48,49 +48,54 @@ clients["logger"] = new Array();
 clients["livemap"] = new Array();
 clients["rcon"] = new Array();
 clients["match"] = new Array();
+clients["chat"] = new Array();
+var chatlog = new Array();
+chatlog.push("chatlog");
 
 wsServer.on('request', function(request) {
-    console.log("New connection");
     if (!originIsAllowed(request.origin)) {
         // Make sure we only accept requests from an allowed origin
         request.reject();
         console.log((new Date()) + ' Connection from origin ' + request.origin + ' rejected.');
         return;
     }
-    
+
     var connection = request.accept(null, request.origin);
     var mode = request.resourceURL.path;
-    console.log((new Date()) + ' Connection accepted for '+request.resourceURL.path+ ' ('+request.remoteAddress+')');
+    console.log((new Date()) + ' \['+request.origin+'\] Connection accepted for '+request.resourceURL.path+ ' ('+request.remoteAddress+')');
 
-    var indexAlive = 0;
-    var indexLogger = 0;
-    var indexRcon = 0;
-    var indexMatch = 0;
-    var indexLivemap = 0;
+    var clientIndex = null;
 
     if (mode == "/alive") {
         connection.alive = new Array();
-        indexAlive = clients["alive"].push(connection) - 1;
+        clients["alive"].push(connection);
         if (request.remoteAddress != udp_ip) {
             var dgram = new Buffer("__aliveCheck__");
             clientUDP.send(dgram, 0, dgram.length, udp_port, udp_ip);
         }
     } else if (mode == "/logger") {
         connection.logger = new Array();
-        indexLogger = clients["logger"].push(connection) - 1;
+        clients["logger"].push(connection);
         if (request.remoteAddress != udp_ip) {
             var dgram = new Buffer("__true__");
             clientUDP.send(dgram, 0, dgram.length, udp_port, udp_ip);
         }
     } else if (mode == "/rcon") {
         connection.rcon = new Array();
-        indexRcon = clients["rcon"].push(connection) - 1;
+        clients["rcon"].push(connection);
     } else if (mode == "/match") {
         connection.match = new Array();
-        indexMatch = clients["match"].push(connection) - 1;
+        clients["match"].push(connection);
     } else if (mode == "/livemap") {
         connection.livemap = new Array();
-        indexLivemap = clients["livemap"].push(connection) - 1;
+        clients["livemap"].push(connection);
+    } else if (mode == "/chat") {
+        connection.chat = new Array();
+        clients["chat"].push(connection);
+        connection.send(JSON.stringify(chatlog));
+        for (var c in clients["chat"]) {
+            clients["chat"][c].send(clients["chat"].length);
+        }
     } else {
         console.log("unknow mode "+mode);
     }
@@ -99,7 +104,7 @@ wsServer.on('request', function(request) {
         if (message.type === 'binary') {
             return;
         }
-        
+
         var data = {};
         try {
             data = JSON.parse(message.utf8Data);
@@ -107,100 +112,96 @@ wsServer.on('request', function(request) {
 
         if (data.message == "ping") {
             return;
-        }
-
-        if (mode == "/alive") {
+        } else if (mode == "/alive") {
             for (var c in clients["alive"]) {
                 if (clients["alive"][c].remoteAddress != udp_ip) {
                     clients["alive"][c].send(message.utf8Data);
                 }
             }
-        }
-        if (mode == "/rcon") {
-            var sentByServer = true;
-
+        } else if (mode == "/rcon") {
+            clientIndex = clients['rcon'].indexOf(connection, null);
             if (request.remoteAddress != udp_ip) {
                 var regex = /registerMatch_(\d+)/;
                 if (message.utf8Data.match(regex)) {
                     data = message.utf8Data.match(regex);
-                    clients['rcon'][indexRcon].rcon.push(data[1]);
+                    clients['rcon'][clientIndex].rcon.push(data[1]);
                 } else {
                     var dgram = new Buffer(message.utf8Data);
                     clientUDP.send(dgram, 0, dgram.length, udp_port, udp_ip);
                 }
                 sentByServer = false;
-            }
-
-            if (sentByServer) {
+            } else {
                 for (var c in clients["rcon"]) {
                     if (clients["rcon"][c].remoteAddress == udp_ip) {
                         continue;
-                    }
-                    
-                    if (c == indexRcon || clients['rcon'][c].rcon.indexOf(data.id, null) < 0) {
+                    } else if (c == clientIndex || clients['rcon'][c].rcon.indexOf(data.id, null) < 0) {
                         continue;
                     }
                     clients["rcon"][c].send(message.utf8Data);
                 }
             }
-        }
-
-        if (mode == "/logger") {
+        } else if (mode == "/logger") {
+            clientIndex = clients['logger'].indexOf(connection, null);
             if (request.remoteAddress != udp_ip) {
                 var regex = /registerMatch_(\d+)/;
                 if (message.utf8Data.match(regex)) {
                     data = message.utf8Data.match(regex);
-                    clients['logger'][indexLogger].logger.push(data[1]);
+                    clients['logger'][clientIndex].logger.push(data[1]);
                 }
                 return;
             }
-
             for (var c in clients["logger"]) {
                 if (clients['logger'][c].logger.indexOf(data.id, null) >= 0) {
                     clients["logger"][c].send(message.utf8Data);
                 }
             }
-        }
-
-        if (mode == "/match") {
+        } else if (mode == "/match") {
+            clientIndex = clients['match'].indexOf(connection, null);
             if (request.remoteAddress != udp_ip) {
                 var dgram = new Buffer(message.utf8Data);
                 clientUDP.send(dgram, 0, dgram.length, udp_port, udp_ip);
             }
-
             for (var c in clients["match"]) {
-                if (indexMatch == c) {
+                if (clientIndex == c) {
                     continue;
                 }
                 clients["match"][c].send(message.utf8Data);
+            }
+        } else if (mode == "/chat") {
+            chatlog.push(message.utf8Data);
+            if (chatlog.length >= 20)
+                chatlog.splice(1, 1);
+            for (var c in clients["chat"]) {
+                clients["chat"][c].send(message.utf8Data);
+                clients["chat"][c].send(clients["chat"].length);
             }
         }
     });
 
     connection.on('close', function(reasonCode, description) {
         if (mode == "/alive") {
-            clients['alive'].splice(indexAlive, 1);
-        }
-
-        if (mode == "/match") {
-            clients['match'].splice(indexMatch, 1);
-        }
-
-        if (mode == "/rcon") {
-            clients['rcon'].splice(indexRcon, 1);
-        }
-
-        if (mode == "/logger") {
-            clients['logger'].splice(indexLogger, 1);
-            if (clients['logger'].length == 0) {
+            clientIndex = clients['alive'].indexOf(connection, null);
+            clients['alive'].splice(clientIndex, 1);
+        } else if (mode == "/match") {
+            clientIndex = clients['match'].indexOf(connection, null);
+            clients['match'].splice(clientIndex, 1);
+        } else if (mode == "/rcon") {
+            clientIndex = clients['rcon'].indexOf(connection, null);
+            clients['rcon'].splice(clientIndex, 1);
+        } else if (mode == "/logger") {
+            clientIndex = clients['logger'].indexOf(connection, null);
+            clients['logger'].splice(clientIndex, 1);
+            if (clients['logger'].length == 1) {
                 var dgram = new Buffer("__false__");
                 clientUDP.send(dgram, 0, dgram.length, udp_port, udp_ip);
             }
+        } else if (mode == "/livemap") {
+            clientIndex = clients['livemap'].indexOf(connection, null);
+            clients['livemap'].splice(clientIndex, 1);
+        } else if (mode == "/chat") {
+            clientIndex = clients['chat'].indexOf(connection, null);
+            clients['chat'].splice(clientIndex, 1);
         }
-
-        if (mode == "/livemap") {
-            clients['livemap'].splice(indexLivemap, 1);
-        }
-        console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected. ('+mode+')');
+        console.log((new Date()) + ' \['+request.origin+'\] Peer ' + connection.remoteAddress + ' disconnected. ('+mode+') (#'+clientIndex+')');
     });
 });
