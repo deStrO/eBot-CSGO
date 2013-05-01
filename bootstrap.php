@@ -87,7 +87,9 @@ if (PHP_OS == "Linux") {
     $descriptorspec = array(
         0 => array("pipe", "r"),
         1 => array("file", APP_ROOT . "logs" . DIRECTORY_SEPARATOR . "websocket.log", "a"),
+//        1 => array("pipe", "w"),
         2 => array("file", APP_ROOT . "logs" . DIRECTORY_SEPARATOR . "websocket.error", "a")
+//        2 => array("pipe", "w")
     );
     $webSocketProcess = proc_open('node ' . APP_ROOT . 'websocket_server.js ' . \eBot\Config\Config::getInstance()->getBot_ip() . ' ' . \eBot\Config\Config::getInstance()->getBot_port(), $descriptorspec, $pipes);
     if (is_resource($webSocketProcess)) {

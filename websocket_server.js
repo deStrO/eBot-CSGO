@@ -191,7 +191,7 @@ wsServer.on('request', function(request) {
         } else if (mode == "/logger") {
             clientIndex = clients['logger'].indexOf(connection, null);
             clients['logger'].splice(clientIndex, 1);
-            if (clients['logger'].length == 0) {
+            if (clients['logger'].length == 1) {
                 var dgram = new Buffer("__false__");
                 clientUDP.send(dgram, 0, dgram.length, udp_port, udp_ip);
             }

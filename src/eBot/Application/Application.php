@@ -24,6 +24,7 @@ class Application extends AbstractApplication {
 
     private $socket = null;
     public $websocket = null;
+    private $clientsConnected = false;
 
     public function run() {
         // Loading Logger instance
@@ -81,7 +82,11 @@ class Application extends AbstractApplication {
             $data = $this->socket->recvfrom($ip);
             if ($data) {
                 if (!preg_match("/L+\s+\d+\/\d+\/\d+/", $data)) {
-                    if ($data == '__aliveCheck__') {
+                    if ($data == '__true__') {
+                        $this->clientsConnected = true;
+                    } elseif ($data == '__false__') {
+                        $this->clientsConnected = false;
+                    } elseif ($data == '__aliveCheck__') {
                         $this->websocket['aliveCheck']->sendData('__isAlive__');
                     } else {
                         $data = json_decode($data, true);
@@ -220,6 +225,17 @@ class Application extends AbstractApplication {
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
+                            } elseif (preg_match("!^(?<id>\d+) skipmap (?<ip>\d+\.\d+\.\d+\.\d+\:\d+)$!", $text, $preg)) {
+                                $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
+                                if ($match) {
+                                    $reply = $match->adminSkipMap();
+                                    /*if ($reply) {
+                                        $send = json_encode(array('message' => 'button', 'content' => 'stop', 'id' => $preg["id"]));
+                                        $this->websocket['match']->sendData($send);
+                                    }*/
+                                } else {
+                                    Logger::error($preg["ip"] . " is not managed !");
+                                }
                             } else {
                                 Logger::error($text . " not managed");
                             }
@@ -234,8 +250,10 @@ class Application extends AbstractApplication {
                         \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->processMessage($line);
                         $line = substr($data, 7, strlen($data) - 8);
                         file_put_contents(Logger::getInstance()->getLogPathAdmin() . "/logs_" . \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId() . ".log", $line, FILE_APPEND);
-                        $send = json_encode(array('id' => \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), 'content' => $line));
-                        $this->websocket['logger']->sendData($send);
+                        if ($this->clientsConnected) {
+                            $send = json_encode(array('id' => \eBot\Manager\MatchManager::getInstance()->getMatch($ip)->getMatchId(), 'content' => $line));
+                            $this->websocket['logger']->sendData($send);
+                        }
                     }
                 }
             }

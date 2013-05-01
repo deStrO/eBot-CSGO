@@ -695,6 +695,9 @@ class Match implements Taskable {
         $message = str_replace("#red", "\002", $message);
         $message = str_replace("#lightred", "\007", $message);
 
+        // temporary fix because of ugly chatcolor after last csgo update
+        $message = str_replace("\003", "\001", $message);
+
         try {
             if (!$this->pluginCsay) {
                 $message = str_replace(array("\001", "\002", "\003", "\004", "\005", "\006", "\007"), array("", "", "", "", "", "", ""), $message);
@@ -2681,6 +2684,57 @@ class Match implements Taskable {
     public function adminExecuteCommand($command) {
         $reply = $this->rcon->send($command);
         return $reply;
+    }
+
+    public function adminSkipMap() {
+        $backupMap = $this->currentMap;
+        $this->currentMap = null;
+        if ($backupMap->getMapsFor() == "team1") {
+            $mapFor = "team2";
+        } elseif ($backupMap->getMapsFor() == "team2") {
+            $mapFor = "default";
+        }
+
+        foreach ($this->maps as $map) {
+            if ($map->getMapsFor() == $mapFor) {
+                if ($map->getStatus() == Map::STATUS_NOT_STARTED) {
+                    $this->currentMap = $map;
+                    break;
+                }
+            }
+        }
+        foreach ($this->maps as $map) {
+            if ($map->getStatus() == Map::STATUS_NOT_STARTED) {
+                if ($map->getMapsFor() == $mapFor) {
+                    $this->currentMap = $map;
+                    break;
+                }
+            }
+        }
+
+        if ($this->currentMap != null) {
+            $this->currentMap->setStatus(Map::STATUS_STARTING, true);
+            $this->setStatus(self::STATUS_STARTING, true);
+            \mysql_query("UPDATE `matchs` SET `current_map` = '".$this->currentMap->getMapId()."' WHERE `id` = '".$this->match_id."'");
+
+            Logger::debug("Setting need knife round on map");
+            $this->currentMap->setNeedKnifeRound(true);
+            $this->nbOT = 0;
+            $this->score["team_a"] = 0;
+            $this->score["team_b"] = 0;
+
+            $this->addLog("Engaging next map " . $this->currentMap->getMapName());
+            $this->addMatchLog("Engaging next map " . $this->currentMap->getMapName());
+            $time = microtime(true);
+            $this->timeEngageMap = $time;
+            $this->addLog("Skipping Map");
+            TaskManager::getInstance()->addTask(new Task($this, self::TASK_ENGAGE_MAP, $time));
+        } else {
+            $this->setStatus(self::STATUS_END_MATCH, true);
+            Logger::error("Not map found");
+            $this->addLog("Match is closed");
+        }
+        return true;
     }
 
     public function adminFixSides() {
