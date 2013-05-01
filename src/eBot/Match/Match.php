@@ -149,6 +149,7 @@ class Match implements Taskable {
         // Get Websocket
         $this->websocket['match'] = \eBot\Application\Application::getInstance()->getWebSocket('match');
         $this->websocket['livemap'] = \eBot\Application\Application::getInstance()->getWebSocket('livemap');
+        $this->websocket['logger'] = \eBot\Application\Application::getInstance()->getWebSocket('logger');
 
         $ip = explode(":", $this->server_ip);
         try {
