@@ -70,6 +70,7 @@ class Match implements Taskable {
     // Variable en BDD obligatoire
     private $match_id = 0;
     private $server_ip = "";
+    private $season_id;
     private $score = array("team_a" => 0, "team_b" => 0);
     private $nbRound = 0;
     private $nbOT = 0;
@@ -109,6 +110,8 @@ class Match implements Taskable {
     private $playMap = array("ct" => "", "t" => "");
     private $timeEngageMap = 0;
     private $mapIsEngaged = false;
+    private $waitRoundStartRecord = false;
+    private $forceRoundStartRecord = false;
 
     public function __construct($match_id, $server_ip, $rcon) {
         Logger::debug("Registring MessageManager");
@@ -123,7 +126,6 @@ class Match implements Taskable {
         if (!$query) {
             throw new MatchException();
         }
-
         $this->matchData = \mysql_fetch_assoc($query);
 
         // SETTING TEAMNAME AND FLAG
@@ -135,12 +137,18 @@ class Match implements Taskable {
         $this->teamBName = $teamb_details['name'];
         $this->teamBFlag = $teamb_details['flag'];
 
+        $this->season_id = $this->matchData["season_id"];
+
         $this->addMatchLog("----------- Creating log file -----------", false, false);
         $this->addMatchLog("- Match Parameter", false, false);
         $this->addMatchLog("- Match ID: " . $this->match_id, false, false);
         $this->addMatchLog("- Teams: " . $this->teamAName . " - " . $this->teamBName, false, false);
         $this->addMatchLog("- MaxRound: " . $this->matchData["max_round"], false, false);
         $this->addMatchLog("- Overtime: " . ($this->matchData["config_ot"]) ? "yes (money: " . $this->matchData['overtime_startmoney'] . ", round: " . $this->matchData['overtime_max_round'] . ")" : "no", false, false);
+
+        // Get Websocket
+        $this->websocket['match'] = \eBot\Application\Application::getInstance()->getWebSocket('match');
+        $this->websocket['livemap'] = \eBot\Application\Application::getInstance()->getWebSocket('livemap');
 
         $ip = explode(":", $this->server_ip);
         try {
@@ -151,15 +159,14 @@ class Match implements Taskable {
             $this->addMatchLog("- RCON connection OK", true, false);
         } catch (\Exception $ex) {
             $this->needDel = true;
+            \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0, `status` = 0 WHERE `id` = '".$this->match_id."'");
+            $this->websocket['match']->sendData(json_encode(array('message' => 'button', 'content' => 'stop', 'id' => $this->match_id)));
             Logger::error("Rcon failed - " . $ex->getMessage());
+            Logger::error("Match destructed.");
             $this->addMatchLog("RCON Failed - " . $ex->getMessage(), false, false);
             throw new MatchException();
         }
         TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 30));
-
-        // Get Websocket
-        $this->websocket['match'] = \eBot\Application\Application::getInstance()->getWebSocket('match');
-        $this->websocket['livemap'] = \eBot\Application\Application::getInstance()->getWebSocket('livemap');
 
         // CSay Detection
         try {
@@ -452,7 +459,9 @@ class Match implements Taskable {
         if ($save) {
             $this->message = 0;
             Logger::debug("Updating status to " . $this->getStatusText() . " in database");
-            mysql_query("UPDATE `matchs` SET status='" . $newStatus . "' WHERE id='" . $this->match_id . "'");
+            if ($newStatus == self::STATUS_END_MATCH)
+                $setDisable = ", enable = '0'";
+            mysql_query("UPDATE `matchs` SET status='" . $newStatus . "' ".$setDisable." WHERE id='" . $this->match_id . "'");
         }
     }
 
@@ -608,7 +617,8 @@ class Match implements Taskable {
                 if ($this->getStatus() == self::STATUS_STARTING && $this->timeEngageMap > 0) {
                     $time = ceil(microtime(true) - $this->timeEngageMap);
                     $this->lastMessage = time();
-                    $this->say("The next map will be start in #lighgreen" . $time . " #defaultseconds, be patient !");
+                    $this->say("Waiting till GOTV Broadcast is finished.");
+                    $this->say("The next map will start in #lightgreen" . $time . "#default seconds!");
                 } else {
                     // Récupération du SIDE de l'équipe
                     $teamA = strtoupper($this->side['team_a']);
@@ -635,9 +645,11 @@ class Match implements Taskable {
                         case self::STATUS_WU_OT_2_SIDE: $message = "Warmup Second Side OverTime";
                             break;
                     }
-                    if ($this->mapIsEngaged) {
+                    if ($this->mapIsEngaged && ($this->streamerReady || !$this->config_streamer)) {
                         $messages [] = "\003Please write \006!ready \003when your team is ready !";
                         $messages [] = "\003Available commands: !help, !rules, !ready, !notready";
+                    } elseif ($this->mapIsEngaged && (!$this->streamerReady || $this->config_streamer)) {
+                        $messages [] = "\003Streamers are not ready yet !";
                     } else {
                         $messages [] = "\003Please write \006!map mapname \003to select the map!";
                         $maps = \eBot\Config\Config::getInstance()->getMaps();
@@ -650,8 +662,10 @@ class Match implements Taskable {
                     if ($message)
                         $messages [] = "\003$message - \005" . $this->teamAName . " \001($teamA\001) \001VS \001($teamB\001) \005" . $this->teamBName;
 
-                    foreach (\eBot\Config\Config::getInstance()->getPubs() as $pub) {
-                        $messages [] = "\003$pub";
+                    $adverts = \eBot\Config\Config::getInstance()->getAdvertising($this->season_id);
+
+                    for ($i=0;$i<count($adverts['season_id']);$i++) {
+                        $messages [] = "\003".$adverts['message'][$i];
                         if ($message)
                             $messages [] = "\003$message - \005" . $this->teamAName . " \001($teamA\001) \001VS \001($teamB\001) \005" . $this->teamBName;
                     }
@@ -681,6 +695,9 @@ class Match implements Taskable {
         $message = str_replace("#red", "\002", $message);
         $message = str_replace("#lightred", "\007", $message);
 
+        // temporary fix because of ugly chatcolor after last csgo update
+        $message = str_replace("\003", "\001", $message);
+
         try {
             if (!$this->pluginCsay) {
                 $message = str_replace(array("\001", "\002", "\003", "\004", "\005", "\006", "\007"), array("", "", "", "", "", "", ""), $message);
@@ -696,6 +713,7 @@ class Match implements Taskable {
     }
 
     public function destruct() {
+        $this->websocket['logger']->sendData('removeMatch_'.$this->match_id);
         TaskManager::getInstance()->removeAllTaskForObject($this);
         unset($this->rcon);
         $this->addLog("Destructing match " . $this->match_id);
@@ -1068,7 +1086,7 @@ class Match implements Taskable {
                     $this->startMatch();
                 }
             }
-        } elseif (($text == "!stop") && !\eBot\Config\Config::getInstance()->getConfigStopDisabled()) {
+        } elseif (($text == "!stop" || $text == ".stop") && !\eBot\Config\Config::getInstance()->getConfigStopDisabled()) {
             if ($this->isMatchRound() && $this->enable) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say stop");
 
@@ -1094,7 +1112,7 @@ class Match implements Taskable {
                     $this->addLog("Can't stop, it's already stop");
                 }
             }
-        } elseif ($text == "!continue") {
+        } elseif ($text == "!continue" || $text == ".continue") {
             if ($this->isMatchRound() && !$this->enable) {
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
@@ -1114,7 +1132,7 @@ class Match implements Taskable {
 
                 $this->continueMatch();
             }
-        } elseif ($text == "!ready") {
+        } elseif ($text == "!ready" || $text == ".ready") {
             if ($this->isWarmupRound()) {
                 if ($this->config_streamer && !$this->getStreamerReady()) {
                     $this->say("\002Streamers are not ready yet. \001Please wait, till they are ready.");
@@ -1153,7 +1171,7 @@ class Match implements Taskable {
                     $this->startMatch();
                 }
             }
-        } elseif ($text == "!pause") {
+        } elseif ($text == "!pause" || $text == ".pause") {
             if ($this->isMatchRound() && !$this->isPaused && $this->enable) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say pause");
 
@@ -1162,8 +1180,10 @@ class Match implements Taskable {
 
                     if (!$this->pause['ct']) {
                         $this->pause['ct'] = true;
-                        if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instant")
+                        if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm")
                             $this->say($team . " (CT) \003want to pause, write !pause to confirm");
+                        elseif (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm")
+                            $this->say($team . " (CT) \003 will be paused now!");
                         else
                             $this->say($team . " (CT) \003want to pause, match will be paused next freezetime.");
                     }
@@ -1172,16 +1192,18 @@ class Match implements Taskable {
 
                     if (!$this->pause['t']) {
                         $this->pause['t'] = true;
-                        if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instant")
+                        if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm")
                             $this->say($team . " (T) \003want to pause, write !pause to confirm");
+                        elseif (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm")
+                            $this->say($team . " (T) \003 will be paused now!");
                         else
                             $this->say($team . " (T) \003want to pause, match will be paused next freezetime.");
                     }
                 }
-                if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instant")
+                if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm" || \eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm")
                     $this->pauseMatch();
             }
-        } elseif ($text == "!unpause") {
+        } elseif ($text == "!unpause" || $text == ".unpause") {
             if ($this->isMatchRound() && $this->isPaused && $this->enable) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say pause");
 
@@ -1203,7 +1225,7 @@ class Match implements Taskable {
 
                 $this->unpauseMatch();
             }
-        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!stay")) {
+        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!stay" || $text == ".stay")) {
             if ($message->getUserTeam() == $this->winKnife) {
                 $this->addLog($message->getUserName() . " want to stay, going to warmup");
 
@@ -1216,7 +1238,7 @@ class Match implements Taskable {
                 $this->rcon->send("mp_warmup_start");
                 $this->say("nothing change, going to warmup");
             }
-        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!switch")) {
+        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!switch" || $text == ".switch")) {
             if ($message->getUserTeam() == $this->winKnife) {
                 $this->addLog($message->getUserName() . " want to stay, going to warmup");
 
@@ -1233,7 +1255,7 @@ class Match implements Taskable {
                 $this->rcon->send("mp_swapteams");
                 $this->sendTeamNames();
             }
-        } elseif ($text == "!notready") {
+        } elseif ($text == "!notready" || $text == ".notready" || $text == "!unready" || $text == ".unready") {
             if ($this->isWarmupRound()) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say notready");
 
@@ -1966,14 +1988,11 @@ class Match implements Taskable {
         }
     }
 
-    private $waitRoundStartRecord = false;
-
     private function processRoundRestart(\eBot\Message\Type\RoundRestart $message) {
-        if ($this->waitForRestart && $this->getStatus() == self::STATUS_FIRST_SIDE && \eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "matchstart") {
+        if ($this->waitForRestart && $this->getStatus() == self::STATUS_FIRST_SIDE && ( \eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "matchstart" || $this->forceRoundStartRecord)) {
             $this->waitRoundStartRecord = true;
-        }
-        
-        if ($this->waitForRestart && $this->getStatus() == self::STATUS_KNIFE && \eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "knifestart") {
+            $this->forceRoundStartRecord = false;
+        } elseif ($this->waitForRestart && $this->getStatus() == self::STATUS_KNIFE && \eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "knifestart") {
             $this->waitRoundStartRecord = true;
         }
     }
@@ -2215,7 +2234,7 @@ class Match implements Taskable {
 
     private function saveScore() {
         foreach ($this->players as $player) {
-            
+
         }
     }
 
@@ -2243,17 +2262,32 @@ class Match implements Taskable {
     }
 
     private function pauseMatch() {
-        if ($this->pause["ct"] && $this->pause["t"] && $this->isMatchRound() && !$this->isPaused) {
-            $this->isPaused = true;
-            $this->say("Match is paused");
-            $this->say("Write !unpause to remove the pause when ready");
-            $this->addMatchLog("Pausing match");
-            $this->rcon->send("pause");
+        if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm") {
+            if ($this->pause["ct"] && $this->pause["t"] && $this->isMatchRound() && !$this->isPaused) {
+                $this->isPaused = true;
+                $this->say("Match is paused");
+                $this->say("Write !unpause to remove the pause when ready");
+                $this->addMatchLog("Pausing match");
+                $this->rcon->send("pause");
 
-            $this->pause["ct"] = false;
-            $this->pause["t"] = false;
-            $this->unpause["ct"] = false;
-            $this->unpause["t"] = false;
+                $this->pause["ct"] = false;
+                $this->pause["t"] = false;
+                $this->unpause["ct"] = false;
+                $this->unpause["t"] = false;
+            }
+        } elseif (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm") {
+            if (($this->pause["ct"] || $this->pause["t"]) && $this->isMatchRound() && !$this->isPaused) {
+                $this->isPaused = true;
+                $this->say("Match is paused");
+                $this->say("Write !unpause to remove the pause when ready");
+                $this->addMatchLog("Pausing match");
+                $this->rcon->send("pause");
+
+                $this->pause["ct"] = false;
+                $this->pause["t"] = false;
+                $this->unpause["ct"] = false;
+                $this->unpause["t"] = false;
+            }
         }
     }
 
@@ -2439,7 +2473,8 @@ class Match implements Taskable {
                 // FIX for warmup
 
                 $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_warmuptime 0; mp_halftime_pausetimer 1; mp_warmup_pausetimer 0;");
-                $this->rcon->send("mp_halftime_duration 1");
+                $this->rcon->send("sv_rcon_whitelist_address \"".\eBot\Config\Config::getInstance()->getBot_ip()."\"");
+                $this->rcon->send("mp_halftime_duration 1; mp_roundtime_defuse 60");
                 $this->rcon->send("mp_warmup_end");
                 if (\eBot\Config\Config::getInstance()->getKo3Method() == "csay" && $this->pluginCsay) {
                     $this->rcon->send("csay_ko3");
@@ -2452,7 +2487,7 @@ class Match implements Taskable {
                     $this->say("KNIFE!");
                     $this->say("KNIFE!");
                 }
-                
+
                 $this->waitForRestart = true;
             } else {
                 // FIX for warmup
@@ -2474,13 +2509,14 @@ class Match implements Taskable {
 
                         // NEW
                         $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_halftime_pausetimer 1;");
+                        $this->rcon->send("sv_rcon_whitelist_address \"".\eBot\Config\Config::getInstance()->getBot_ip()."\"");
                         $this->rcon->send("mp_halftime_duration 1");
                         $this->rcon->send("mp_warmup_end");
                         if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay" && $this->pluginCsay) {
                             $this->rcon->send("csay_lo3");
                         } elseif (\eBot\Config\Config::getInstance()->getLo3Method() == "esl" && $this->pluginESL) {
                             $this->rcon->send("esl_lo3");
-                            $this->say("LIVE!");
+                            $this->say("1st Side: LIVE!");
                         } else {
                             $this->rcon->send("mp_restartgame 3");
                             $this->say("LIVE!");
@@ -2499,12 +2535,14 @@ class Match implements Taskable {
                         if ($this->config_full_score) {
                             $this->rcon->send("mp_can_clintch 0");
                         }
+                        $this->say("2nd Side: LIVE!");
                         break;
                     case Map::STATUS_WU_OT_1_SIDE :
                         $this->currentMap->setStatus(Map::STATUS_OT_FIRST_SIDE, true);
                         $this->setStatus(self::STATUS_OT_FIRST_SIDE, true);
                         // NEW
                         $this->rcon->send("mp_halftime_pausetimer 0");
+                        $this->say("1st Side OT: LIVE!");
                         $this->waitForRestart = false;
                         break;
                     case Map::STATUS_WU_OT_2_SIDE :
@@ -2514,6 +2552,7 @@ class Match implements Taskable {
                         // NEW
                         $this->waitForRestart = false;
                         $this->rcon->send("mp_halftime_pausetimer 0");
+                        $this->say("2nd Side OT: LIVE!");
                         break;
                 }
 
@@ -2606,7 +2645,7 @@ class Match implements Taskable {
         $this->rcon->send("exec server.cfg");
 
 
-        mysql_query("UPDATE `matchs` SET enable = 0 WHERE id = '" . $this->match_id . "'");
+        mysql_query("UPDATE `matchs` SET enable = 0, auto_start = 0 WHERE id = '" . $this->match_id . "'");
         $this->needDel = true;
         return true;
     }
@@ -2621,7 +2660,7 @@ class Match implements Taskable {
         $this->rcon->send("exec server.cfg");
         $this->rcon->send("mp_teamname_1 \"\"; mp_teamname_2 \"\"; mp_teamflag_1 \"\"; mp_teamflag_2 \"\"");
 
-        mysql_query("UPDATE `matchs` SET enable = 0 WHERE id = '" . $this->match_id . "'");
+        mysql_query("UPDATE `matchs` SET enable = 0, auto_start = 0 WHERE id = '" . $this->match_id . "'");
         $this->needDel = true;
         return true;
     }
@@ -2636,6 +2675,8 @@ class Match implements Taskable {
             $this->ready["t"] = false;
             $this->currentMap->setStatus(Map::STATUS_WU_1_SIDE, true);
             $this->setStatus(self::STATUS_WU_1_SIDE, true);
+            if (\eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "knifestart")
+                $this->forceRoundStartRecord = true;
             return true;
         }
     }
@@ -2643,6 +2684,57 @@ class Match implements Taskable {
     public function adminExecuteCommand($command) {
         $reply = $this->rcon->send($command);
         return $reply;
+    }
+
+    public function adminSkipMap() {
+        $backupMap = $this->currentMap;
+        $this->currentMap = null;
+        if ($backupMap->getMapsFor() == "team1") {
+            $mapFor = "team2";
+        } elseif ($backupMap->getMapsFor() == "team2") {
+            $mapFor = "default";
+        }
+
+        foreach ($this->maps as $map) {
+            if ($map->getMapsFor() == $mapFor) {
+                if ($map->getStatus() == Map::STATUS_NOT_STARTED) {
+                    $this->currentMap = $map;
+                    break;
+                }
+            }
+        }
+        foreach ($this->maps as $map) {
+            if ($map->getStatus() == Map::STATUS_NOT_STARTED) {
+                if ($map->getMapsFor() == $mapFor) {
+                    $this->currentMap = $map;
+                    break;
+                }
+            }
+        }
+
+        if ($this->currentMap != null) {
+            $this->currentMap->setStatus(Map::STATUS_STARTING, true);
+            $this->setStatus(self::STATUS_STARTING, true);
+            \mysql_query("UPDATE `matchs` SET `current_map` = '".$this->currentMap->getMapId()."' WHERE `id` = '".$this->match_id."'");
+
+            Logger::debug("Setting need knife round on map");
+            $this->currentMap->setNeedKnifeRound(true);
+            $this->nbOT = 0;
+            $this->score["team_a"] = 0;
+            $this->score["team_b"] = 0;
+
+            $this->addLog("Engaging next map " . $this->currentMap->getMapName());
+            $this->addMatchLog("Engaging next map " . $this->currentMap->getMapName());
+            $time = microtime(true);
+            $this->timeEngageMap = $time;
+            $this->addLog("Skipping Map");
+            TaskManager::getInstance()->addTask(new Task($this, self::TASK_ENGAGE_MAP, $time));
+        } else {
+            $this->setStatus(self::STATUS_END_MATCH, true);
+            Logger::error("Not map found");
+            $this->addLog("Match is closed");
+        }
+        return true;
     }
 
     public function adminFixSides() {
