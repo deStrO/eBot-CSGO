@@ -29,7 +29,6 @@ class Config extends Singleton {
     private $record_name = "ebot";
     private $delay_busy_server = 90;
     private $nb_max_matchs = 0;
-    private $ot_rounds;
     private $advertising = array();
     private $maps;
     private $lo3_method;
@@ -53,7 +52,6 @@ class Config extends Singleton {
             $this->bot_port = $config["BOT_PORT"];
 
             $this->delay_busy_server = $config["DELAY_BUSY_SERVER"];
-            $this->ot_rounds = $config["OT_ROUNDS"];
 
             $this->maps = $config["MAP"];
 
