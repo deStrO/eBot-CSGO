@@ -27,6 +27,9 @@ class MatchManager extends Singleton implements Taskable {
     public function sendPub() {
         foreach ($this->matchs as $k => $match) {
             if ($match->getStatus() == Match::STATUS_END_MATCH) {
+                if ($match->getNeedDelTask()) {
+                    continue;
+                }
                 $this->matchs[$k]->destruct();
                 unset($this->matchs[$k]);
                 unset($this->authkeys[$k]);

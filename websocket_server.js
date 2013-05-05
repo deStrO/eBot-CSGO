@@ -1,20 +1,60 @@
 var WebSocketServer = require('websocket').server;
 var http = require('http');
-
+var formidable = require('formidable');
+var zipper = require('zipper').Zipper;
+var fs = require('fs');
 var dgram = require('dgram');
 var clientUDP = dgram.createSocket("udp4");
 
 var udp_ip = process.argv[2];
 var udp_port = process.argv[3];
 
+String.prototype.endsWith = function(suffix) {
+    return this.indexOf(suffix, this.length - suffix.length) !== -1;
+};
+
 var server = http.createServer(function(request, response) {
-    console.log((new Date()) + ' Received request for ' + request.url);
-    response.writeHead(404);
-    response.end();
+    switch (request.url) {
+        case '/upload':
+            var form = new formidable.IncomingForm({uploadDir: 'demos'});
+
+            form.parse(request, function(err, fields, files) {
+                console.log("Recieved file");
+                if (files.file) {
+                    if (files.file.name.endsWith(".dem")) {
+                        if (files.file.type == "application/octet-stream") {
+                            fs.unlink("demos/" + files.file.name + ".zip");
+                            var zipfile = new zipper("demos/" + files.file.name + ".zip");
+                            zipfile.addFile(files.file.path, files.file.name, function(err) {
+                                if (err)
+                                    console.error(err);
+                                fs.unlink(files.file.path);
+                            });
+                        }
+                    } else {
+                        console.error("bad file uploaded " + files.file);
+                    }
+                }
+                response.writeHead(200, {'content-type': 'text/plain'});
+                response.end();
+            });
+
+            break;
+        default:
+            response.writeHead(404);
+            response.end();
+            break;
+    }
+});
+
+fs.exists('demos', function(exists) {
+    if (!exists) {
+        fs.mkdir('demos');
+    }
 });
 
 server.listen(udp_port, function() {
-    console.log((new Date()) + ' Server is listening on port '+udp_port);
+    console.log((new Date()) + ' Server is listening on port ' + udp_port);
 });
 
 wsServer = new WebSocketServer({
@@ -28,7 +68,7 @@ function originIsAllowed(origin) {
 }
 
 if (!Array.prototype.indexOf) {
-    Array.prototype.indexOf = function (obj, fromIndex) {
+    Array.prototype.indexOf = function(obj, fromIndex) {
         if (fromIndex == null) {
             fromIndex = 0;
         } else if (fromIndex < 0) {
@@ -62,7 +102,7 @@ wsServer.on('request', function(request) {
 
     var connection = request.accept(null, request.origin);
     var mode = request.resourceURL.path;
-    console.log((new Date()) + ' \['+request.origin+'\] Connection accepted for '+request.resourceURL.path+ ' ('+request.remoteAddress+')');
+    console.log((new Date()) + ' \[' + request.origin + '\] Connection accepted for ' + request.resourceURL.path + ' (' + request.remoteAddress + ')');
 
     var clientIndex = null;
 
@@ -97,7 +137,7 @@ wsServer.on('request', function(request) {
             clients["chat"][c].send(clients["chat"].length);
         }
     } else {
-        console.log("unknow mode "+mode);
+        console.log("unknow mode " + mode);
     }
 
     connection.on('message', function(message) {
@@ -108,7 +148,8 @@ wsServer.on('request', function(request) {
         var data = {};
         try {
             data = JSON.parse(message.utf8Data);
-        } catch (e) { }
+        } catch (e) {
+        }
 
         if (data.message == "ping") {
             return;
@@ -202,6 +243,6 @@ wsServer.on('request', function(request) {
             clientIndex = clients['chat'].indexOf(connection, null);
             clients['chat'].splice(clientIndex, 1);
         }
-        console.log((new Date()) + ' \['+request.origin+'\] Peer ' + connection.remoteAddress + ' disconnected. ('+mode+') (#'+clientIndex+')');
+        console.log((new Date()) + ' \[' + request.origin + '\] Peer ' + connection.remoteAddress + ' disconnected. (' + mode + ') (#' + clientIndex + ')');
     });
 });

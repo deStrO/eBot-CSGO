@@ -41,6 +41,7 @@ class Map {
     private $scores = array();
     private $currentScore = null;
     private $nbMaxRound = 15;
+    private $tvRecordFile = "";
 
     public function __construct($mapData) {
         Logger::debug("Creating maps " . $mapData["id"]);
@@ -52,6 +53,7 @@ class Map {
         $this->setStatus($mapData["status"]);
         $this->setMapsFor($mapData["maps_for"]);
         $this->setNbOt($mapData["nb_ot"]);
+        $this->setTvRecordFile($mapData['tv_record_file']);
 
         Logger::log("Maps loaded " . $this->getMapName() . " (score: " . $this->getScore1() . " - " . $this->getScore2() . ") - Current left side: " . $this->getCurrentSide() . " - Current status: " . $this->getStatusText());
 
@@ -297,6 +299,15 @@ class Map {
     public function setNbMaxRound($nbMaxRound) {
         $this->nbMaxRound = $nbMaxRound;
     }
+    
+    public function getTvRecordFile() {
+        return $this->tvRecordFile;
+    }
+
+    public function setTvRecordFile($tvRecordName) {
+        $this->tvRecordFile = $tvRecordName;
+    }
+
 
 }
 

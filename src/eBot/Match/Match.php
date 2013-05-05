@@ -40,6 +40,7 @@ class Match implements Taskable {
     const TEST_RCON = "testRcon";
     const REINIT_RCON = "rconReinit";
     const SET_LIVE = "setLive";
+    const STOP_RECORD = "stopRecord";
 
     // Variable calculable (pas en BDD)
     private $players = array();
@@ -160,7 +161,7 @@ class Match implements Taskable {
             $this->addMatchLog("- RCON connection OK", true, false);
         } catch (\Exception $ex) {
             $this->needDel = true;
-            \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0, `status` = 0 WHERE `id` = '".$this->match_id."'");
+            \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0, `status` = 0 WHERE `id` = '" . $this->match_id . "'");
             $this->websocket['match']->sendData(json_encode(array('message' => 'button', 'content' => 'stop', 'id' => $this->match_id)));
             Logger::error("Rcon failed - " . $ex->getMessage());
             Logger::error("Match destructed.");
@@ -368,6 +369,11 @@ class Match implements Taskable {
         if ($this->getStatus() > self::STATUS_WU_1_SIDE) {
             $this->streamerReady = true;
         }
+        
+        // Setting nbMaxRound for sided score
+        if ($this->getStatus() > self::STATUS_WU_OT_1_SIDE && $this->config_ot) {
+            $this->currentMap->setNbMaxRound($this->ot_maxround);
+        }
 
         // Sending roundbackup format file
         $this->rcon->send("mp_backup_round_file \"ebot_" . $this->match_id . "\"");
@@ -462,7 +468,7 @@ class Match implements Taskable {
             Logger::debug("Updating status to " . $this->getStatusText() . " in database");
             if ($newStatus == self::STATUS_END_MATCH)
                 $setDisable = ", enable = '0'";
-            mysql_query("UPDATE `matchs` SET status='" . $newStatus . "' ".$setDisable." WHERE id='" . $this->match_id . "'");
+            mysql_query("UPDATE `matchs` SET status='" . $newStatus . "' " . $setDisable . " WHERE id='" . $this->match_id . "'");
         }
     }
 
@@ -539,6 +545,13 @@ class Match implements Taskable {
                 \eBot\Manager\MatchManager::getInstance()->delayServer($this->server_ip, 10);
                 $this->needDel = true;
             }
+        } elseif ($name == self::STOP_RECORD) {
+            $this->needDelTask = false;
+            $this->addLog("Stopping record & push");
+            $this->rcon->send("tv_stoprecord");
+            $this->rcon->send('csay_tv_demo_push "'.$this->currentRecordName.'.dem" "http://'.\eBot\Config\Config::getInstance()->getBot_ip().':'.\eBot\Config\Config::getInstance()->getBot_port().'/upload"');
+            $this->currentRecordName = "";
+            $this->rcon->send("exec server.cfg;");
         }
     }
 
@@ -665,8 +678,8 @@ class Match implements Taskable {
 
                     $adverts = \eBot\Config\Config::getInstance()->getAdvertising($this->season_id);
 
-                    for ($i=0;$i<count($adverts['season_id']);$i++) {
-                        $messages [] = "\003".$adverts['message'][$i];
+                    for ($i = 0; $i < count($adverts['season_id']); $i++) {
+                        $messages [] = "\003" . $adverts['message'][$i];
                         if ($message)
                             $messages [] = "\003$message - \005" . $this->teamAName . " \001($teamA\001) \001VS \001($teamB\001) \005" . $this->teamBName;
                     }
@@ -714,7 +727,7 @@ class Match implements Taskable {
     }
 
     public function destruct() {
-        $this->websocket['logger']->sendData('removeMatch_'.$this->match_id);
+        $this->websocket['logger']->sendData('removeMatch_' . $this->match_id);
         TaskManager::getInstance()->removeAllTaskForObject($this);
         unset($this->rcon);
         $this->addLog("Destructing match " . $this->match_id);
@@ -722,6 +735,10 @@ class Match implements Taskable {
 
     public function getNeedDel() {
         return $this->needDel;
+    }
+    
+    public function getNeedDelTask() {
+        return $this->needDelTask;
     }
 
     /**
@@ -1587,7 +1604,7 @@ class Match implements Taskable {
                         $this->nbOT++;
                         $this->addLog("Going to overtime");
                         $this->say("Going to overtime");
-                        $this->currentMap->setNbMaxRound($this->matchData['max_round'] * 2 + $this->ot_maxround);
+                        $this->currentMap->setNbMaxRound($this->ot_maxround);
                         //$this->rcon->send("mp_do_warmup_period 1; mp_warmuptime 30; mp_warmup_pausetimer 1");
                         //$this->rcon->send("mp_restartgame 1");
                         //$this->sendTeamNames();
@@ -1625,7 +1642,7 @@ class Match implements Taskable {
                         $this->currentMap->setStatus(Map::STATUS_WU_OT_1_SIDE, true);
                         $this->maxRound = $this->ot_maxround;
                         $this->currentMap->addOvertime();
-                        $this->currentMap->setNbMaxRound($this->matchData['max_round'] * 2 + $this->ot_maxround * $this->nbOT + $this->ot_maxround);
+                        $this->currentMap->setNbMaxRound($this->ot_maxround);
                         $this->nbOT++;
                         $this->addLog("Going to overtime");
                         //$this->rcon->send("mp_do_warmup_period 1; mp_warmuptime 30; mp_warmup_pausetimer 1");
@@ -1658,7 +1675,19 @@ class Match implements Taskable {
         $this->roundEndEvent = true;
     }
 
+    private $needDelTask = false;
+    private $currentRecordName = false;
+    
     private function lookEndingMatch() {
+        /**
+         * TV PUSH
+         */
+        TaskManager::getInstance()->addTask(new Task($this, self::STOP_RECORD, microtime(true) + 2));
+        $record_name = $this->currentMap->getTvRecordFile();
+        if ($record_name != "") {
+            $this->currentRecordName = $record_name;
+        }
+        
         $allFinish = true;
         foreach ($this->maps as $map) {
             if ($map->getStatus() != Map::STATUS_MAP_ENDED)
@@ -1668,6 +1697,7 @@ class Match implements Taskable {
         $this->rcon->send("tv_stoprecord");
 
         if (count($this->maps) == 1 || $allFinish) {
+            $this->needDelTask = true;
             $this->setStatus(self::STATUS_END_MATCH, true);
 
             $this->addLog("Match is closed");
@@ -1683,7 +1713,6 @@ class Match implements Taskable {
             }
             $this->rcon->send("mp_teamname_1 \"\"; mp_teamflag_1 \"\";");
             $this->rcon->send("mp_teamname_2 \"\"; mp_teamflag_2 \"\";");
-            $this->rcon->send("exec server.cfg;");
 
             $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => $this->getStatusText(), 'id' => $this->match_id)));
 
@@ -2014,11 +2043,12 @@ class Match implements Taskable {
                 }
             }
 
-            Logger::log("Launching record $record_name;");
+            Logger::log("Launching record $record_name");
             $this->rcon->send("tv_record $record_name");
+            $this->currentMap->setTvRecordFile($record_name);
             $this->waitRoundStartRecord = false;
 
-            \mysql_query("UPDATE `matchs` SET tv_record_file='" . $record_name . "' WHERE id='" . $this->match_id . "'") or $this->addLog("Error while updating tv record name - " . mysql_error(), Logger::ERROR);
+            \mysql_query("UPDATE `maps` SET tv_record_file='" . $record_name . "' WHERE id='" . $this->currentMap->getMapId() . "'") or $this->addLog("Error while updating tv record name - " . mysql_error(), Logger::ERROR);
         }
 
         $this->nbLast['nb_ct'] = $this->nbLast['nb_max_ct'];
@@ -2235,7 +2265,7 @@ class Match implements Taskable {
 
     private function saveScore() {
         foreach ($this->players as $player) {
-
+            
         }
     }
 
@@ -2474,7 +2504,7 @@ class Match implements Taskable {
                 // FIX for warmup
 
                 $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_warmuptime 0; mp_halftime_pausetimer 1; mp_warmup_pausetimer 0;");
-                $this->rcon->send("sv_rcon_whitelist_address \"".\eBot\Config\Config::getInstance()->getBot_ip()."\"");
+                $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
                 $this->rcon->send("mp_halftime_duration 1; mp_roundtime_defuse 60");
                 $this->rcon->send("mp_warmup_end");
                 if (\eBot\Config\Config::getInstance()->getKo3Method() == "csay" && $this->pluginCsay) {
@@ -2510,7 +2540,7 @@ class Match implements Taskable {
 
                         // NEW
                         $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_halftime_pausetimer 1;");
-                        $this->rcon->send("sv_rcon_whitelist_address \"".\eBot\Config\Config::getInstance()->getBot_ip()."\"");
+                        $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
                         $this->rcon->send("mp_halftime_duration 1");
                         $this->rcon->send("mp_warmup_end");
                         if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay" && $this->pluginCsay) {
@@ -2716,7 +2746,7 @@ class Match implements Taskable {
         if ($this->currentMap != null) {
             $this->currentMap->setStatus(Map::STATUS_STARTING, true);
             $this->setStatus(self::STATUS_STARTING, true);
-            \mysql_query("UPDATE `matchs` SET `current_map` = '".$this->currentMap->getMapId()."' WHERE `id` = '".$this->match_id."'");
+            \mysql_query("UPDATE `matchs` SET `current_map` = '" . $this->currentMap->getMapId() . "' WHERE `id` = '" . $this->match_id . "'");
 
             Logger::debug("Setting need knife round on map");
             $this->currentMap->setNeedKnifeRound(true);
