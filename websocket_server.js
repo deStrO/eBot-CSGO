@@ -1,7 +1,7 @@
 var WebSocketServer = require('websocket').server;
 var http = require('http');
 var formidable = require('formidable');
-var zipper = require('zipper').Zipper;
+var archiver = require('archiver');
 var fs = require('fs');
 var dgram = require('dgram');
 var clientUDP = dgram.createSocket("udp4");
@@ -9,27 +9,39 @@ var clientUDP = dgram.createSocket("udp4");
 var udp_ip = process.argv[2];
 var udp_port = process.argv[3];
 
+var DEMO_PATH = __dirname + "/demos/";
+
 String.prototype.endsWith = function(suffix) {
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };
 
 var server = http.createServer(function(request, response) {
     switch (request.url) {
+
         case '/upload':
-            var form = new formidable.IncomingForm({uploadDir: 'demos'});
+            var form = new formidable.IncomingForm({uploadDir: DEMO_PATH});
 
             form.parse(request, function(err, fields, files) {
-                console.log("Recieved file");
                 if (files.file) {
                     if (files.file.name.endsWith(".dem")) {
                         if (files.file.type == "application/octet-stream") {
-                            fs.unlink("demos/" + files.file.name + ".zip");
-                            var zipfile = new zipper("demos/" + files.file.name + ".zip");
-                            zipfile.addFile(files.file.path, files.file.name, function(err) {
-                                if (err)
-                                    console.error(err);
-                                fs.unlink(files.file.path);
-                            });
+                            console.log("Recieved file");
+
+                            if (fs.existsSync(DEMO_PATH + files.file.name + ".zip"))
+                                fs.unlinkSync(DEMO_PATH + files.file.name + ".zip");
+                            if (fs.existsSync(files.file.path))
+                                fs.renameSync(files.file.path, DEMO_PATH + files.file.name);
+
+                            var output = fs.createWriteStream(DEMO_PATH + files.file.name + ".zip");
+                            var archive = archiver('zip');
+                            archive.pipe(output);
+
+                            var demo = DEMO_PATH + files.file.name;
+                            archive.append(fs.createReadStream(demo), { name: files.file.name });
+                            archive.finalize();
+
+                            if (fs.existsSync(DEMO_PATH + files.file.name) && fs.existsSync(DEMO_PATH + files.file.name + ".zip"))
+                                fs.unlinkSync(DEMO_PATH + files.file.name);
                         }
                     } else {
                         console.error("bad file uploaded " + files.file);
@@ -47,9 +59,9 @@ var server = http.createServer(function(request, response) {
     }
 });
 
-fs.exists('demos', function(exists) {
+fs.exists(DEMO_PATH, function(exists) {
     if (!exists) {
-        fs.mkdir('demos');
+        fs.mkdir(DEMO_PATH);
     }
 });
 
