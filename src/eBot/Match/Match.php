@@ -369,7 +369,7 @@ class Match implements Taskable {
         if ($this->getStatus() > self::STATUS_WU_1_SIDE) {
             $this->streamerReady = true;
         }
-        
+
         // Setting nbMaxRound for sided score
         if ($this->getStatus() > self::STATUS_WU_OT_1_SIDE && $this->config_ot) {
             $this->currentMap->setNbMaxRound($this->ot_maxround);
@@ -549,7 +549,8 @@ class Match implements Taskable {
             $this->needDelTask = false;
             $this->addLog("Stopping record & push");
             $this->rcon->send("tv_stoprecord");
-            $this->rcon->send('csay_tv_demo_push "'.$this->currentRecordName.'.dem" "http://'.\eBot\Config\Config::getInstance()->getBot_ip().':'.\eBot\Config\Config::getInstance()->getBot_port().'/upload"');
+            if (\eBot\Config\Config::getInstance()->getDemoDownload())
+                $this->rcon->send('csay_tv_demo_push "'.$this->currentRecordName.'.dem" "http://'.\eBot\Config\Config::getInstance()->getBot_ip().':'.\eBot\Config\Config::getInstance()->getBot_port().'/upload"');
             $this->currentRecordName = "";
             $this->rcon->send("exec server.cfg;");
         }
@@ -736,7 +737,7 @@ class Match implements Taskable {
     public function getNeedDel() {
         return $this->needDel;
     }
-    
+
     public function getNeedDelTask() {
         return $this->needDelTask;
     }
@@ -1677,8 +1678,9 @@ class Match implements Taskable {
 
     private $needDelTask = false;
     private $currentRecordName = false;
-    
+
     private function lookEndingMatch() {
+
         /**
          * TV PUSH
          */
@@ -1687,14 +1689,21 @@ class Match implements Taskable {
         if ($record_name != "") {
             $this->currentRecordName = $record_name;
         }
-        
-        $allFinish = true;
-        foreach ($this->maps as $map) {
-            if ($map->getStatus() != Map::STATUS_MAP_ENDED)
+
+        if($this->matchData['map_selection_mode'] == "normal") {
+            $allFinish = true;
+        } else {
+            foreach ($this->maps as $map) {
+                if ($map->getScore1() > $map->getScore2())
+                    $team1win++;
+                else
+                    $team2win++;
+            }
+            if ($team1win > $team2win)
+                $allFinish = true;
+            else
                 $allFinish = false;
         }
-
-        $this->rcon->send("tv_stoprecord");
 
         if (count($this->maps) == 1 || $allFinish) {
             $this->needDelTask = true;
@@ -1797,6 +1806,7 @@ class Match implements Taskable {
             if ($this->currentMap != null) {
                 $this->currentMap->setStatus(Map::STATUS_STARTING, true);
                 $this->setStatus(self::STATUS_STARTING, true);
+                \mysql_query("UPDATE `matchs` SET `current_map` = '".$this->currentMap->getMapId()."' WHERE `id` = '".$this->match_id."'");
 
                 Logger::debug("Setting need knife round on map");
                 $this->currentMap->setNeedKnifeRound(true);
@@ -1986,6 +1996,8 @@ class Match implements Taskable {
                 $this->say("Write !unpause to remove the pause when ready");
                 $this->addMatchLog("Pausing match");
                 $this->rcon->send("pause");
+                \mysql_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '".$this->match_id."'");
+                $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id)));
 
                 $this->pause["ct"] = false;
                 $this->pause["t"] = false;
@@ -2265,7 +2277,7 @@ class Match implements Taskable {
 
     private function saveScore() {
         foreach ($this->players as $player) {
-            
+
         }
     }
 
@@ -2300,6 +2312,8 @@ class Match implements Taskable {
                 $this->say("Write !unpause to remove the pause when ready");
                 $this->addMatchLog("Pausing match");
                 $this->rcon->send("pause");
+                \mysql_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '".$this->match_id."'");
+                $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id)));
 
                 $this->pause["ct"] = false;
                 $this->pause["t"] = false;
@@ -2313,6 +2327,8 @@ class Match implements Taskable {
                 $this->say("Write !unpause to remove the pause when ready");
                 $this->addMatchLog("Pausing match");
                 $this->rcon->send("pause");
+                \mysql_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '".$this->match_id."'");
+                $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id)));
 
                 $this->pause["ct"] = false;
                 $this->pause["t"] = false;
@@ -2328,6 +2344,8 @@ class Match implements Taskable {
             $this->say("Match is unpaused, live !");
             $this->addMatchLog("Unpausing match");
             $this->rcon->send("pause");
+            \mysql_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '".$this->match_id."'");
+            $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_unpaused', 'id' => $this->match_id)));
 
             $this->pause["ct"] = false;
             $this->pause["t"] = false;
@@ -2836,6 +2854,8 @@ class Match implements Taskable {
             $this->addMatchLog("Unpausing match by admin");
             $this->addLog('Match is unpaused!');
             $this->rcon->send("pause");
+            \mysql_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '".$this->match_id."'");
+            $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_unpaused', 'id' => $this->match_id)));
 
             $this->pause["ct"] = false;
             $this->pause["t"] = false;
@@ -2849,6 +2869,8 @@ class Match implements Taskable {
             $this->addMatchLog("Pausing match by admin");
             $this->addLog('Match is paused!');
             $this->rcon->send("pause");
+            \mysql_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '".$this->match_id."'");
+            $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id)));
 
             $this->pause["ct"] = false;
             $this->pause["t"] = false;
@@ -2889,6 +2911,8 @@ class Match implements Taskable {
             $this->rcon->send("pause");
             $this->isPaused = false;
             $this->addLog("Disabling pause");
+            \mysql_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '".$this->match_id."'");
+            $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_unpaused', 'id' => $this->match_id)));
         }
 
         $this->score["team_a"] = $req['score_a'];
