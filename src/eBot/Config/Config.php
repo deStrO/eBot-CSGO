@@ -33,6 +33,7 @@ class Config extends Singleton {
     private $maps;
     private $lo3_method;
     private $ko3_method;
+    private $demo_download;
     private $pause_method;
     private $config_stop_disabled = false;
     private $config_knife_method = false;
@@ -57,6 +58,8 @@ class Config extends Singleton {
 
             $this->lo3_method = $config["LO3_METHOD"];
             $this->ko3_method = $config["KO3_METHOD"];
+
+            $this->demo_download = (bool) $config["DEMO_DOWNLOAD"];
 
             $this->pause_method = $config["PAUSE_METHOD"];
 
@@ -252,6 +255,14 @@ class Config extends Singleton {
 
     public function setKo3Method($ko3_method) {
         $this->ko3_method = $ko3_method;
+    }
+
+    public function getDemoDownload() {
+        return $this->demo_download;
+    }
+
+    public function setDemoDownload($demo_download) {
+        $this->demo_download = $demo_download;
     }
 
     public function getCryptKey() {

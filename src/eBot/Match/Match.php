@@ -549,7 +549,8 @@ class Match implements Taskable {
             $this->needDelTask = false;
             $this->addLog("Stopping record & push");
             $this->rcon->send("tv_stoprecord");
-            $this->rcon->send('csay_tv_demo_push "'.$this->currentRecordName.'.dem" "http://'.\eBot\Config\Config::getInstance()->getBot_ip().':'.\eBot\Config\Config::getInstance()->getBot_port().'/upload"');
+            if (\eBot\Config\Config::getInstance()->getDemoDownload())
+                $this->rcon->send('csay_tv_demo_push "'.$this->currentRecordName.'.dem" "http://'.\eBot\Config\Config::getInstance()->getBot_ip().':'.\eBot\Config\Config::getInstance()->getBot_port().'/upload"');
             $this->currentRecordName = "";
             $this->rcon->send("exec server.cfg;");
         }
