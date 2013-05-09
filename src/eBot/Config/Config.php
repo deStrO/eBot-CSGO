@@ -1,4 +1,5 @@
 <?php
+
 /**
  * eBot - A bot for match management for CS:GO
  * @license     http://creativecommons.org/licenses/by/3.0/ Creative Commons 3.0
@@ -28,14 +29,15 @@ class Config extends Singleton {
     private $record_name = "ebot";
     private $delay_busy_server = 90;
     private $nb_max_matchs = 0;
-    private $pubs;
+    private $advertising = array();
+    private $maps;
     private $lo3_method;
     private $ko3_method;
+    private $demo_download;
+    private $pause_method;
+    private $config_stop_disabled = false;
+    private $config_knife_method = false;
 
-    public function getNbRoundOvertime() {
-        return 3;
-    }
-    
     public function __construct() {
         Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
         if (file_exists(APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini")) {
@@ -49,24 +51,51 @@ class Config extends Singleton {
 
             $this->bot_ip = $config["BOT_IP"];
             $this->bot_port = $config["BOT_PORT"];
-            
+
             $this->delay_busy_server = $config["DELAY_BUSY_SERVER"];
 
-            $this->pubs = $config["PUB"];
-            
-            $this->lo3_method = $config["LO3_METHOD"];            
-            $this->ko3_method = $config["KO3_METHOD"];
-            
-            $encrypt = \eTools\Utils\Encryption::getInstance();
-            $encrypt->setCRYPT_CKEY($config["CRYPT_KEY"]);
+            $this->maps = $config["MAP"];
 
-            Logger::log("Configuration loaded");
+            $this->lo3_method = $config["LO3_METHOD"];
+            $this->ko3_method = $config["KO3_METHOD"];
+
+            $this->demo_download = (bool) $config["DEMO_DOWNLOAD"];
+
+            $this->pause_method = $config["PAUSE_METHOD"];
+
+            $this->config_stop_disabled = (bool) $config['COMMAND_STOP_DISABLED'];
+            $this->config_knife_method = ($config['RECORD_METHOD'] == "knifestart") ? "knifestart" : "matchstart";
+
+            Logger::debug("Configuration loaded");
         }
+    }
+
+    public function scanAdvertising() {
+        $q = \mysql_query("SELECT a.`season_id`, a.`message`, s.`name` FROM `advertising` a LEFT JOIN `seasons` s ON a.`season_id` = s.`id` WHERE a.`active` = 1");
+        while ($row = mysql_fetch_array($q, MYSQL_ASSOC)) {
+            $this->advertising['message'][] = $row['message'];
+            if ($row['season_id'] == null) {
+                $row['season_id'] = 0;
+                $row['name'] = "General";
+            }
+            $this->advertising['season_id'][] = intval($row['season_id']);
+            $this->advertising['season_name'][] = $row['name'];
+        }
+        array_multisort($this->advertising['season_id'], SORT_ASC, $this->advertising['season_name'], $this->advertising['message']);
     }
 
     public function printConfig() {
         Logger::log("MySQL: " . $this->mysql_ip . ":" . $this->mysql_port . " " . $this->mysql_user . ":" . \str_repeat("*", \strlen($this->mysql_pass)) . "@" . $this->mysql_base);
         Logger::log("Socket: " . $this->bot_ip . ":" . $this->bot_port);
+        Logger::log("OverTime rounds: " . $this->ot_rounds);
+        Logger::log("Advertising by Season:");
+        for ($i=0; $i<count($this->advertising['message']); $i++) {
+            Logger::log("-> ".$this->advertising['season_name'][$i].": ".$this->advertising['message'][$i]);
+        }
+        Logger::log("Maps:");
+        foreach ($this->maps as $map) {
+            Logger::log("-> ".$map);
+        }
     }
 
     public function getMysql_ip() {
@@ -157,6 +186,14 @@ class Config extends Singleton {
         $this->nb_max_matchs = $nb_max_matchs;
     }
 
+    public function getNbRoundOvertime() {
+        return $this->ot_rounds;
+    }
+
+    public function setNbRoundOvertime($ot_rounds) {
+        $this->ot_rounds = $ot_rounds;
+    }
+
     public function getPerf_link() {
         return $this->perf_link;
     }
@@ -172,21 +209,44 @@ class Config extends Singleton {
     public function setPerf_link_on_update($perf_link_on_update) {
         $this->perf_link_on_update = $perf_link_on_update;
     }
-    
-    public function getPubs() {
-        return $this->pubs;
+
+    public function getAdvertising($seasonID) {
+        for ($i=0;$i<count($this->advertising['season_id']);$i++) {
+            if (($this->advertising['season_id'][$i] == $seasonID) || ($this->advertising['season_id'][$i] == 0)) {
+                $output['season_id'][] = $this->advertising['season_id'][$i];
+                $output['season_name'][] = $this->advertising['season_name'][$i];
+                $output['message'][] = $this->advertising['message'][$i];
+            }
+        }
+        return $output;
     }
 
-    public function setPubs($pubs) {
-        $this->pubs = $pubs;
+    public function setAdvertising($pubs) {
+        $this->advertising = $pubs;
     }
-    
+
+    public function getMaps() {
+        return $this->maps;
+    }
+
+    public function setMaps($maps) {
+        $this->maps = $maps;
+    }
+
     public function getLo3Method() {
         return $this->lo3_method;
     }
 
     public function setLo3Method($lo3_method) {
         $this->lo3_method = $lo3_method;
+    }
+
+    public function getPauseMethod() {
+        return $this->pause_method;
+    }
+
+    public function setPauseMethod($pause_method) {
+        $this->pause_method = $pause_method;
     }
 
     public function getKo3Method() {
@@ -196,6 +256,35 @@ class Config extends Singleton {
     public function setKo3Method($ko3_method) {
         $this->ko3_method = $ko3_method;
     }
+
+    public function getDemoDownload() {
+        return $this->demo_download;
+    }
+
+    public function setDemoDownload($demo_download) {
+        $this->demo_download = $demo_download;
+    }
+
+    public function getCryptKey() {
+        return $this->crypt_key;
+    }
+
+    public function getConfigStopDisabled() {
+        return $this->config_stop_disabled;
+    }
+
+    public function setConfigStopDisabled($config_stop_disabled) {
+        $this->config_stop_disabled = $config_stop_disabled;
+    }
+
+    public function getConfigKnifeMethod() {
+        return $this->config_knife_method;
+    }
+
+    public function setConfigKnifeMethod($config_knife_method) {
+        $this->config_knife_method = $config_knife_method;
+    }
+
 
 
 

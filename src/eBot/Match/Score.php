@@ -86,8 +86,8 @@ class Score {
             $this->score1Side2 += $score_teamA;
             $this->score2Side2 += $score_teamB;
         }
-
-        mysql_query("UPDATE maps_score SET score1_side1='" . $this->score1Side1 . "',score1_side2='" . $this->score1Side2 . "',score2_side1='" . $this->score2Side1 . "',score2_side2='" . $this->score2Side2 . "' WHERE id='" . $this->id . "' ");
+        
+        $this->saveScore();
     }
 
     public function saveScore() {
