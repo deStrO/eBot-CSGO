@@ -20,7 +20,7 @@ use eBot\Config\Config;
 
 class Application extends AbstractApplication {
 
-    const VERSION = "3.0";
+    const VERSION = "3.1";
 
     private $socket = null;
     public $websocket = null;
