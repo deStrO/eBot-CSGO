@@ -54,11 +54,11 @@ class PluginMatchScoreNotifier implements Plugin {
     }
 
     public function onEventAdded($name) {
-        
+
     }
 
     public function onEventRemoved($name) {
-        
+
     }
 
     public function onReload() {

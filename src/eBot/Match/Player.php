@@ -183,7 +183,11 @@ class Player {
 
     public function setUserName($name) {
         if ($this->name != $name) {
-            Logger::log("Changing {$this->name} to $name");
+            if ($this->name == "") {
+                Logger::log("Setting nickname to $name");
+            } else {
+                Logger::log("Changing nickname from {$this->name} to $name");
+            }
             $this->name = $name;
         }
     }
@@ -227,13 +231,41 @@ class Player {
     }
 
     public function snapshot($round) {
-        @\mysql_query("DELETE FROM FROM players_snapshot WHERE player_id = '" . $this->mysql_id . "' AND round_id='" . $round . "'");
+        @\mysql_query("DELETE FROM players_snapshot WHERE player_id = '" . $this->mysql_id . "' AND round_id='" . $round . "'");
 
         \mysql_query("INSERT INTO players_snapshot 
             (`player_id`,`nb_kill`,`death`,`assist`,`point`,`hs`,`defuse`,`bombe`,`tk`,`nb1`,`nb2`,`nb3`,`nb4`,`nb5`,`nb1kill`,`nb2kill`,`nb3kill`,`nb4kill`,`nb5kill`,`firstkill`,`round_id`,`created_at`,`updated_at`)
             VALUES
-            ({$this->mysql_id}, {$this->kill}, {$this->death}, {$this->assist}, {$this->point}, {$this->hs}, {$this->defuse}, {$this->bombe}, {$this->tk}, {$this->v1}, {$this->v2}, {$this->v3}, {$this->v4}, {$this->v5}, {$this->k1}, {$this->k2}, {$this->k3}, {$this->k4}, {$this->k5}, {$this->firstKill}, {$round}, NOW(), NOW())")
-                or Logger::error("Error while snapshoting");
+            ({$this->mysql_id}, {$this->kill}, {$this->death}, {$this->assist}, {$this->point}, {$this->hs}, {$this->defuse}, {$this->bombe}, {$this->tk}, {$this->v1}, {$this->v2}, {$this->v3}, {$this->v4}, {$this->v5}, {$this->k1}, {$this->k2}, {$this->k3}, {$this->k4}, {$this->k5}, {$this->firstKill}, {$round}, NOW(), NOW())") or Logger::error("Error while snapshoting");
+    }
+
+    public function restoreSnapshot($round) {
+        $sql = \mysql_query("SELECT * FROM players_snapshot WHERE player_id ='" . $this->mysql_id . "' AND round_id='" . $round . "' ") or dir(mysql_error());
+        $req = \mysql_fetch_array($sql);
+        if ($req) {
+            Logger::log("Restoring player " . $this->steamid . " from match " . $this->match_id . " for round " . $round);
+            $this->kill = $req['nb_kill'];
+            $this->assist = $req['assist'];
+            $this->death = $req['death'];
+            $this->point = $req['point'];
+            $this->hs = $req['hs'];
+            $this->defuse = $req['defuse'];
+            $this->bombe = $req['bombe'];
+            $this->tk = $req['tk'];
+            $this->v1 = $req['nb1'];
+            $this->v2 = $req['nb2'];
+            $this->v3 = $req['nb3'];
+            $this->v4 = $req['nb4'];
+            $this->v5 = $req['nb5'];
+            $this->k1 = $req['nb1kill'];
+            $this->k2 = $req['nb2kill'];
+            $this->k3 = $req['nb3kill'];
+            $this->k4 = $req['nb4kill'];
+            $this->k5 = $req['nb5kill'];
+            $this->firstKill = $req['firstkill'];
+        } else {
+            Logger::log("Snapshot not found for " . $this->steamid . " from match " . $this->match_id . " for round " . $round);
+        }
     }
 
 }

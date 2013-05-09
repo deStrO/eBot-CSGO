@@ -10,7 +10,7 @@
 namespace eBot\Exception;
 
 class MatchException extends \Exception {
-    
+
 }
 
 ?>
