@@ -71,6 +71,7 @@ class Config extends Singleton {
     }
 
     public function scanAdvertising() {
+        unset($this->advertising);
         $q = \mysql_query("SELECT a.`season_id`, a.`message`, s.`name` FROM `advertising` a LEFT JOIN `seasons` s ON a.`season_id` = s.`id` WHERE a.`active` = 1");
         while ($row = mysql_fetch_array($q, MYSQL_ASSOC)) {
             $this->advertising['message'][] = $row['message'];
