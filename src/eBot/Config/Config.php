@@ -88,7 +88,6 @@ class Config extends Singleton {
     public function printConfig() {
         Logger::log("MySQL: " . $this->mysql_ip . ":" . $this->mysql_port . " " . $this->mysql_user . ":" . \str_repeat("*", \strlen($this->mysql_pass)) . "@" . $this->mysql_base);
         Logger::log("Socket: " . $this->bot_ip . ":" . $this->bot_port);
-        Logger::log("OverTime rounds: " . $this->ot_rounds);
         Logger::log("Advertising by Season:");
         for ($i=0; $i<count($this->advertising['message']); $i++) {
             Logger::log("-> ".$this->advertising['season_name'][$i].": ".$this->advertising['message'][$i]);
