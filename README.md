@@ -25,7 +25,7 @@ You can copy, distribute, modify the source code, but you have to keep the licen
 
 ## Credits
 * Julien 'deStrO' Pardons (destro@esport-tools.net)
-* Fabian 'Basert' Gruber (mail@basert.de)
+* Fabian 'Basert' Gruber (basert@esport-tools.net)
 
 ## Thanks
 * Loic Peron (RegnaM)
