@@ -329,6 +329,7 @@ class Match implements Taskable {
             $this->side['team_a'] = "t";
             $this->side['team_b'] = "ct";
         }
+        $this->websocket['match']->sendData(json_encode(array('message' => 'teams', 'teamA' => $this->side['team_a'], 'teamB' => $this->side['team_b'], 'id' => $this->match_id)));
 
         // Calculating scores
         $this->currentMap->calculScores();
@@ -557,7 +558,7 @@ class Match implements Taskable {
 
             $this->rcon->send("mp_teamname_1 \"\"; mp_teamflag_1 \"\";");
             $this->rcon->send("mp_teamname_2 \"\"; mp_teamflag_2 \"\";");
-            $this->rcon->send("hostname \"" . $this->hostname . "\"");
+//            $this->rcon->send("hostname \"" . $this->hostname . "\"");
             $this->rcon->send("exec server.cfg;");
         }
     }
@@ -1263,7 +1264,7 @@ class Match implements Taskable {
                 $this->rcon->send("mp_warmup_start");
                 $this->say("nothing change, going to warmup");
             }
-        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!switch" || $text == ".switch")) {
+        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!switch" || $text == ".switch" || $text == "!swap" || $text == ".swap")) {
             if ($message->getUserTeam() == $this->winKnife) {
                 $this->addLog($message->getUserName() . " want to stay, going to warmup");
 
@@ -2387,6 +2388,7 @@ class Match implements Taskable {
                 $this->side['team_a'] = "t";
                 $this->side['team_b'] = "ct";
             }
+            $this->websocket['match']->sendData(json_encode(array('message' => 'teams', 'teamA' => $this->side['team_a'], 'teamB' => $this->side['team_b'], 'id' => $this->match_id)));
 
             $this->currentMap->calculScores();
 
@@ -2546,8 +2548,13 @@ class Match implements Taskable {
                 // FIX for warmup
                 $this->rcon->send("mp_warmup_pausetimer 0;");
 
-                $this->stop['t'] = false;
-                $this->stop['ct'] = false;
+                $this->ready['ct'] = false;
+                $this->ready['t'] = false;
+                $this->pause["ct"] = false;
+                $this->pause["t"] = false;
+                $this->unpause["ct"] = false;
+                $this->unpause["t"] = false;
+
                 $this->waitForRestart = true;
                 $this->nbRS = 0;
 
@@ -2613,13 +2620,6 @@ class Match implements Taskable {
                     $this->recupStatus(true);
                 }
             }
-
-            $this->ready['ct'] = false;
-            $this->ready['t'] = false;
-            $this->pause["ct"] = false;
-            $this->pause["t"] = false;
-            $this->unpause["ct"] = false;
-            $this->unpause["t"] = false;
         }
     }
 
@@ -2673,6 +2673,7 @@ class Match implements Taskable {
             $this->side['team_a'] = "ct";
             $this->side['team_b'] = "t";
         }
+        $this->websocket['match']->sendData(json_encode(array('message' => 'teams', 'teamA' => $this->side['team_a'], 'teamB' => $this->side['team_b'], 'id' => $this->match_id)));
         $this->currentMap->setCurrentSide($this->side["team_a"], true);
     }
 
@@ -2695,7 +2696,7 @@ class Match implements Taskable {
 
         $this->rcon->send("mp_teamname_1 \"\"; mp_teamflag_2 \"\";");
         $this->rcon->send("mp_teamname_2 \"\"; mp_teamflag_1 \"\";");
-        $this->rcon->send("hostname \"" . $this->hostname . "\"");
+        //$this->rcon->send("hostname \"" . $this->hostname . "\"");
         $this->rcon->send("exec server.cfg");
 
 
@@ -2713,7 +2714,7 @@ class Match implements Taskable {
 
         $this->rcon->send("mp_teamname_1 \"\"; mp_teamname_2 \"\";");
         $this->rcon->send("mp_teamflag_1 \"\"; mp_teamflag_2 \"\";");
-        $this->rcon->send("hostname \"" . $this->hostname . "\"");
+        //$this->rcon->send("hostname \"" . $this->hostname . "\"");
         $this->rcon->send("exec server.cfg");
 
         mysql_query("UPDATE `matchs` SET enable = 0, auto_start = 0 WHERE id = '" . $this->match_id . "'");
