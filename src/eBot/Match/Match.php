@@ -73,7 +73,7 @@ class Match implements Taskable {
     private $server_ip;
     private $season_id;
     private $score = array("team_a" => 0, "team_b" => 0);
-    private $hostname;
+    private $hostname = null;
     private $nbRound = 0;
     private $nbOT = 0;
     private $scoreSide = array();
@@ -512,7 +512,12 @@ class Match implements Taskable {
             }
         } elseif ($name == self::CHANGE_HOSTNAME) {
             if ($this->rcon->getState()) {
-                $this->hostname = $this->rcon->send("hostname");
+                if (empty($this->hostname)) {
+                    $hostname = $this->rcon->send("hostname");
+                    preg_match('/[^(hostname)]"[^".*]+/', $hostname, $preg);
+                    $this->hostname = substr($preg[0], 2);
+                }
+                var_dump($this->hostname);
                 $this->rcon->send('hostname "' . $this->getHostname() . '"');
             } else {
                 TaskManager::getInstance()->addTask(new Task($this, self::CHANGE_HOSTNAME, microtime(true) + 5));
@@ -558,7 +563,8 @@ class Match implements Taskable {
 
             $this->rcon->send("mp_teamname_1 \"\"; mp_teamflag_1 \"\";");
             $this->rcon->send("mp_teamname_2 \"\"; mp_teamflag_2 \"\";");
-//            $this->rcon->send("hostname \"" . $this->hostname . "\"");
+            if (!empty($this->hostname))
+                $this->rcon->send("hostname \"" . $this->hostname . "\"");
             $this->rcon->send("exec server.cfg;");
         }
     }
@@ -2696,7 +2702,8 @@ class Match implements Taskable {
 
         $this->rcon->send("mp_teamname_1 \"\"; mp_teamflag_2 \"\";");
         $this->rcon->send("mp_teamname_2 \"\"; mp_teamflag_1 \"\";");
-        //$this->rcon->send("hostname \"" . $this->hostname . "\"");
+        if (!empty($this->hostname))
+            $this->rcon->send("hostname \"" . $this->hostname . "\"");
         $this->rcon->send("exec server.cfg");
 
 
@@ -2714,7 +2721,8 @@ class Match implements Taskable {
 
         $this->rcon->send("mp_teamname_1 \"\"; mp_teamname_2 \"\";");
         $this->rcon->send("mp_teamflag_1 \"\"; mp_teamflag_2 \"\";");
-        //$this->rcon->send("hostname \"" . $this->hostname . "\"");
+        if (!empty($this->hostname))
+            $this->rcon->send("hostname \"" . $this->hostname . "\"");
         $this->rcon->send("exec server.cfg");
 
         mysql_query("UPDATE `matchs` SET enable = 0, auto_start = 0 WHERE id = '" . $this->match_id . "'");
