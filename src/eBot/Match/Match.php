@@ -517,7 +517,6 @@ class Match implements Taskable {
                     preg_match('/[^(hostname)]"[^".*]+/', $hostname, $preg);
                     $this->hostname = substr($preg[0], 2);
                 }
-                var_dump($this->hostname);
                 $this->rcon->send('hostname "' . $this->getHostname() . '"');
             } else {
                 TaskManager::getInstance()->addTask(new Task($this, self::CHANGE_HOSTNAME, microtime(true) + 5));
