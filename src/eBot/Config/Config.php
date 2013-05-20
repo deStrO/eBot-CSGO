@@ -37,6 +37,7 @@ class Config extends Singleton {
     private $pause_method;
     private $config_stop_disabled = false;
     private $config_knife_method = false;
+    private $delay_ready = false;
 
     public function __construct() {
         Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
@@ -65,6 +66,7 @@ class Config extends Singleton {
 
             $this->config_stop_disabled = (bool) $config['COMMAND_STOP_DISABLED'];
             $this->config_knife_method = ($config['RECORD_METHOD'] == "knifestart") ? "knifestart" : "matchstart";
+            $this->delay_ready = (bool)$config['DELAY_READY'];
 
             Logger::debug("Configuration loaded");
         }
@@ -285,8 +287,13 @@ class Config extends Singleton {
         $this->config_knife_method = $config_knife_method;
     }
 
+    public function getDelayReady() {
+        return $this->delay_ready;
+    }
 
-
+    public function setDelayReady($delay_ready) {
+        $this->delay_ready = $delay_ready;
+    }
 
 }
 
