@@ -1182,7 +1182,7 @@ class Match implements Taskable {
                 $this->continueMatch();
             }
         } elseif ($text == "!ready" || $text == ".ready") {
-            if ($this->isWarmupRound()) {
+            if ($this->isWarmupRound() && $this->mapIsEngaged) {
                 if ($this->config_streamer && !$this->getStreamerReady()) {
                     $this->say("\002Streamers are not ready yet. \001Please wait, till they are ready.");
                 } else {
@@ -1305,7 +1305,7 @@ class Match implements Taskable {
                 $this->sendTeamNames();
             }
         } elseif ($text == "!notready" || $text == ".notready" || $text == "!unready" || $text == ".unready") {
-            if ($this->isWarmupRound()) {
+            if ($this->isWarmupRound() && $this->mapIsEngaged) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say notready");
 
                 if ($message->getUserTeam() == "CT") {
