@@ -1328,7 +1328,7 @@ class Match implements Taskable {
                     }
                 }
             }
-        } elseif ($text == "!abort" || $text == ".abort") {
+        } elseif ($text == "!abort" || $text == ".abort" && $this->delay_ready_inprogress) {
             if ($this->isWarmupRound() && $this->ready['ct'] && $this->ready['t'] && \eBot\Config\Config::getInstance()->getDelayReady()) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say abort");
 
