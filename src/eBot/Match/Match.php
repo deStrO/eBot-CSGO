@@ -432,7 +432,7 @@ class Match implements Taskable {
         if ($normal)
             $round = "Round #";
         else
-            $ound = "#";
+            $round = "#";
         switch ($this->getStatus()) {
             case self::STATUS_NOT_STARTED:
                 return "Not started";
