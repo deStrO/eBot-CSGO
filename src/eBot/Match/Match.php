@@ -428,7 +428,11 @@ class Match implements Taskable {
         return $this->score["team_a"] + $this->score["team_b"] + 1;
     }
 
-    public function getStatusText() {
+    public function getStatusText($normal = true) {
+        if ($normal)
+            $round = "Round #";
+        else
+            $ound = "#";
         switch ($this->getStatus()) {
             case self::STATUS_NOT_STARTED:
                 return "Not started";
@@ -443,19 +447,19 @@ class Match implements Taskable {
             case self::STATUS_WU_1_SIDE:
                 return "Warmup first side";
             case self::STATUS_FIRST_SIDE:
-                return "First side - Round #" . $this->getNbRound();
+                return "First side - " . $round . $this->getNbRound();
             case self::STATUS_WU_2_SIDE:
                 return "Warmup second side";
             case self::STATUS_SECOND_SIDE:
-                return "Second side - Round #" . $this->getNbRound();
+                return "Second side - " . $round . $this->getNbRound();
             case self::STATUS_WU_OT_1_SIDE:
                 return "Warmup first side OverTime";
             case self::STATUS_OT_FIRST_SIDE:
-                return "First side OverTime - Round #" . $this->getNbRound();
+                return "First side OverTime - " . $round . $this->getNbRound();
             case self::STATUS_WU_OT_2_SIDE:
                 return "Warmup second side OverTime";
             case self::STATUS_OT_SECOND_SIDE:
-                return "Second side OverTime - Round #" . $this->getNbRound();
+                return "Second side OverTime - " . $round . $this->getNbRound();
             case self::STATUS_END_MATCH:
                 return "Finished";
         }
@@ -467,7 +471,7 @@ class Match implements Taskable {
 
     public function setStatus($newStatus, $save = false) {
         $this->status = $newStatus;
-        $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => $this->getStatusText(), 'id' => $this->match_id)));
+        $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => $this->getStatusText(false), 'id' => $this->match_id)));
         $this->websocket['match']->sendData(json_encode(array('message' => 'button', 'content' => $this->getStatus(), 'id' => $this->match_id)));
         if ($save) {
             $this->message = 0;
@@ -619,6 +623,8 @@ class Match implements Taskable {
             }
 
             $this->mapIsEngaged = true;
+
+            $this->websocket['match']->sendData(json_encode(array('message' => 'currentMap', 'mapname' => $this->currentMap->getMapName(), 'id' => $this->match_id)));
 
             TaskManager::getInstance()->addTask(new Task($this, self::CHANGE_HOSTNAME, microtime(true) + 3));
         } else {
@@ -1705,7 +1711,7 @@ class Match implements Taskable {
 
             // Dispatching to Websocket
 
-            $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => $this->getStatusText(), 'id' => $this->match_id)));
+            $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => $this->getStatusText(false), 'id' => $this->match_id)));
             $this->websocket['match']->sendData(json_encode(array('message' => 'button', 'content' => $this->getStatus(), 'id' => $this->match_id)));
             $this->websocket['match']->sendData(json_encode(array('message' => 'score', 'scoreA' => $this->score['team_a'], 'scoreB' => $this->score['team_b'], 'id' => $this->match_id)));
 
@@ -1767,7 +1773,7 @@ class Match implements Taskable {
                 $this->addMatchLog("Final score: " . $this->score["team_a"] . " - " . $this->score["team_b"] . " - Draw !");
             }
 
-            $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => $this->getStatusText(), 'id' => $this->match_id)));
+            $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => $this->getStatusText(false), 'id' => $this->match_id)));
 
             $event = new \eBot\Events\Event\MatchEnd();
             $event->setMatch($this);
@@ -2152,7 +2158,7 @@ class Match implements Taskable {
                 'id' => $this->match_id,
                 'message' => "newRound",
                 'round' => $this->getNbRound(),
-                'status' => $this->getStatusText()
+                'status' => $this->getStatusText(false)
             )));
 
         $this->roundEndEvent = false;
