@@ -487,7 +487,7 @@ class Match implements Taskable {
     }
 
     private function getStreamerReady() {
-        if ($this->config_streamer)
+        if ($this->config_streamer == "1")
             return $this->streamerReady;
         else
             return false;
@@ -577,7 +577,8 @@ class Match implements Taskable {
             if (\eBot\Config\Config::getInstance()->getDelayReady()) {
                 if ($this->delay_ready_countdown > 0 && !$this->delay_ready_abort && $this->ready['ct'] && $this->ready['t']) {
                     $this->say("Both teams are ready! Match will start in ".$this->delay_ready_countdown." seconds");
-                    $this->say("Abort countdown with !abort");
+                    if (($this->delay_ready_countdown % 2) == 0)
+                        $this->say("Abort countdown with !abort");
                     $this->delay_ready_countdown--;
                     TaskManager::getInstance()->addTask(new Task($this, self::TASK_DELAY_READY, microtime(true) + 1));
                 } elseif ($this->delay_ready_countdown == 0 && !$this->delay_ready_abort && $this->ready['ct'] && $this->ready['t']) {
@@ -2873,6 +2874,7 @@ class Match implements Taskable {
     public function adminStreamerReady() {
         if ($this->config_streamer) {
             $this->streamerReady = true;
+            \mysql_query("UPDATE `matchs` SET `config_streamer` = 2 WHERE `id` = '".$this->match_id."'");
             if (($this->getStatus() == self::STATUS_WU_1_SIDE) || ($this->getStatus() == self::STATUS_WU_KNIFE)) {
                 $this->say("\002Streamers are ready now! \001Please confirm, that you are ready too: !ready");
             }

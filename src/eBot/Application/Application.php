@@ -196,7 +196,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminStreamerReady();
                                     if ($reply) {
-                                        $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
+                                        $send = json_encode(array('message' => 'streamerReady', 'content' => 'true', 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
