@@ -31,6 +31,7 @@ class Config extends Singleton {
     private $nb_max_matchs = 0;
     private $advertising = array();
     private $maps;
+    private $workshop;
     private $lo3_method;
     private $ko3_method;
     private $demo_download;
@@ -56,6 +57,7 @@ class Config extends Singleton {
             $this->delay_busy_server = $config["DELAY_BUSY_SERVER"];
 
             $this->maps = $config["MAP"];
+            $this->workshop = $config["WORKSHOP"];
 
             $this->lo3_method = $config["LO3_METHOD"];
             $this->ko3_method = $config["KO3_METHOD"];
@@ -233,6 +235,20 @@ class Config extends Singleton {
 
     public function setMaps($maps) {
         $this->maps = $maps;
+    }
+
+    public function getWorkshop() {
+        return $this->workshop;
+    }
+
+    public function getWorkshopByMap($mapname) {
+        if (!empty($this->workshop[$mapname]))
+            return $this->workshop[$mapname];
+        else return false;
+    }
+
+    public function setWorkshop($workshop) {
+        $this->workshop = $workshop;
     }
 
     public function getLo3Method() {

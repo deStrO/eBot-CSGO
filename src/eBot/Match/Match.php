@@ -613,7 +613,11 @@ class Match implements Taskable {
 
             // Changing map
             $this->addLog("Changing map to " . $this->currentMap->getMapName());
-            $this->rcon->send("changelevel " . $this->currentMap->getMapName());
+
+            if (\eBot\Config\Config::getInstance()->getWorkshop() && \eBot\Config\Config::getInstance()->getWorkshopByMap($this->currentMap->getMapName()))
+                $this->rcon->send("changelevel " . \eBot\Config\Config::getInstance()->getWorkshopByMap($this->currentMap->getMapName()));
+            else
+                $this->rcon->send("changelevel " . $this->currentMap->getMapName());
 
             if ($this->config_kniferound) {
                 $this->setStatus(self::STATUS_WU_KNIFE, true);
@@ -1749,16 +1753,16 @@ class Match implements Taskable {
             foreach ($this->maps as $map) {
                 if ($map->getScore1() > $map->getScore2())
                     $team1win++;
-                else
+                elseif ($map->getScore1() < $map->getScore2())
                     $team2win++;
             }
-            if ($team1win > $team2win)
+            if ( $team1win == 2 || $team2win == 2 )
                 $allFinish = true;
             else
                 $allFinish = false;
         }
 
-        if (count($this->maps) == 1 || $allFinish) {
+        if ($allFinish) {
             $this->needDelTask = true;
             $this->setStatus(self::STATUS_END_MATCH, true);
 
@@ -1785,6 +1789,7 @@ class Match implements Taskable {
             $backupMap = $this->currentMap;
             $this->currentMap = null;
 
+            /*
             // bo2, bo3_modea, bo3_modeb, normal
             if ($this->matchData['map_selection_mode'] == "bo2") {
                 if (count($this->maps) == 2) {
@@ -1821,7 +1826,8 @@ class Match implements Taskable {
                         }
                     }
                 }
-            } elseif ($this->matchData['map_selection_mode'] == "bo3_modeb") {
+            */
+            if ($this->matchData['map_selection_mode'] == "bo3_modeb") {
                 if ($backupMap->getMapsFor() == "team1") {
                     $mapFor = "team2";
                 } elseif ($backupMap->getMapsFor() == "team2") {
@@ -1845,32 +1851,40 @@ class Match implements Taskable {
                 }
             }
 
-            foreach ($this->maps as $map) {
-                if ($map->getStatus() == Map::STATUS_NOT_STARTED) {
-                    if ($map->getMapsFor() == $mapFor) {
-                        $this->currentMap = $map;
-                        break;
-                    }
-                }
-            }
-
             if ($this->currentMap != null) {
                 $this->currentMap->setStatus(Map::STATUS_STARTING, true);
                 $this->setStatus(self::STATUS_STARTING, true);
-                \mysql_query("UPDATE `matchs` SET `current_map` = '".$this->currentMap->getMapId()."' WHERE `id` = '".$this->match_id."'");
-
-                Logger::debug("Setting need knife round on map");
-                $this->currentMap->setNeedKnifeRound(true);
+                if ($this->currentMap->getCurrentSide() == "ct") {
+                    $this->side['team_a'] = "ct";
+                    $this->side['team_b'] = "t";
+                } else {
+                    $this->side['team_a'] = "t";
+                    $this->side['team_b'] = "ct";
+                }
                 $this->nbOT = 0;
                 $this->score["team_a"] = 0;
                 $this->score["team_b"] = 0;
+                $this->currentMap->calculScores();
+                $this->recupStatus();
+
+                \mysql_query("UPDATE `matchs` SET `current_map` = '".$this->currentMap->getMapId()."' WHERE `id` = '".$this->match_id."'");
+
+                if ($this->config_kniferound) {
+                    Logger::debug("Setting need knife round on map");
+                    $this->currentMap->setNeedKnifeRound(true);
+                }
 
                 $this->addLog("Engaging next map " . $this->currentMap->getMapName());
                 $this->addMatchLog("Engaging next map " . $this->currentMap->getMapName());
-                $time = microtime(true) + \eBot\Config\Config::getInstance()->getDelay_busy_server();
-                $this->timeEngageMap = $time;
-                $this->addLog("Launching map in " . \eBot\Config\Config::getInstance()->getDelay_busy_server() . " seconds");
-                TaskManager::getInstance()->addTask(new Task($this, self::TASK_ENGAGE_MAP, $time));
+                $tvTimeRemaining = $this->rcon->send("tv_time_remaining");
+                if (preg_match('/(?<time>\d+\.\d+) seconds/', $tvTimeRemaining, $preg)) {
+                    $this->timeEngageMap = $preg['time'];
+                    TaskManager::getInstance()->addTask(new Task($this, self::TASK_ENGAGE_MAP, microtime(true) + floatval($preg['time']) + 1));
+                    $this->addLog("Waiting till GOTV broadcast is finished! Mapchange in " . (intval($preg['time']) + 1) . " seconds");
+                } else {
+                    TaskManager::getInstance()->addTask(new Task($this, self::TASK_ENGAGE_MAP, 1));
+                }
+                $this->addLog("Launching map in " . $preg['time'] . " seconds");
             } else {
                 $this->setStatus(self::STATUS_END_MATCH, true);
                 Logger::error("Not map found");
