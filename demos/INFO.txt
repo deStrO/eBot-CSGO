@@ -1,0 +1,1 @@
+This directory will contain the demos, downloaded by the server.
