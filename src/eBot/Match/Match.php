@@ -573,7 +573,7 @@ class Match implements Taskable {
             $this->rcon->send("mp_warmuptime 1");
             $this->rcon->send("mp_warmup_pausetimer 1; mp_halftime_duration 5;");
             if ($this->config_full_score) {
-                $this->rcon->send("mp_can_clintch 0;");
+                $this->rcon->send("mp_match_can_clinch 0;");
             }
 
             // Changing map
@@ -2590,7 +2590,7 @@ class Match implements Taskable {
                         $this->waitForRestart = false;
                         $this->rcon->send("mp_halftime_pausetimer 0; ");
                         if ($this->config_full_score) {
-                            $this->rcon->send("mp_can_clintch 0");
+                            $this->rcon->send("mp_match_can_clinch 0");
                         }
                         $this->say("2nd Side: LIVE!");
                         break;
