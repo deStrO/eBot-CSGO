@@ -17,6 +17,7 @@
 ------------------------
 - Put the content into a directory
 - Download or install composer.phar (http://getcomposer.org/download/)
+- Launch composer.phar to install dependency (php composer.phar install)
 - Download and install NodeJS and npm
 - Install NPM dependency
    - npm install websocket formidable archiver
