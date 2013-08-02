@@ -12,6 +12,7 @@
 - Sockets
 - MySQL database
 - composer.phar
+
 ------------------------
 | Installation
 ------------------------
@@ -30,6 +31,7 @@
   Windows: websocket_server.bat
     - BOT_IP and BOT_PORT
 - Don't forget to edit the BOT_IP and BOT_PORT, or it will not work
+
 ------------------------
 | About the database
 ------------------------
