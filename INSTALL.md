@@ -18,8 +18,8 @@
 - Put the content into a directory
 - Download or install composer.phar (http://getcomposer.org/download/)
 - Download and install NodeJS and npm
-- Install NPM websocket
-   - npm install websocket
+- Install NPM dependency
+   - npm install websocket formidable archiver
 - Install the package and requirements:
    Windows: composer install
    Linux: php composer.phar install
