@@ -1219,7 +1219,9 @@ class Match implements Taskable {
                             $this->say($team . " (T) \003want to pause, match will be paused next freezetime.");
                     }
                 }
-                if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm" || \eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm")
+                if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm" 
+					|| \eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm" 
+						|| $this->roundEndEvent)
                     $this->pauseMatch();
             }
         } elseif ($text == "!unpause" || $text == ".unpause") {
