@@ -59,21 +59,7 @@ class Application extends AbstractApplication {
             die();
         }
 
-        try {
-            $this->websocket['match'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/match");
-            $this->websocket['match']->open();
-            $this->websocket['rcon'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/rcon");
-            $this->websocket['rcon']->open();
-            $this->websocket['logger'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/logger");
-            $this->websocket['logger']->open();
-            $this->websocket['livemap'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/livemap");
-            $this->websocket['livemap']->open();
-            $this->websocket['aliveCheck'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/alive");
-            $this->websocket['aliveCheck']->open();
-        } catch (Exception $ex) {
-            Logger::error("Unable to create Websocket.");
-            die();
-        }
+        $this->loadWebsocket();
 
         PluginsManager::getInstance()->startAll();
 
@@ -86,6 +72,8 @@ class Application extends AbstractApplication {
                         $this->clientsConnected = true;
                     } elseif ($data == '__false__') {
                         $this->clientsConnected = false;
+                    } elseif ($data == '__reloadConfig__') {
+                        $this->reloadConfig();
                     } elseif ($data == '__aliveCheck__') {
                         $this->websocket['aliveCheck']->sendData('__isAlive__');
                     } else {
@@ -208,7 +196,7 @@ class Application extends AbstractApplication {
                                 if ($match) {
                                     $reply = $match->adminStreamerReady();
                                     if ($reply) {
-                                        $send = json_encode(array('message' => 'button', 'content' => $match->getStatus(), 'id' => $preg["id"]));
+                                        $send = json_encode(array('message' => 'streamerReady', 'content' => 'true', 'id' => $preg["id"]));
                                         $this->websocket['match']->sendData($send);
                                     }
                                 } else {
@@ -282,6 +270,36 @@ class Application extends AbstractApplication {
             Logger::error("Can't select database " . Config::getInstance()->getMysql_base());
             exit(1);
         }
+    }
+
+    private function loadWebsocket() {
+        try {
+            $this->websocket['match'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/match");
+            $this->websocket['match']->open();
+            $this->websocket['rcon'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/rcon");
+            $this->websocket['rcon']->open();
+            $this->websocket['logger'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/logger");
+            $this->websocket['logger']->open();
+            $this->websocket['livemap'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/livemap");
+            $this->websocket['livemap']->open();
+            $this->websocket['aliveCheck'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/alive");
+            $this->websocket['aliveCheck']->open();
+        } catch (Exception $ex) {
+            Logger::error("Unable to create Websocket.");
+            die();
+        }
+    }
+
+    private function reloadConfig() {
+        Logger::log("Reloading Websocket and Advertising");
+        $this->websocket['match']->close();
+        $this->websocket['rcon']->close();
+        $this->websocket['logger']->close();
+        $this->websocket['livemap']->close();
+        $this->websocket['aliveCheck']->close();
+        $this->loadWebsocket();
+        Config::getInstance()->scanAdvertising();
+        Config::getInstance()->printConfig();
     }
 
     public function getName() {

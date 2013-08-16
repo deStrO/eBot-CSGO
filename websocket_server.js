@@ -100,6 +100,7 @@ clients["logger"] = new Array();
 clients["livemap"] = new Array();
 clients["rcon"] = new Array();
 clients["match"] = new Array();
+clients["reload"] = new Array();
 clients["chat"] = new Array();
 var chatlog = new Array();
 chatlog.push("chatlog");
@@ -125,6 +126,9 @@ wsServer.on('request', function(request) {
             var dgram = new Buffer("__aliveCheck__");
             clientUDP.send(dgram, 0, dgram.length, udp_port, udp_ip);
         }
+    } else if (mode == "/reload") {
+        connection.reload = new Array();
+        clients['reload'].push(connection);
     } else if (mode == "/logger") {
         connection.logger = new Array();
         clients["logger"].push(connection);
@@ -170,6 +174,11 @@ wsServer.on('request', function(request) {
                 if (clients["alive"][c].remoteAddress != udp_ip) {
                     clients["alive"][c].send(message.utf8Data);
                 }
+            }
+        } else if (mode == "/reload") {
+            if (request.remoteAddress != udp_ip) {
+                var dgram = new Buffer("__reloadConfig__");
+                clientUDP.send(dgram, 0, dgram.length, udp_port, udp_ip);
             }
         } else if (mode == "/rcon") {
             clientIndex = clients['rcon'].indexOf(connection, null);
@@ -235,6 +244,9 @@ wsServer.on('request', function(request) {
         if (mode == "/alive") {
             clientIndex = clients['alive'].indexOf(connection, null);
             clients['alive'].splice(clientIndex, 1);
+        } else if (mode == "/reload") {
+            clientIndex = clients['reload'].indexOf(connection, null);
+            clients['reload'].splice(clientIndex, 1);
         } else if (mode == "/match") {
             clientIndex = clients['match'].indexOf(connection, null);
             clients['match'].splice(clientIndex, 1);
