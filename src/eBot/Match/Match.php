@@ -1311,7 +1311,7 @@ class Match implements Taskable {
                 $this->rcon->send("mp_warmuptime 30");
                 $this->rcon->send("mp_warmup_pausetimer 1");
                 $this->rcon->send("mp_warmup_start");
-                $this->say("swaping teams");
+                $this->say("Swapping Teams");
                 $this->rcon->send("mp_swapteams");
                 $this->sendTeamNames();
             }
