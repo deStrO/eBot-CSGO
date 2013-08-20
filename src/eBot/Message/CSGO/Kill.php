@@ -16,7 +16,7 @@ use eBot\Message\Type\Kill as Object;
 class Kill extends Message {
 
     public function __construct() {
-        parent::__construct('/^"(?P<user_name>.+)[<](?P<user_id>\d+)[>][<](?P<steam_id>.*)[>][<](?P<user_team>CT|TERRORIST|Unassigned|Spectator)[>]" \[(?P<killer_x>[\-]?[0-9]+) (?P<killer_y>[\-]?[0-9]+) (?P<killer_z>[\-]?[0-9]+)\] killed "(?P<killed_user_name>.+)[<](?P<killed_user_id>\d+)[>][<](?P<killed_steam_id>.*)[>][<](?P<killed_user_team>CT|TERRORIST|Unassigned|Spectator)[>]" \[(?P<killed_x>[\-]?[0-9]+) (?P<killed_y>[\-]?[0-9]+) (?P<killed_z>[\-]?[0-9]+)\] with "(?P<weapon>[a-zA-Z0-9]+)"(?P<headshot>.*)/');
+        parent::__construct('/^"(?P<user_name>.+)[<](?P<user_id>\d+)[>][<](?P<steam_id>.*)[>][<](?P<user_team>CT|TERRORIST|Unassigned|Spectator)[>]" \[(?P<killer_x>[\-]?[0-9]+) (?P<killer_y>[\-]?[0-9]+) (?P<killer_z>[\-]?[0-9]+)\] killed "(?P<killed_user_name>.+)[<](?P<killed_user_id>\d+)[>][<](?P<killed_steam_id>.*)[>][<](?P<killed_user_team>CT|TERRORIST|Unassigned|Spectator)[>]" \[(?P<killed_x>[\-]?[0-9]+) (?P<killed_y>[\-]?[0-9]+) (?P<killed_z>[\-]?[0-9]+)\] with "(?P<weapon>[a-zA-Z0-9_]+)"(?P<headshot>.*)/');
     }
 
     public function process() {
