@@ -788,11 +788,23 @@ class Match implements Taskable {
                     return $this->processThrewStuff($message);
                 case "eBot\Message\Type\Purchased":
                     return $this->processPurchased($message);
+                case "eBot\Message\Type\TeamScored":
+                    return $this->processTeamScored($message);
+                case "eBot\Message\Type\RoundEnd":
+                    return $this->processRoundEnd($message);
                 default:
                     $this->addLog("Message non traité: " . get_class($message));
                     break;
             }
         }
+    }
+
+    private function processTeamScored(\eBot\Message\Type\TeamScored $message) {
+        // $this->addLog("TeamScored Event");
+    }
+
+    private function processRoundEnd(\eBot\Message\Type\RoundEnd $message) {
+        // $this->addLog("RoundEnd Event");
     }
 
     private function processChangeMap(\eBot\Message\Type\ChangeMap $message) {
@@ -1219,9 +1231,7 @@ class Match implements Taskable {
                             $this->say($team . " (T) \003want to pause, match will be paused next freezetime.");
                     }
                 }
-                if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm" 
-					|| \eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm" 
-						|| $this->roundEndEvent)
+                if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm" || \eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm" || $this->roundEndEvent)
                     $this->pauseMatch();
             }
         } elseif ($text == "!unpause" || $text == ".unpause") {
@@ -1697,11 +1707,11 @@ class Match implements Taskable {
         } else {
             $team1win = 0;
             $team2win = 0;
-            
+
             $countPlayed = 0;
             foreach ($this->maps as $map) {
                 if ($map->getStatus() == Map::STATUS_MAP_ENDED) {
-                    $countPlayed ++;
+                    $countPlayed++;
                     if ($map->getScore1() > $map->getScore2())
                         $team1win++;
                     else
@@ -2345,6 +2355,21 @@ class Match implements Taskable {
                 $this->unpause["ct"] = false;
                 $this->unpause["t"] = false;
             }
+        } elseif (\eBot\Config\Config::getInstance()->getPauseMethod() == "nextRound") {
+            if ($this->pause["ct"] && $this->pause["t"] && $this->isMatchRound() && !$this->isPaused) {
+                $this->isPaused = true;
+                $this->say("Match is paused");
+                $this->say("Write !unpause to remove the pause when ready");
+                $this->addMatchLog("Pausing match");
+                $this->rcon->send("pause");
+                \mysql_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
+                $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id)));
+
+                $this->pause["ct"] = false;
+                $this->pause["t"] = false;
+                $this->unpause["ct"] = false;
+                $this->unpause["t"] = false;
+            }
         }
     }
 
@@ -2930,11 +2955,14 @@ class Match implements Taskable {
 
         @mysql_query("UPDATE `matchs` SET score_a = '" . $this->score["team_a"] . "', score_b ='" . $this->score["team_b"] . "' WHERE id='" . $this->match_id . "'");
 
+        // To check with overtime
         if ($this->score["team_a"] + $this->score["team_b"] < $this->matchData["max_round"]) {
             $score = $this->currentMap->getCurrentScore();
             if ($score != null) {
                 $score->setScore1Side1($this->score['team_a']);
                 $score->setScore2Side1($this->score['team_b']);
+                $score->setScore1Side2(0);
+                $score->setScore2Side2(0);
                 $score->saveScore();
             }
             $this->currentMap->calculScores();
@@ -2962,6 +2990,60 @@ class Match implements Taskable {
 
         foreach ($this->players as &$player) {
             $player->restoreSnapshot($this->getNbRound() - 1);
+        }
+
+        // Determine status
+        $status = false;
+        $total = $this->score["team_a"] + $this->score["team_b"];
+        if ($total < $this->matchData["max_round"]) {
+            $status = self::STATUS_FIRST_SIDE;
+            $statusMap = Map::STATUS_FIRST_SIDE;
+        } elseif ($total < $this->matchData["max_round"] * 2) {
+            $status = self::STATUS_SECOND_SIDE;
+            $statusMap = Map::STATUS_SECOND_SIDE;
+        } else {
+            if ($this->config_ot) {
+                $total -= $this->matchData["max_round"] * 2;
+                $total_rest = $total % $this->ot_maxround * 2;
+                if ($total_rest < $this->ot_maxround) {
+                    $status = self::STATUS_OT_FIRST_SIDE;
+                    $statusMap = Map::STATUS_OT_FIRST_SIDE;
+                } else {
+                    $status = self::STATUS_OT_SECOND_SIDE;
+                    $statusMap = Map::STATUS_OT_SECOND_SIDE;
+                }
+            }
+        }
+
+        if ($status && $this->getStatus() != $status) {
+            $this->addLog("Setting match to another status: " . $status);
+            switch ($this->getStatus()) {
+                case self::STATUS_SECOND_SIDE:
+                    if ($status == self::STATUS_FIRST_SIDE) {
+                        $this->addLog("Swapping teams !");
+                        $this->swapSides();
+                    }
+                    break;
+                case self::STATUS_OT_FIRST_SIDE:
+                    if ($status == self::STATUS_FIRST_SIDE) {
+                        $this->addLog("Swapping teams !");
+                        $this->swapSides();
+                    }
+                    break;
+                case self::STATUS_OT_SECOND_SIDE:
+                    if ($status == self::STATUS_OT_FIRST_SIDE) {
+                        $this->addLog("Swapping teams !");
+                        $this->swapSides();
+                    }
+
+                    if ($status == self::STATUS_SECOND_SIDE) {
+                        $this->addLog("Swapping teams !");
+                        $this->swapSides();
+                    }
+                    break;
+            }
+            $this->setStatus($status, true);
+            $this->currentMap->setStatus($statusMap, true);
         }
 
         $this->say("Round restored, going live !");

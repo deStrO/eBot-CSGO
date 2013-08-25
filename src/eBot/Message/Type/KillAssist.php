@@ -18,12 +18,11 @@ class KillAssist extends Type {
     public $userName = "";
     public $userTeam = "";
     public $userSteamid = "";
-    
     public $killedUserId = "";
     public $killedUserName = "";
     public $killedUserTeam = "";
     public $killedUserSteamid = "";
-    
+
     public function __construct() {
         $this->setName("KillAssist");
     }

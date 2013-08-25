@@ -1,4 +1,5 @@
 <?php
+
 /**
  * eBot - A bot for match management for CS:GO
  * @license     http://creativecommons.org/licenses/by/3.0/ Creative Commons 3.0
@@ -12,12 +13,13 @@ namespace eBot\Message\Type;
 use eBot\Message\Type;
 
 class RoundStart extends Type {
-    
+
     public $time = 0;
-	
-	public function __construct() {
-		$this->setName("RoundStart");
-	}
+
+    public function __construct() {
+        $this->setName("RoundStart");
+    }
+
 }
 
 ?>

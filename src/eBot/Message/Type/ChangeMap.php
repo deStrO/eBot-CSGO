@@ -1,4 +1,5 @@
 <?php
+
 /**
  * eBot - A bot for match management for CS:GO
  * @license     http://creativecommons.org/licenses/by/3.0/ Creative Commons 3.0
@@ -14,7 +15,7 @@ use eBot\Message\Type;
 class ChangeMap extends Type {
 
     public $maps;
-    
+
     public function __construct() {
         $this->setName("ChangeMap");
     }

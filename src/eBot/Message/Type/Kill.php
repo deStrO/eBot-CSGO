@@ -28,7 +28,6 @@ class Kill extends Type {
     public $killedPosX = 0;
     public $killedPosY = 0;
     public $killedPosZ = 0;
-    
     public $weapon;
     public $headshot;
 

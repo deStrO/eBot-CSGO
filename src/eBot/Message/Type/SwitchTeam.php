@@ -1,4 +1,5 @@
 <?php
+
 /**
  * eBot - A bot for match management for CS:GO
  * @license     http://creativecommons.org/licenses/by/3.0/ Creative Commons 3.0
@@ -13,15 +14,16 @@ use eBot\Message\Type;
 
 class SwitchTeam extends Type {
 
-	public $userId = "";
-	public $userName = "";
-	public $userTeam = "";
-	public $userSteamid = "";
-	public $newTeam;
-	
-	public function __construct() {
-		$this->setName("SwitchTeam");
-	}
+    public $userId = "";
+    public $userName = "";
+    public $userTeam = "";
+    public $userSteamid = "";
+    public $newTeam;
+
+    public function __construct() {
+        $this->setName("SwitchTeam");
+    }
+
 }
 
 ?>

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * eBot - A bot for match management for CS:GO
  * @license     http://creativecommons.org/licenses/by/3.0/ Creative Commons 3.0
@@ -12,11 +13,11 @@ namespace eBot\Message\Type;
 use eBot\Message\Type;
 
 class Disconnected extends Type {
-    
+
     public $userId = "";
-	public $userName = "";
-	public $userTeam = "";
-	public $userSteamid = "";
+    public $userName = "";
+    public $userTeam = "";
+    public $userSteamid = "";
 
     public function __construct() {
         $this->setName("Disconnected");
