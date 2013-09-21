@@ -15,6 +15,14 @@ String.prototype.endsWith = function(suffix) {
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };
 
+var clients = new Array();
+clients["alive"] = new Array();
+clients["logger"] = new Array();
+clients["livemap"] = new Array();
+clients["rcon"] = new Array();
+clients["match"] = new Array();
+clients["chat"] = new Array();
+
 var server = http.createServer(function(request, response) {
     switch (request.url) {
 
@@ -37,7 +45,7 @@ var server = http.createServer(function(request, response) {
                             archive.pipe(output);
 
                             var demo = DEMO_PATH + files.file.name;
-                            archive.append(fs.createReadStream(demo), { name: files.file.name });
+                            archive.append(fs.createReadStream(demo), {name: files.file.name});
                             archive.finalize();
 
                             if (fs.existsSync(DEMO_PATH + files.file.name) && fs.existsSync(DEMO_PATH + files.file.name + ".zip"))
@@ -53,6 +61,54 @@ var server = http.createServer(function(request, response) {
 
             break;
         default:
+            if (request.method == 'POST') {
+                var body = '';
+                request.on('data', function(data) {
+                    body += data;
+                });
+                request.on('end', function() {
+                    var data = {};
+                    try {
+                        data = JSON.parse(body);
+                    } catch (e) {
+                    }
+                    if (request.url == "/alive") {
+                        for (var c in clients["alive"]) {
+                            if (clients["alive"][c].remoteAddress != udp_ip) {
+                                clients["alive"][c].send(body);
+                            }
+                        }
+                    } else if (request.url == "/rcon") {
+                        for (var c in clients["rcon"]) {
+                            if (clients["rcon"][c].remoteAddress == udp_ip) {
+                                continue;
+                            } else if (clients['rcon'][c].rcon.indexOf(data.id, null) < 0) {
+                                continue;
+                            }
+                            clients["rcon"][c].send(body);
+                        }
+                    } else if (request.url == "/logger") {
+                        for (var c in clients["logger"]) {
+                            if (clients["logger"][c].remoteAddress == udp_ip) {
+                                continue;
+                            }
+                            if (clients['logger'][c].logger.indexOf(data.id, null) >= 0) {
+                                clients["logger"][c].send(body);
+                            }
+                        }
+                    } else if (request.url == "/match") {
+                        for (var c in clients["match"]) {
+                            if (clients["match"][c].remoteAddress == udp_ip) {
+                                continue;
+                            }
+                            clients["match"][c].send(body);
+                        }
+                    } else {
+                        message = JSON.parse(body);
+                    }
+                });
+            }
+
             response.writeHead(404);
             response.end();
             break;
@@ -94,13 +150,7 @@ if (!Array.prototype.indexOf) {
     };
 }
 
-var clients = new Array();
-clients["alive"] = new Array();
-clients["logger"] = new Array();
-clients["livemap"] = new Array();
-clients["rcon"] = new Array();
-clients["match"] = new Array();
-clients["chat"] = new Array();
+
 var chatlog = new Array();
 chatlog.push("chatlog");
 
