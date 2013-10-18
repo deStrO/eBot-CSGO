@@ -18,7 +18,8 @@ define('APP_ROOT', __DIR__ . DIRECTORY_SEPARATOR);
 
 require_once APP_ROOT . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 require_once 'steam-condenser.php';
-require_once APP_ROOT . 'websocket' . DIRECTORY_SEPARATOR . 'websocket.client.php';
+//require_once APP_ROOT . 'websocket' . DIRECTORY_SEPARATOR . 'websocket.client.php';
+require_once APP_ROOT . 'websocket' . DIRECTORY_SEPARATOR . 'websocket.hotfix.php';
 
 echo "
       ____        _
