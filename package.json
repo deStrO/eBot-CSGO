@@ -1,6 +1,5 @@
 {
   "name": "ebot-websocket",
-  "version": "3.1",
   "description": "eBot realtime websocket server",
   "author": "Julien Parodns <destro@esport-tools.net>",
   "dependencies": {
