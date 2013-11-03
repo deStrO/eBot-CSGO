@@ -109,6 +109,24 @@ if (PHP_OS == "Linux") {
     sleep(5);
 }
 
+/*
+
+not done yet
+
+// Checking outgoing connection and IP configuration
+if (!($status = file_get_contents("http://www.esport-tools.net/ebot/ping"))) {
+    echo '-----------------------------------------------------' . PHP_EOL;
+    echo '| Cannot connect to the internet.' . PHP_EOL;
+} elseif (\eBot\Config\Config::getInstance()->getBot_ip() != $status) {
+    echo '-----------------------------------------------------' . PHP_EOL;
+    echo '| Your config\'s IP address differs from your real IP.' . PHP_EOL;
+    echo '| Be sure to not use a loopback like "localhost" or "127.0.0.1".' . PHP_EOL;
+    echo '| The gameservers sends the serverlog to the eBot IP address.' . PHP_EOL;
+    echo '-----------------------------------------------------' . PHP_EOL;
+    die();
+}
+*/
+
 echo '-----------------------------------------------------' . PHP_EOL;
 
 error_reporting(E_ERROR);
