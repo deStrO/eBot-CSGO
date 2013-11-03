@@ -798,13 +798,48 @@ class Match implements Taskable {
             }
         }
     }
+    
+    private $tempScoreA = null;
+    private $tempScoreB = null;
 
     private function processTeamScored(\eBot\Message\Type\TeamScored $message) {
-        // $this->addLog("TeamScored Event");
+        if (!$this->roundEndEvent) {
+            if ($message->team == $this->side['team_a']) {
+                $this->tempScoreA = $message->score;
+                $this->addLog("Score for ".$this->teamAName.": ".$this->tempScoreA);
+            } else {
+                $this->tempScoreB = $message->score;
+                $this->addLog("Score for ".$this->teamBName.": ".$this->tempScoreB);
+            }
+        }
     }
 
     private function processRoundEnd(\eBot\Message\Type\RoundEnd $message) {
-        // $this->addLog("RoundEnd Event");
+        if (!$this->roundEndEvent) {
+            $this->addLog(($this->tempScoreA + $this->tempScoreB) - ($this->score['team_a'] + $this->score['team_b']));
+            if (($this->tempScoreA + $this->tempScoreB) - ($this->score['team_a'] + $this->score['team_b']) == 1) {
+                $messageNew = new \eBot\Message\Type\RoundScored();
+                if ($this->tempScoreA > $this->score['team_a']) {
+                    $messageNew->team = strtoupper($this->side['team_a']);
+                    $messageNew->team_win = strtoupper($this->side['team_a']);
+                    $messageNew->teamWin = strtoupper($this->side['team_a']);
+                } else {
+                    $messageNew->team = strtoupper($this->side['team_b']);
+                    $messageNew->team_win = strtoupper($this->side['team_b']);
+                    $messageNew->teamWin = strtoupper($this->side['team_b']);
+                }
+                
+                if ($messageNew->team == "T") {
+                    $messageNew->team = "TERRORIST";
+                }
+                $messageNew->type = "normal";
+                               
+                $this->addLog("Need a score fix ! Score detected: ".$this->tempScoreA.":".$this->tempScoreB." - Score in system: ".$this->score['team_a'].":".$this->score['team_b']);
+                $this->processRoundScored($messageNew);
+            }
+        }
+        $this->tempScoreA = null;
+        $this->tempScoreB = null;
     }
 
     private function processChangeMap(\eBot\Message\Type\ChangeMap $message) {
@@ -1717,6 +1752,9 @@ class Match implements Taskable {
                         $team2win++;
                 }
             }
+            
+            $this->addLog("Score end: $team1win - $team2win");
+            $this->addLog("Number of map to win: ".ceil(count($this->maps) / 2));
 
             if ($countPlayed == count($this->maps)) {
                 $allFinish = true;
@@ -1726,7 +1764,7 @@ class Match implements Taskable {
                 else
                     $allFinish = false;
             } else {
-                if (($team1win > $team2win && $team1win > ceil(count($this->maps) / 2)) || ($team1win < $team2win && $team2win > ceil(count($this->maps) / 2)))
+                if (($team1win > $team2win && $team1win >= ceil(count($this->maps) / 2)) || ($team1win < $team2win && $team2win >= ceil(count($this->maps) / 2)))
                     $allFinish = true;
                 else
                     $allFinish = false;

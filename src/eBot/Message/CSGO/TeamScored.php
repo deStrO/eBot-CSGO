@@ -27,7 +27,7 @@ class TeamScored extends Message {
 
     public function process() {
         $o = new Object();
-        $o->setTeam($this->datas["team"] == "CT" ? "CT": "T");
+        $o->setTeam($this->datas["team"] == "CT" ? "ct": "t");
         $o->setScore($this->datas['score']);
         $o->setPlayers($this->datas['players']);       
 
