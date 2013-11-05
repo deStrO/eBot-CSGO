@@ -31,12 +31,14 @@ class Config extends Singleton {
     private $nb_max_matchs = 0;
     private $advertising = array();
     private $maps;
+    private $workshop;
     private $lo3_method;
     private $ko3_method;
     private $demo_download;
     private $pause_method;
     private $config_stop_disabled = false;
     private $config_knife_method = false;
+    private $delay_ready = false;
 
     public function __construct() {
         Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
@@ -55,6 +57,7 @@ class Config extends Singleton {
             $this->delay_busy_server = $config["DELAY_BUSY_SERVER"];
 
             $this->maps = $config["MAP"];
+            $this->workshop = $config["WORKSHOP"];
 
             $this->lo3_method = $config["LO3_METHOD"];
             $this->ko3_method = $config["KO3_METHOD"];
@@ -65,12 +68,14 @@ class Config extends Singleton {
 
             $this->config_stop_disabled = (bool) $config['COMMAND_STOP_DISABLED'];
             $this->config_knife_method = ($config['RECORD_METHOD'] == "knifestart") ? "knifestart" : "matchstart";
+            $this->delay_ready = (bool)$config['DELAY_READY'];
 
             Logger::debug("Configuration loaded");
         }
     }
 
     public function scanAdvertising() {
+        unset($this->advertising);
         $q = \mysql_query("SELECT a.`season_id`, a.`message`, s.`name` FROM `advertising` a LEFT JOIN `seasons` s ON a.`season_id` = s.`id` WHERE a.`active` = 1");
         while ($row = mysql_fetch_array($q, MYSQL_ASSOC)) {
             $this->advertising['message'][] = $row['message'];
@@ -87,7 +92,6 @@ class Config extends Singleton {
     public function printConfig() {
         Logger::log("MySQL: " . $this->mysql_ip . ":" . $this->mysql_port . " " . $this->mysql_user . ":" . \str_repeat("*", \strlen($this->mysql_pass)) . "@" . $this->mysql_base);
         Logger::log("Socket: " . $this->bot_ip . ":" . $this->bot_port);
-        Logger::log("OverTime rounds: " . $this->ot_rounds);
         Logger::log("Advertising by Season:");
         for ($i=0; $i<count($this->advertising['message']); $i++) {
             Logger::log("-> ".$this->advertising['season_name'][$i].": ".$this->advertising['message'][$i]);
@@ -233,6 +237,20 @@ class Config extends Singleton {
         $this->maps = $maps;
     }
 
+    public function getWorkshop() {
+        return $this->workshop;
+    }
+
+    public function getWorkshopByMap($mapname) {
+        if (!empty($this->workshop[$mapname]))
+            return $this->workshop[$mapname];
+        else return false;
+    }
+
+    public function setWorkshop($workshop) {
+        $this->workshop = $workshop;
+    }
+
     public function getLo3Method() {
         return $this->lo3_method;
     }
@@ -285,8 +303,13 @@ class Config extends Singleton {
         $this->config_knife_method = $config_knife_method;
     }
 
+    public function getDelayReady() {
+        return $this->delay_ready;
+    }
 
-
+    public function setDelayReady($delay_ready) {
+        $this->delay_ready = $delay_ready;
+    }
 
 }
 
