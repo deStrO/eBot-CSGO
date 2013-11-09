@@ -1,4 +1,5 @@
 <?php
+
 /**
  * eBot - A bot for match management for CS:GO
  * @license     http://creativecommons.org/licenses/by/3.0/ Creative Commons 3.0
@@ -22,7 +23,7 @@ abstract class Rcon {
         $this->rcon = $rcon;
 
         if (!$this->auth()) {
-            throw new \eBot\Exception\MatchException("rcon failed");
+            throw new \eBot\Exception\MatchException("Can't auth to rcon " . $this->ip . ":" . $this->port . " (" . $this->error . ")");
         }
     }
 
@@ -47,6 +48,7 @@ abstract class Rcon {
     }
 
     public abstract function auth();
+
     public abstract function send($cmd);
 }
 

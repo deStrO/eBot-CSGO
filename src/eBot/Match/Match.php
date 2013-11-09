@@ -165,14 +165,32 @@ class Match implements Taskable {
             $this->addMatchLog("- RCON connection OK", true, false);
         } catch (\Exception $ex) {
             $this->needDel = true;
-            \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0, `status` = 0 WHERE `id` = '" . $this->match_id . "'");
+            if (!is_numeric(\eBot\Manager\MatchManager::getInstance()->getRetry($this->match_id))) {
+                if ($this->status == 1) {
+                    \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0, `status` = 0 WHERE `id` = '" . $this->match_id . "'");
+                } else {
+                    \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0 WHERE `id` = '" . $this->match_id . "'");
+                }
+            } else {
+                if (\eBot\Manager\MatchManager::getInstance()->getRetry($this->match_id) > 3) {
+                    if ($this->status == 1) {
+                        \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0, `status` = 0 WHERE `id` = '" . $this->match_id . "'");
+                    } else {
+                        \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0 WHERE `id` = '" . $this->match_id . "'");
+                    }
+                } else {
+                    $this->addLog("Next retry (" . \eBot\Manager\MatchManager::getInstance()->getRetry($this->match_id) . "/3)");
+                    \eBot\Manager\MatchManager::getInstance()->setRetry($this->match_id, \eBot\Manager\MatchManager::getInstance()->getRetry($this->match_id) + 1);
+                    \eBot\Manager\MatchManager::getInstance()->delayServer($this->server_ip, 5);
+                }
+            }
             $this->websocket['match']->sendData(json_encode(array('message' => 'button', 'content' => 'stop', 'id' => $this->match_id)));
             Logger::error("Rcon failed - " . $ex->getMessage());
             Logger::error("Match destructed.");
             $this->addMatchLog("RCON Failed - " . $ex->getMessage(), false, false);
             throw new MatchException();
         }
-        TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 30));
+        TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 10));
 
         // CSay Detection
         try {
@@ -214,7 +232,7 @@ class Match implements Taskable {
         $this->rules = $this->matchData["rules"];
 
         $this->status = $this->matchData["status"];
-        
+
         $this->isPaused = $this->matchData['is_paused'] == 1;
 
         Logger::debug("Match config loaded - Printing configuration");
@@ -538,6 +556,7 @@ class Match implements Taskable {
                         Logger::error("Trying to rengage in 10 seconds");
                         $this->addMatchLog("RCON Connection failed, trying to engage the match in 10 seconds", true);
 
+                        \eBot\Manager\MatchManager::getInstance()->setRetry($this->match_id, \eBot\Manager\MatchManager::getInstance()->getRetry($this->match_id) + 1);
                         \eBot\Manager\MatchManager::getInstance()->delayServer($this->server_ip, 10);
                         $this->needDel = true;
                     }

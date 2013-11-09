@@ -18,6 +18,7 @@ class MatchManager extends Singleton implements Taskable {
     private $matchs = array();
     private $authkeys = array();
     private $busyServers = array();
+    private $retry = array();
 
     public function __construct() {
         Logger::log("Creating MatchManager version " . self::VERSION);
@@ -61,14 +62,14 @@ class MatchManager extends Singleton implements Taskable {
                     $teamA = $this->getTeamDetails($req['team_a'], 'a', $req);
                     $teamB = $this->getTeamDetails($req['team_a'], 'b', $req);
                     Logger::log("New match detected - " . $teamA['name'] . " vs " . $teamB['name'] . " on " . $req['server_ip']);
-                    \mysql_query("UPDATE `matchs` SET `enable` = 1, `status` = " . Match::STATUS_STARTING . " WHERE `id` = " . $req["match_id"] . "");
+                    //\mysql_query("UPDATE `matchs` SET `enable` = 1, `status` = " . Match::STATUS_STARTING . " WHERE `id` = " . $req["match_id"] . "");
                     $this->newMatch($req["match_id"], $req['server_ip'], $req['server_rcon'], $req['config_authkey']);
                 } catch (MatchException $ex) {
                     Logger::error("Error while creating the match");
                     mysql_query("UPDATE `matchs` SET enable=0, auto_start = 0 WHERE id = '" . $req['match_id'] . "'") or die(mysql_error());
                 } catch (\Exception $ex) {
                     if ($ex->getMessage() == "SERVER_BUSY") {
-                        Logger::error($req["server_ip"] . " is busy for " . (time() - $this->busyServers[$req['server_ip']]));
+                        Logger::error($req["server_ip"] . " is busy for " . ($this->busyServers[$req['server_ip']] - time(). " seconds"));
                     } elseif ($ex->getMessage() == "MATCH_ALREADY_PLAY_ON_THIS_SERVER") {
                         Logger::error("A match is already playing on " . $req["server_ip"]);
                     }
@@ -95,6 +96,14 @@ class MatchManager extends Singleton implements Taskable {
             $this->busyServers[$ip] = time() + $delay;
             Logger::log("Delay $ip for $delay seconds");
         }
+    }
+    
+    public function setRetry($id, $number) {
+        $this->retry[$id] = $number;
+    }
+    
+    public function getRetry($id) {
+        return $this->retry[$id];
     }
 
     private function newMatch($match_id, $ip, $rcon, $authkey) {
