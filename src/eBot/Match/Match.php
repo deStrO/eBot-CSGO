@@ -1226,7 +1226,7 @@ class Match implements Taskable {
 
                 $this->continueMatch();
             }
-        } elseif (preg_match("/!ready/i", $text) || preg_match("/.ready/i", $text)) {
+        } elseif (preg_match("/!ready/i", $text) || preg_match("/\.ready/i", $text)) {
             if ($this->isWarmupRound() && $this->mapIsEngaged) {
                 if ($this->config_streamer && !$this->getStreamerReady()) {
                     $this->say("\002Streamers are not ready yet.");
@@ -1266,7 +1266,7 @@ class Match implements Taskable {
                     $this->startMatch();
                 }
             }
-        } elseif (preg_match("/!pause/i", $text) || preg_match("/.pause/i", $text)) {
+        } elseif (preg_match("/!pause/i", $text) || preg_match("/\.pause/i", $text)) {
             if ($this->isMatchRound() && !$this->isPaused && $this->enable) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say pause");
 
@@ -1297,7 +1297,7 @@ class Match implements Taskable {
                 }
                 $this->pauseMatch();
             }
-        } elseif (preg_match("/!unpause/i", $text) || preg_match("/.unpause/i", $text)) {
+        } elseif (preg_match("/!unpause/i", $text) || preg_match("/\.unpause/i", $text)) {
             if ($this->isMatchRound() && $this->isPaused && $this->enable) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say pause");
 
@@ -1319,7 +1319,7 @@ class Match implements Taskable {
 
                 $this->unpauseMatch();
             }
-        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && (preg_match("/!stay/i", $text) || preg_match("/.stay/i", $text))) {
+        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && (preg_match("/!stay/i", $text) || preg_match("/\.stay/i", $text))) {
             if ($message->getUserTeam() == $this->winKnife) {
                 $this->addLog($message->getUserName() . " want to stay, going to warmup");
 
@@ -1332,7 +1332,7 @@ class Match implements Taskable {
                 $this->rcon->send("mp_warmup_start");
                 $this->say("nothing change, going to warmup");
             }
-        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && (preg_match("/!switch/i", $text) || preg_match("/.switch/i", $text) || preg_match("/!swap/i", $text) || preg_match("/.swap/i", $text))) {
+        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && (preg_match("/!switch/i", $text) || preg_match("/\.switch/i", $text) || preg_match("/!swap/i", $text) || preg_match("/\.swap/i", $text))) {
             if ($message->getUserTeam() == $this->winKnife) {
                 $this->addLog($message->getUserName() . " want to stay, going to warmup");
 
@@ -1349,7 +1349,7 @@ class Match implements Taskable {
                 $this->rcon->send("mp_swapteams");
                 $this->sendTeamNames();
             }
-        } elseif (preg_match("/!notready/i", $text) || preg_match("/.notready/i", $text) || preg_match("/!unready/i", $text) || preg_match("/.unready/i", $text)) {
+        } elseif (preg_match("/!notready/i", $text) || preg_match("/\.notready/i", $text) || preg_match("/!unready/i", $text) || preg_match("/\.unready/i", $text)) {
             if ($this->isWarmupRound() && $this->mapIsEngaged) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say notready");
 
@@ -1373,7 +1373,7 @@ class Match implements Taskable {
                     }
                 }
             }
-        } elseif ((preg_match("/!abort/i", $text) || preg_match("/.abort/i", $text)) && $this->delay_ready_inprogress) {
+        } elseif ((preg_match("/!abort/i", $text) || preg_match("/\.abort/i", $text)) && $this->delay_ready_inprogress) {
             if ($this->isWarmupRound() && $this->ready['ct'] && $this->ready['t'] && \eBot\Config\Config::getInstance()->getDelayReady()) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say abort");
                 if ($message->getUserTeam() == "CT") {
