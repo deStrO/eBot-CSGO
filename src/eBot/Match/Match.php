@@ -70,7 +70,7 @@ class Match implements Taskable {
     private $passwordChanged = false;
     private $updatedHeatmap = false;
     // Variable en BDD obligatoire
-    private $match_id ;
+    private $match_id;
     private $server_ip;
     private $season_id;
     private $score = array("team_a" => 0, "team_b" => 0);
@@ -214,6 +214,8 @@ class Match implements Taskable {
         $this->rules = $this->matchData["rules"];
 
         $this->status = $this->matchData["status"];
+        
+        $this->isPaused = $this->matchData['is_paused'] == 1;
 
         Logger::debug("Match config loaded - Printing configuration");
         $this->addLog("Match configuration" .
@@ -826,7 +828,7 @@ class Match implements Taskable {
             }
         }
     }
-    
+
     private $tempScoreA = null;
     private $tempScoreB = null;
 
@@ -834,10 +836,10 @@ class Match implements Taskable {
         if (!$this->roundEndEvent) {
             if ($message->team == $this->side['team_a']) {
                 $this->tempScoreA = $message->score;
-                $this->addLog("Score for ".$this->teamAName.": ".$this->tempScoreA);
+                $this->addLog("Score for " . $this->teamAName . ": " . $this->tempScoreA);
             } else {
                 $this->tempScoreB = $message->score;
-                $this->addLog("Score for ".$this->teamBName.": ".$this->tempScoreB);
+                $this->addLog("Score for " . $this->teamBName . ": " . $this->tempScoreB);
             }
         }
     }
@@ -856,13 +858,13 @@ class Match implements Taskable {
                     $messageNew->team_win = strtoupper($this->side['team_b']);
                     $messageNew->teamWin = strtoupper($this->side['team_b']);
                 }
-                
+
                 if ($messageNew->team == "T") {
                     $messageNew->team = "TERRORIST";
                 }
                 $messageNew->type = "normal";
-                               
-                $this->addLog("Need a score fix ! Score detected: ".$this->tempScoreA.":".$this->tempScoreB." - Score in system: ".$this->score['team_a'].":".$this->score['team_b']);
+
+                $this->addLog("Need a score fix ! Score detected: " . $this->tempScoreA . ":" . $this->tempScoreB . " - Score in system: " . $this->score['team_a'] . ":" . $this->score['team_b']);
                 $this->processRoundScored($messageNew);
             }
         }
@@ -1266,7 +1268,7 @@ class Match implements Taskable {
                     $this->startMatch();
                 }
             }
-        } elseif (preg_match("/!pause/i", $text) || preg_match("/.pause/i", $text)) {
+        } elseif ($text == "!pause" || $text == ".pause") {
             if ($this->isMatchRound() && !$this->isPaused && $this->enable) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say pause");
 
@@ -1297,7 +1299,7 @@ class Match implements Taskable {
                 }
                 $this->pauseMatch();
             }
-        } elseif (preg_match("/!unpause/i", $text) || preg_match("/.unpause/i", $text)) {
+        } elseif ($text == "!unpause" || $text == ".unpause") {
             if ($this->isMatchRound() && $this->isPaused && $this->enable) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say pause");
 
@@ -1793,9 +1795,9 @@ class Match implements Taskable {
                         $team2win++;
                 }
             }
-            
+
             $this->addLog("Score end: $team1win - $team2win");
-            $this->addLog("Number of map to win: ".ceil(count($this->maps) / 2));
+            $this->addLog("Number of map to win: " . ceil(count($this->maps) / 2));
 
             if ($countPlayed == count($this->maps)) {
                 $allFinish = true;
@@ -2093,7 +2095,7 @@ class Match implements Taskable {
         $this->addLog($message->userName . " entered the game");
     }
 
-    private function processGotTheBomb(\eBot\Message\Type\GotTheBomb $message) {                
+    private function processGotTheBomb(\eBot\Message\Type\GotTheBomb $message) {
         if ($this->roundEndEvent) {
             foreach ($this->players as $k => &$v) {
                 if ($this->getNbRound() > 1) {
@@ -2626,7 +2628,7 @@ class Match implements Taskable {
     private function startMatch($force_ready = false) {
         if (\eBot\Config\Config::getInstance()->getDelayReady() && !$force_ready && $this->ready['ct'] && $this->ready['t']) {
             if ($this->delay_ready_abort)
-                $this->delay_ready_abort = false; 
+                $this->delay_ready_abort = false;
             $this->delay_ready_inprogress = true;
             TaskManager::getInstance()->addTask(new Task($this, self::TASK_DELAY_READY, microtime(true) + 1));
         } else {
@@ -2920,7 +2922,7 @@ class Match implements Taskable {
     public function adminStreamerReady() {
         if ($this->config_streamer) {
             $this->streamerReady = true;
-            \mysql_query("UPDATE `matchs` SET `config_streamer` = 2 WHERE `id` = '".$this->match_id."'");
+            \mysql_query("UPDATE `matchs` SET `config_streamer` = 2 WHERE `id` = '" . $this->match_id . "'");
             if (($this->getStatus() == self::STATUS_WU_1_SIDE) || ($this->getStatus() == self::STATUS_WU_KNIFE)) {
                 $this->say("\002Streamers are ready now!");
                 $this->say("\001Please get ready: !ready");
