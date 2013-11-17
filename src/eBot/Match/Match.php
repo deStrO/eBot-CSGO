@@ -117,6 +117,7 @@ class Match implements Taskable {
     private $delay_ready_inprogress = false;
     private $delay_ready_countdown = 10;
     private $delay_ready_abort = false;
+    private $roundRestartEvent = false;
 
     public function __construct($match_id, $server_ip, $rcon) {
         Logger::debug("Registring MessageManager");
@@ -2144,19 +2145,24 @@ class Match implements Taskable {
     }
 
     private function processRemindRoundScored(\eBot\Message\Type\RemindRoundScored $message) {
-        if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
-            if (!$this->roundEndEvent) {
-                $roundScored = new \eBot\Message\Type\RoundScored();
-                $roundScored->team = $message->team;
-                $roundScored->type = $message->type;
-                $roundScored->team_win = $message->team_win;
-                $this->addLog("Missed Round_Scored event !");
-                $this->processRoundScored($roundScored);
+        if (!$this->roundRestartEvent) {
+            if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
+                if (!$this->roundEndEvent) {
+                    $roundScored = new \eBot\Message\Type\RoundScored();
+                    $roundScored->team = $message->team;
+                    $roundScored->type = $message->type;
+                    $roundScored->team_win = $message->team_win;
+                    $this->addLog("Missed Round_Scored event !");
+                    $this->processRoundScored($roundScored);
+                }
             }
+        } else {
+            $this->addLog("Round restarted, don't forward remind round scored !");
         }
     }
 
     private function processRoundSpawn(\eBot\Message\Type\RoundSpawn $message) {
+        $this->roundRestartEvent = false;
         if ($this->roundEndEvent) {
             foreach ($this->players as $k => &$v) {
                 if ($this->getNbRound() > 1) {
@@ -2173,9 +2179,11 @@ class Match implements Taskable {
         } elseif ($this->waitForRestart && $this->getStatus() == self::STATUS_KNIFE && \eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "knifestart") {
             $this->waitRoundStartRecord = true;
         }
+        $this->roundRestartEvent = true;
     }
 
     private function processRoundStart(\eBot\Message\Type\RoundStart $message) {
+        $this->roundRestartEvent = false;
         if (!$this->roundEndEvent) {
             $this->addLog("Missed Round_Score Event !!!", Logger::ERROR);
         }
