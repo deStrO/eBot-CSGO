@@ -16,7 +16,7 @@ use eBot\Message\Type\RoundSpawn as Object;
 class RoundSpawn extends Message {
 
     public function __construct() {
-        parent::__construct('/^World triggered "Round_Start"/');
+        parent::__construct('/^eBot triggered "Round_Spawn"/');
     }
 
     public function process() {

@@ -829,7 +829,7 @@ class Match implements Taskable {
                     return $this->processRoundRestart($message);
                 case "eBot\Message\Type\RoundScored":
                     return $this->processRoundScored($message);
-                case "eBot\Message\Type\RedminRoundScored":
+                case "eBot\Message\Type\RemindRoundScored":
                     return $this->processRemindRoundScored($message);
                 case "eBot\Message\Type\RoundStart":
                     return $this->processRoundStart($message);
