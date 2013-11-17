@@ -554,7 +554,7 @@ class Match implements Taskable {
                     } catch (\Exception $ex) {
                         Logger::error("Reinit rcon failed - " . $ex->getMessage());
                         Logger::error("Trying to rengage in 10 seconds");
-                        $this->addMatchLog("RCON Connection failed, trying to engage the match in 10 seconds - ".$ex->getMessage(), true);
+                        $this->addMatchLog("RCON Connection failed, trying to engage the match in 10 seconds - " . $ex->getMessage(), true);
 
                         \eBot\Manager\MatchManager::getInstance()->setRetry($this->match_id, \eBot\Manager\MatchManager::getInstance()->getRetry($this->match_id) + 1);
                         \eBot\Manager\MatchManager::getInstance()->delayServer($this->server_ip, 10);
@@ -571,7 +571,7 @@ class Match implements Taskable {
             } catch (\Exception $ex) {
                 Logger::error("Reinit rcon failed - " . $ex->getMessage());
                 Logger::error("Trying to rengage in 10 seconds");
-                $this->addMatchLog("RCON Connection failed, trying to engage the match in 10 seconds - ".$ex->getMessage(), true);
+                $this->addMatchLog("RCON Connection failed, trying to engage the match in 10 seconds - " . $ex->getMessage(), true);
 
                 \eBot\Manager\MatchManager::getInstance()->delayServer($this->server_ip, 10);
                 $this->needDel = true;
@@ -856,43 +856,43 @@ class Match implements Taskable {
     private $tempScoreB = null;
 
     private function processTeamScored(\eBot\Message\Type\TeamScored $message) {
-        /*if (!$this->roundEndEvent) {
-            if ($message->team == $this->side['team_a']) {
-                $this->tempScoreA = $message->score;
-                $this->addLog("Score for " . $this->teamAName . ": " . $this->tempScoreA);
-            } else {
-                $this->tempScoreB = $message->score;
-                $this->addLog("Score for " . $this->teamBName . ": " . $this->tempScoreB);
-            }
-        }*/
+        /* if (!$this->roundEndEvent) {
+          if ($message->team == $this->side['team_a']) {
+          $this->tempScoreA = $message->score;
+          $this->addLog("Score for " . $this->teamAName . ": " . $this->tempScoreA);
+          } else {
+          $this->tempScoreB = $message->score;
+          $this->addLog("Score for " . $this->teamBName . ": " . $this->tempScoreB);
+          }
+          } */
     }
 
     private function processRoundEnd(\eBot\Message\Type\RoundEnd $message) {
-        /*if (!$this->roundEndEvent) {
-            $this->addLog(($this->tempScoreA + $this->tempScoreB) - ($this->score['team_a'] + $this->score['team_b']));
-            if (($this->tempScoreA + $this->tempScoreB) - ($this->score['team_a'] + $this->score['team_b']) == 1) {
-                $messageNew = new \eBot\Message\Type\RoundScored();
-                if ($this->tempScoreA > $this->score['team_a']) {
-                    $messageNew->team = strtoupper($this->side['team_a']);
-                    $messageNew->team_win = strtoupper($this->side['team_a']);
-                    $messageNew->teamWin = strtoupper($this->side['team_a']);
-                } else {
-                    $messageNew->team = strtoupper($this->side['team_b']);
-                    $messageNew->team_win = strtoupper($this->side['team_b']);
-                    $messageNew->teamWin = strtoupper($this->side['team_b']);
-                }
+        /* if (!$this->roundEndEvent) {
+          $this->addLog(($this->tempScoreA + $this->tempScoreB) - ($this->score['team_a'] + $this->score['team_b']));
+          if (($this->tempScoreA + $this->tempScoreB) - ($this->score['team_a'] + $this->score['team_b']) == 1) {
+          $messageNew = new \eBot\Message\Type\RoundScored();
+          if ($this->tempScoreA > $this->score['team_a']) {
+          $messageNew->team = strtoupper($this->side['team_a']);
+          $messageNew->team_win = strtoupper($this->side['team_a']);
+          $messageNew->teamWin = strtoupper($this->side['team_a']);
+          } else {
+          $messageNew->team = strtoupper($this->side['team_b']);
+          $messageNew->team_win = strtoupper($this->side['team_b']);
+          $messageNew->teamWin = strtoupper($this->side['team_b']);
+          }
 
-                if ($messageNew->team == "T") {
-                    $messageNew->team = "TERRORIST";
-                }
-                $messageNew->type = "normal";
+          if ($messageNew->team == "T") {
+          $messageNew->team = "TERRORIST";
+          }
+          $messageNew->type = "normal";
 
-                $this->addLog("Need a score fix ! Score detected: " . $this->tempScoreA . ":" . $this->tempScoreB . " - Score in system: " . $this->score['team_a'] . ":" . $this->score['team_b']);
-                $this->processRoundScored($messageNew);
-            }
-        }
-        $this->tempScoreA = null;
-        $this->tempScoreB = null;*/
+          $this->addLog("Need a score fix ! Score detected: " . $this->tempScoreA . ":" . $this->tempScoreB . " - Score in system: " . $this->score['team_a'] . ":" . $this->score['team_b']);
+          $this->processRoundScored($messageNew);
+          }
+          }
+          $this->tempScoreA = null;
+          $this->tempScoreB = null; */
     }
 
     private function processChangeMap(\eBot\Message\Type\ChangeMap $message) {
@@ -2142,18 +2142,20 @@ class Match implements Taskable {
             $player->setOnline(false);
         }
     }
-    
+
     private function processRemindRoundScored(\eBot\Message\Type\RemindRoundScored $message) {
-        if (!$this->roundEndEvent) {
-            $roundScored = new \eBot\Message\Type\RoundScored();
-            $roundScored->team = $message->team;
-            $roundScored->type = $message->type;
-            $roundScored->team_win = $message->team_win;
-            $this->addLog("Missed Round_Scored event !");
-            $this->processRoundScored($roundScored);
+        if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
+            if (!$this->roundEndEvent) {
+                $roundScored = new \eBot\Message\Type\RoundScored();
+                $roundScored->team = $message->team;
+                $roundScored->type = $message->type;
+                $roundScored->team_win = $message->team_win;
+                $this->addLog("Missed Round_Scored event !");
+                $this->processRoundScored($roundScored);
+            }
         }
     }
-    
+
     private function processRoundSpawn(\eBot\Message\Type\RoundSpawn $message) {
         if ($this->roundEndEvent) {
             foreach ($this->players as $k => &$v) {
@@ -2177,7 +2179,7 @@ class Match implements Taskable {
         if (!$this->roundEndEvent) {
             $this->addLog("Missed Round_Score Event !!!", Logger::ERROR);
         }
-        
+
         if ($this->waitForRestart) {
             $this->waitForRestart = false;
             Logger::log("Starting counting score");
