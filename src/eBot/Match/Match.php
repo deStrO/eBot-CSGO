@@ -3039,7 +3039,11 @@ class Match implements Taskable {
             $this->say("Match is unpaused by admin, live !");
             $this->addMatchLog("Unpausing match by admin");
             $this->addLog('Match is unpaused!');
-            $this->rcon->send("pause");
+            if (\eBot\Config\Config::getInstance()->getPauseMethod() == "nextRound") {
+                $this->rcon->send("mp_pause_match");
+            } else {
+                $this->rcon->send("pause");
+            }
             \mysql_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '" . $this->match_id . "'");
             $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_unpaused', 'id' => $this->match_id)));
 
@@ -3054,7 +3058,11 @@ class Match implements Taskable {
             $this->say("Write !unpause to remove the pause when ready");
             $this->addMatchLog("Pausing match by admin");
             $this->addLog('Match is paused!');
-            $this->rcon->send("pause");
+            if (\eBot\Config\Config::getInstance()->getPauseMethod() == "nextRound") {
+                $this->rcon->send("mp_unpause_match");
+            } else {
+                $this->rcon->send("pause");
+            }
             \mysql_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
             $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id)));
 
