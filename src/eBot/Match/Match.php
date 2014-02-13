@@ -3040,7 +3040,7 @@ class Match implements Taskable {
             $this->addMatchLog("Unpausing match by admin");
             $this->addLog('Match is unpaused!');
             if (\eBot\Config\Config::getInstance()->getPauseMethod() == "nextRound") {
-                $this->rcon->send("mp_pause_match");
+                $this->rcon->send("mp_unpause_match");
             } else {
                 $this->rcon->send("pause");
             }
@@ -3059,7 +3059,7 @@ class Match implements Taskable {
             $this->addMatchLog("Pausing match by admin");
             $this->addLog('Match is paused!');
             if (\eBot\Config\Config::getInstance()->getPauseMethod() == "nextRound") {
-                $this->rcon->send("mp_unpause_match");
+                $this->rcon->send("mp_pause_match");
             } else {
                 $this->rcon->send("pause");
             }
