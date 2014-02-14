@@ -869,31 +869,19 @@ class Match implements Taskable {
     }
 
     private function processRoundEnd(\eBot\Message\Type\RoundEnd $message) {
-        /* if (!$this->roundEndEvent) {
-          $this->addLog(($this->tempScoreA + $this->tempScoreB) - ($this->score['team_a'] + $this->score['team_b']));
-          if (($this->tempScoreA + $this->tempScoreB) - ($this->score['team_a'] + $this->score['team_b']) == 1) {
-          $messageNew = new \eBot\Message\Type\RoundScored();
-          if ($this->tempScoreA > $this->score['team_a']) {
-          $messageNew->team = strtoupper($this->side['team_a']);
-          $messageNew->team_win = strtoupper($this->side['team_a']);
-          $messageNew->teamWin = strtoupper($this->side['team_a']);
-          } else {
-          $messageNew->team = strtoupper($this->side['team_b']);
-          $messageNew->team_win = strtoupper($this->side['team_b']);
-          $messageNew->teamWin = strtoupper($this->side['team_b']);
-          }
-
-          if ($messageNew->team == "T") {
-          $messageNew->team = "TERRORIST";
-          }
-          $messageNew->type = "normal";
-
-          $this->addLog("Need a score fix ! Score detected: " . $this->tempScoreA . ":" . $this->tempScoreB . " - Score in system: " . $this->score['team_a'] . ":" . $this->score['team_b']);
-          $this->processRoundScored($messageNew);
-          }
-          }
-          $this->tempScoreA = null;
-          $this->tempScoreB = null; */
+        if (!$this->roundEndEvent) {
+			$this->addLog("RoundEnd catched, but no RoundScored");
+			$lastRoundEnds = $this->rcon->send("ebot_get_last_roundend");
+			$lastRoundEnds = explode("\n",$lastRoundEnds);
+			
+			$message = new \eBot\Message\CSGO\RoundScored();
+			$data = trim(str_replace("#", "",$lastRoundEnds[0]));
+			$data = str_replace("scored", "triggered",$data);
+			$this->addLog($data);
+			if ($message->match($data)) {
+                $this->processRoundScored($message->process());
+            }
+		}
     }
 
     private function processChangeMap(\eBot\Message\Type\ChangeMap $message) {
