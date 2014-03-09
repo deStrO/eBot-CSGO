@@ -1726,7 +1726,7 @@ class Match implements Taskable {
                     $this->currentMap->setStatus(Map::STATUS_WU_OT_2_SIDE, true);
                     $this->saveScore();
                     $this->swapSides();
-                    $this->sendTeamNames();
+                    //$this->sendTeamNames();
 
                     // Not needed anymore with last updates
                     // $this->rcon->send("mp_restartgame 1");
