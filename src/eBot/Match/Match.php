@@ -42,6 +42,7 @@ class Match implements Taskable {
     const SET_LIVE = "setLive";
     const STOP_RECORD = "stopRecord";
     const TASK_DELAY_READY = "delayReady";
+    const TASK_SEND_TEAM_NAMES = "sendTeamNames";
 
     // Variable calculable (pas en BDD)
     private $players = array();
@@ -598,6 +599,8 @@ class Match implements Taskable {
                     $this->startMatch(true);
                 }
             }
+        } elseif ($name == self::TASK_SEND_TEAM_NAMES) {
+            $this->sendTeamNames();
         }
     }
 
@@ -870,18 +873,18 @@ class Match implements Taskable {
 
     private function processRoundEnd(\eBot\Message\Type\RoundEnd $message) {
         if (!$this->roundEndEvent) {
-			$this->addLog("RoundEnd catched, but no RoundScored");
-			$lastRoundEnds = $this->rcon->send("ebot_get_last_roundend");
-			$lastRoundEnds = explode("\n",$lastRoundEnds);
-			
-			$message = new \eBot\Message\CSGO\RoundScored();
-			$data = trim(str_replace("#", "",$lastRoundEnds[0]));
-			$data = str_replace("scored", "triggered",$data);
-			$this->addLog($data);
-			if ($message->match($data)) {
+            $this->addLog("RoundEnd catched, but no RoundScored");
+            $lastRoundEnds = $this->rcon->send("ebot_get_last_roundend");
+            $lastRoundEnds = explode("\n", $lastRoundEnds);
+
+            $message = new \eBot\Message\CSGO\RoundScored();
+            $data = trim(str_replace("#", "", $lastRoundEnds[0]));
+            $data = str_replace("scored", "triggered", $data);
+            $this->addLog($data);
+            if ($message->match($data)) {
                 $this->processRoundScored($message->process());
             }
-		}
+        }
     }
 
     private function processChangeMap(\eBot\Message\Type\ChangeMap $message) {
@@ -1064,7 +1067,7 @@ class Match implements Taskable {
             } else {
                 $this->addLog("Veto isn't enabled");
             }
-        } elseif (preg_match("/!stats/i", $text)) {
+        } elseif ($text == "!stats") {
             $this->addLog($message->getUserName() . " ask his stats");
 
             if ($user) {
@@ -1087,7 +1090,7 @@ class Match implements Taskable {
             } else {
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: pas de stats pour le moment pour \003" . $message->userName . "\"");
             }
-        } elseif (preg_match("/!morestats/i", $text)) {
+        } elseif ($text == "!morestats") {
             $this->addLog($message->getUserName() . " ask more stats");
 
             if ($user) {
@@ -1148,19 +1151,19 @@ class Match implements Taskable {
             } else {
                 $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: Pas de stats pour le moment pour \005" . $message->userName . '"');
             }
-        } elseif (preg_match("/!rules/i", $text)) {
+        } elseif ($text == "!rules") {
             if ($this->pluginCsay) {
                 $this->addLog($message->getUserName() . " ask rules");
 
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Full Score: \005" . (($this->config_full_score) ? "yes" : "no") . " \001:: Switch Auto: \005" . (($this->config_switch_auto) ? "yes" : "no") . "\"");
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Over Time: \005" . (($this->config_ot) ? "yes" : "no") . " \001:: MaxRound: \005" . $this->maxRound . "\"");
             }
-        } elseif (preg_match("/!help/i", $text)) {
+        } elseif ($text == "!help") {
             if ($this->pluginCsay) {
                 $this->addLog($message->getUserName() . " ask help");
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: commands available: !help, !status, !stats, !morestats, !score, !ready, !notready, !stop, !restart (for knife round), !stay, !switch\"");
             }
-        } elseif (preg_match("/!restart/i", $text)) {
+        } elseif ($text == "!restart") {
             $this->addLog($message->getUserName() . " say restart");
             if (($this->getStatus() == self::STATUS_KNIFE) || ($this->getStatus() == self::STATUS_END_KNIFE)) {
                 if ($message->getUserTeam() == "CT") {
@@ -1194,7 +1197,7 @@ class Match implements Taskable {
                     $this->startMatch(true);
                 }
             }
-        } elseif ((preg_match("/!stop/i", $text) || preg_match("/.stop/i", $text)) && !\eBot\Config\Config::getInstance()->getConfigStopDisabled()) {
+        } elseif (($text == "!stop"  || $text == ".stop") && !\eBot\Config\Config::getInstance()->getConfigStopDisabled()) {
             if ($this->isMatchRound() && $this->enable) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say stop");
 
@@ -1220,7 +1223,7 @@ class Match implements Taskable {
                     $this->addLog("Can't stop, it's already stop");
                 }
             }
-        } elseif (preg_match("/!continue/i", $text) || preg_match("/.continue/i", $text)) {
+        } elseif ($text == "!continue" || $text == ".continue") {
             if ($this->isMatchRound() && !$this->enable) {
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
@@ -1240,7 +1243,7 @@ class Match implements Taskable {
 
                 $this->continueMatch();
             }
-        } elseif (preg_match("/!ready/i", $text) || preg_match("/.ready/i", $text)) {
+        } elseif ($text == "!ready" || $text == ".ready") {
             if ($this->isWarmupRound() && $this->mapIsEngaged) {
                 if ($this->config_streamer && !$this->getStreamerReady()) {
                     $this->say("\002Streamers are not ready yet.");
@@ -1333,7 +1336,7 @@ class Match implements Taskable {
 
                 $this->unpauseMatch();
             }
-        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && (preg_match("/!stay/i", $text) || preg_match("/.stay/i", $text))) {
+        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!stay" || $text == ".stay")) {
             if ($message->getUserTeam() == $this->winKnife) {
                 $this->addLog($message->getUserName() . " want to stay, going to warmup");
 
@@ -1346,7 +1349,7 @@ class Match implements Taskable {
                 $this->rcon->send("mp_warmup_start");
                 $this->say("nothing change, going to warmup");
             }
-        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && (preg_match("/!switch/i", $text) || preg_match("/.switch/i", $text) || preg_match("/!swap/i", $text) || preg_match("/.swap/i", $text))) {
+        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!switch" || $text == ".switch" || $text == "!swap" || $text == ".swap")) {
             if ($message->getUserTeam() == $this->winKnife) {
                 $this->addLog($message->getUserName() . " want to stay, going to warmup");
 
@@ -1361,9 +1364,9 @@ class Match implements Taskable {
                 $this->rcon->send("mp_warmup_start");
                 $this->say("Swapping teams");
                 $this->rcon->send("mp_swapteams");
-                $this->sendTeamNames();
+                TaskManager::getInstance()->addTask(new Task($this, self::TASK_SEND_TEAM_NAMES, microtime(true) + 10));
             }
-        } elseif (preg_match("/!notready/i", $text) || preg_match("/.notready/i", $text) || preg_match("/!unready/i", $text) || preg_match("/.unready/i", $text)) {
+        } elseif ($text == "!notready" || $text == ".notready" || $text == "!unready" || $text == ".unready") {
             if ($this->isWarmupRound() && $this->mapIsEngaged) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say notready");
 
@@ -1387,7 +1390,7 @@ class Match implements Taskable {
                     }
                 }
             }
-        } elseif ((preg_match("/!abort/i", $text) || preg_match("/.abort/i", $text)) && $this->delay_ready_inprogress) {
+        } elseif (($text == "abort" || $text == ".abort") && $this->delay_ready_inprogress) {
             if ($this->isWarmupRound() && $this->ready['ct'] && $this->ready['t'] && \eBot\Config\Config::getInstance()->getDelayReady()) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say abort");
                 if ($message->getUserTeam() == "CT") {
@@ -1399,7 +1402,7 @@ class Match implements Taskable {
                 }
                 $this->abortReady();
             }
-        } elseif (preg_match("/!status/i", $text)) {
+        } elseif ($text == "!status") {
             if ($this->pluginCsay) {
                 $this->addLog($message->getUserName() . " ask status");
                 if ($this->enable) {
@@ -1408,7 +1411,7 @@ class Match implements Taskable {
                     $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Current status: \002" . $this->getStatusText() . " - Match paused\"");
                 }
             }
-        } elseif (preg_match("/!score/i", $text)) {
+        } elseif ($text == "!status") {
             if ($this->pluginCsay) {
                 $this->addLog($message->getUserName() . " ask status");
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: \005" . $this->teamAName . " \004" . $this->currentMap->getScore1() . " \001- \004" . $this->currentMap->getScore2() . " \005" . $this->teamBName . "\"");
@@ -1450,6 +1453,7 @@ class Match implements Taskable {
 
             $this->say("\005$team won the knife, !stay or !switch");
 
+            $this->roundEndEvent = true;
             return;
         }
 
@@ -1727,7 +1731,6 @@ class Match implements Taskable {
                     $this->saveScore();
                     $this->swapSides();
                     //$this->sendTeamNames();
-
                     // Not needed anymore with last updates
                     // $this->rcon->send("mp_restartgame 1");
 
@@ -2172,7 +2175,7 @@ class Match implements Taskable {
 
     private function processRoundStart(\eBot\Message\Type\RoundStart $message) {
         $this->roundRestartEvent = false;
-        if (!$this->roundEndEvent) {
+        if (!$this->roundEndEvent && $this->isMatchRound()) {
             $this->addLog("Missed Round_Score Event !!!", Logger::ERROR);
         }
 
