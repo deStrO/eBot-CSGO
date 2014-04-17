@@ -2142,7 +2142,7 @@ class Match implements Taskable {
                     $roundScored = new \eBot\Message\Type\RoundScored();
                     $roundScored->team = $message->team;
                     $roundScored->type = $message->type;
-                    $roundScored->team_win = $message->team_win;
+                    $roundScored->teamWin = $message->teamWin;
                     $this->addLog("Missed Round_Scored event !");
                     $this->processRoundScored($roundScored);
                 }
