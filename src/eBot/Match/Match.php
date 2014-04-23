@@ -2601,7 +2601,7 @@ class Match implements Taskable {
             foreach ($this->players as &$player) {
                 $player->restoreSnapshot($this->getNbRound() - 1);
             }
-
+			
             $this->say("Round restored, going live !");
             \mysql_query("UPDATE `matchs` SET ingame_enable = 1 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
             TaskManager::getInstance()->addTask(new Task($this, self::SET_LIVE, microtime(true) + 2));
@@ -3121,6 +3121,8 @@ class Match implements Taskable {
             \mysql_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '" . $this->match_id . "'");
             $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_unpaused', 'id' => $this->match_id)));
         }
+		
+		$this->rcon->send("mp_unpause_match");
 
         $this->score["team_a"] = $req['score_a'];
         $this->score["team_b"] = $req['score_b'];
