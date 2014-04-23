@@ -889,33 +889,51 @@ class Match implements Taskable {
 
     private function processChangeMap(\eBot\Message\Type\ChangeMap $message) {
         Logger::debug("Processing Change Map");
+		
+		if (preg_match("!CRC!", $message->maps)) {
+			$this->addLog("Wrong map name ".$message->maps);
+			return;
+		}
+		
+		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($this->currentMap->getMapName(), $message->maps) !== false  ) {
+			$this->addLog("Loading maps " . $message->maps);
+			$this->addMatchLog("Loading maps " . $message->maps);
+			$ip = explode(":", $this->server_ip);
+			try {
+				$this->rcon = new Rcon($ip[0], $ip[1], $this->rconPassword);
+				$this->rcon->send("echo eBot;");
 
-        $this->addLog("Loading maps " . $message->maps);
-        $this->addMatchLog("Loading maps " . $message->maps);
+				if ($this->matchData["config_password"] != "") {
+					$this->rcon->send("sv_password \"" . $this->matchData["config_password"] . "\"");
+				}
 
-        $ip = explode(":", $this->server_ip);
-        try {
-            $this->rcon = new Rcon($ip[0], $ip[1], $this->rconPassword);
-            $this->rcon->send("echo eBot;");
+				$this->rcon->send("mp_warmup_pausetimer 1");
 
-            if ($this->matchData["config_password"] != "") {
-                $this->rcon->send("sv_password \"" . $this->matchData["config_password"] . "\"");
-            }
+				if ($this->config_ot) {
+					$this->rcon->send("mp_overtime_enable 1");
+					$this->rcon->send("mp_overtime_maxrounds " . ($this->ot_maxround * 2));
+					$this->rcon->send("mp_overtime_startmoney " . $this->ot_startmoney);
+					$this->rcon->send("mp_overtime_halftime_pausetimer 1");
+				}
 
-            $this->rcon->send("mp_warmup_pausetimer 1");
-
-            if ($this->config_ot) {
-                $this->rcon->send("mp_overtime_enable 1");
-                $this->rcon->send("mp_overtime_maxrounds " . ($this->ot_maxround * 2));
-                $this->rcon->send("mp_overtime_startmoney " . $this->ot_startmoney);
-                $this->rcon->send("mp_overtime_halftime_pausetimer 1");
-            }
-
-            $this->sendTeamNames();
-        } catch (\Exception $ex) {
-            Logger::error("Reinit rcon failed - " . $ex->getMessage());
-            TaskManager::getInstance()->addTask(new Task($this, self::REINIT_RCON, microtime(true) + 1));
-        }
+				$this->sendTeamNames();
+			} catch (\Exception $ex) {
+				Logger::error("Reinit rcon failed - " . $ex->getMessage());
+				TaskManager::getInstance()->addTask(new Task($this, self::REINIT_RCON, microtime(true) + 1));
+			}
+		} else {
+			$this->addLog("Wrong map loaded " . $message->maps. " need ".$this->currentMap->getMapName());
+			$this->addMatchLog("Wrong map loaded " . $message->maps. " need ".$this->currentMap->getMapName());
+			$ip = explode(":", $this->server_ip);
+			try {
+				$this->rcon = new Rcon($ip[0], $ip[1], $this->rconPassword);
+				$this->rcon->send("echo eBot;");
+				$this->rcon->send("changelevel ".$this->currentMap->getMapName());
+			} catch (\Exception $ex) {
+				Logger::error("Reinit rcon failed - " . $ex->getMessage());
+				TaskManager::getInstance()->addTask(new Task($this, self::REINIT_RCON, microtime(true) + 1));
+			}
+		}
     }
 
     /**
@@ -3093,7 +3111,11 @@ class Match implements Taskable {
         $this->stop["ct"] = false;
         $this->stop["t"] = false;
         if ($this->isPaused) {
-            $this->rcon->send("pause");
+            if (\eBot\Config\Config::getInstance()->getPauseMethod() == "nextRound") {
+                $this->rcon->send("mp_unpause_match");
+            } else {
+                $this->rcon->send("pause");
+            }
             $this->isPaused = false;
             $this->addLog("Disabling pause");
             \mysql_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '" . $this->match_id . "'");
