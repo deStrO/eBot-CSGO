@@ -41,9 +41,17 @@ class Config extends Singleton {
     private $delay_ready = false;
 
     public function __construct() {
-        Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
-        if (file_exists(APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini")) {
-            $config = parse_ini_file(APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
+        $options = getopt("c::");  
+        $file = APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini";
+        if ($options['c']) {
+            if (file_exists(APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . $options['c'])) {
+                $file = APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . $options['c'];
+            }
+        }
+        
+        Logger::debug("Loading " . $file);
+        if (file_exists($file)) {
+            $config = parse_ini_file($file);
 
             $this->mysql_ip = $config["MYSQL_IP"];
             $this->mysql_port = $config["MYSQL_PORT"];
