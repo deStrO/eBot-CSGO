@@ -12,6 +12,7 @@ $check["php5.4"] = (function_exists('version_compare') && version_compare(phpver
 $check["mysql"] = extension_loaded('mysql');
 $check["spl"] = extension_loaded('spl');
 $check["sockets"] = extension_loaded("sockets");
+$check["pthreads"] = extension_loaded("pthreads");
 
 define('EBOT_DIRECTORY', __DIR__);
 define('APP_ROOT', __DIR__ . DIRECTORY_SEPARATOR);
@@ -36,6 +37,7 @@ echo "| PHP 5.3.1 or newer    -> required  -> " . ($check["php"] ? ("[\033[0;32m
 echo "| Standard PHP Library  -> required  -> " . ($check["spl"] ? "[\033[0;32m Yes \033[0m]" : "[\033[0;31m No \033[0m]") . PHP_EOL;
 echo "| MySQL                 -> required  -> " . ($check["mysql"] ? "[\033[0;32m Yes \033[0m]" : "[\033[0;31m No \033[0m]") . PHP_EOL;
 echo "| Sockets               -> required  -> " . ($check["sockets"] ? "[\033[0;32m Yes \033[0m]" : "[\033[0;31m No \033[0m]") . PHP_EOL;
+echo "| pthreads              -> required  -> " . ($check["pthreads"] ? "[\033[0;32m Yes \033[0m]" : "[\033[0;31m No \033[0m]") . PHP_EOL;
 echo "-----------------------------------------------------" . PHP_EOL;
 
 if (!$check["php5.4"]) {
@@ -188,6 +190,6 @@ class LogReceiver extends Thread {
 $config = \eBot\Config\Config::getInstance();
 
 $loggerData = new LoggerArray();
-$thread = new LogReceiver($loggerData, $config->getBotIp(), $config->getBotPort());
+$thread = new LogReceiver($loggerData, $config->getBot_ip(), $config->getBot_port());
 
 \eBot\Application\Application::getInstance()->run();

@@ -41,11 +41,11 @@ class Config extends Singleton {
     private $delay_ready = false;
 
     public function __construct() {
-        $options = getopt("c::");  
+        $options = getopt("", array("config::"));  
         $file = APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini";
-        if ($options['c']) {
-            if (file_exists(APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . $options['c'])) {
-                $file = APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . $options['c'];
+        if (@$options['config']) {
+            if (file_exists(APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . $options['config'])) {
+                $file = APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . $options['config'];
             }
         }
         

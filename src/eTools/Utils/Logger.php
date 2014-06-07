@@ -26,8 +26,16 @@ class Logger extends Singleton {
     public static $level = Logger::LOG;
 
     public function __construct() {
-        if (file_exists(APP_ROOT . "/config/logger.ini")) {
-            $config = parse_ini_file(APP_ROOT . "/config/logger.ini");
+        $options = getopt("", array("logger::"));  
+        $file = APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "logger.ini";
+        if (@$options['logger']) {
+            if (file_exists(APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . $options['logger'])) {
+                $file = APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . $options['logger'];
+            }
+        }
+                
+        if (file_exists($file)) {
+            $config = parse_ini_file($file);
             $this->log_path = $config["LOG_PATH"];
             $this->log_path_admin = $config["LOG_PATH_ADMIN"];
             $this->log_enabled = (boolean) $config["LOG"];
