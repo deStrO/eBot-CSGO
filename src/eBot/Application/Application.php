@@ -27,6 +27,7 @@ class Application extends AbstractApplication {
     private $clientsConnected = false;
 
     public function run() {
+	global $loggerData;
         // Loading Logger instance
         Logger::getInstance();
         Logger::log($this->getName());
@@ -51,13 +52,13 @@ class Application extends AbstractApplication {
 
         // Starting application
         Logger::log("Starting eBot Application");
-
-        try {
+		
+        /*try {
             $this->socket = new Socket(Config::getInstance()->getBot_ip(), Config::getInstance()->getBot_port());
         } catch (Exception $ex) {
             Logger::error("Unable to bind socket");
             die();
-        }
+        }*/
 
         try {
             $this->websocket['match'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/match");
@@ -79,7 +80,21 @@ class Application extends AbstractApplication {
 
         $time = time();
         while (true) {
-            $data = $this->socket->recvfrom($ip);
+			$data = "";
+			$ip = "";
+			$nbMessage = count($loggerData);
+			if ($nbMessage > 0) {
+				if ($nbMessage > 5) {
+					Logger::log($nbMessage. " in queue!");
+				}
+				$d = explode("---",$loggerData->shift());
+				$ip = array_shift($d);
+				$data = implode("---", $d);
+				$nbMessage--;
+			} else {
+				usleep(500);
+			}
+            //$data = $this->socket->recvfrom($ip);
             if ($data) {
                 if (!preg_match("/L+\s+\d+\/\d+\/\d+/", $data)) {
                     if ($data == '__true__') {
@@ -266,8 +281,10 @@ class Application extends AbstractApplication {
                 $this->websocket['aliveCheck']->send(json_encode(array("message" => "ping")));
             }
 
-            \eBot\Manager\MatchManager::getInstance()->sendPub();
-            \eTools\Task\TaskManager::getInstance()->runTask();
+			if ($nbMessage < 100) {
+				\eBot\Manager\MatchManager::getInstance()->sendPub();
+				\eTools\Task\TaskManager::getInstance()->runTask();
+			}
         }
     }
 

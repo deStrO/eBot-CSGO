@@ -69,7 +69,7 @@ function handleShutdown() {
     global $webSocketProcess;
 
     if (PHP_OS == "Linux")
-        proc_terminate($webSocketProcess,9);
+        proc_terminate($webSocketProcess, 9);
 
     $error = error_get_last();
     if (!empty($error)) {
@@ -111,23 +111,83 @@ if (PHP_OS == "Linux") {
 
 /*
 
-not done yet
+  not done yet
 
-// Checking outgoing connection and IP configuration
-if (!($status = file_get_contents("http://www.esport-tools.net/ebot/ping"))) {
-    echo '-----------------------------------------------------' . PHP_EOL;
-    echo '| Cannot connect to the internet.' . PHP_EOL;
-} elseif (\eBot\Config\Config::getInstance()->getBot_ip() != $status) {
-    echo '-----------------------------------------------------' . PHP_EOL;
-    echo '| Your config\'s IP address differs from your real IP.' . PHP_EOL;
-    echo '| Be sure to not use a loopback like "localhost" or "127.0.0.1".' . PHP_EOL;
-    echo '| The gameservers sends the serverlog to the eBot IP address.' . PHP_EOL;
-    echo '-----------------------------------------------------' . PHP_EOL;
-    die();
-}
-*/
+  // Checking outgoing connection and IP configuration
+  if (!($status = file_get_contents("http://www.esport-tools.net/ebot/ping"))) {
+  echo '-----------------------------------------------------' . PHP_EOL;
+  echo '| Cannot connect to the internet.' . PHP_EOL;
+  } elseif (\eBot\Config\Config::getInstance()->getBot_ip() != $status) {
+  echo '-----------------------------------------------------' . PHP_EOL;
+  echo '| Your config\'s IP address differs from your real IP.' . PHP_EOL;
+  echo '| Be sure to not use a loopback like "localhost" or "127.0.0.1".' . PHP_EOL;
+  echo '| The gameservers sends the serverlog to the eBot IP address.' . PHP_EOL;
+  echo '-----------------------------------------------------' . PHP_EOL;
+  die();
+  }
+ */
 
 echo '-----------------------------------------------------' . PHP_EOL;
 
 error_reporting(E_ERROR);
+
+class LoggerArray extends Stackable {
+
+    public function run() {
+        
+    }
+
+}
+
+class LogReceiver extends Thread {
+
+    public $shared_array;
+    public $botIp;
+    public $botPort;
+
+    public function __construct($shared_array, $botIp, $botPort) {
+        $this->shared_array = $shared_array;
+        $this->botIp = $botIp;
+        $this->botPort = $botPort;
+        $this->start();
+    }
+
+    public function run() {
+        $socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+        if ($socket) {
+            if (socket_bind($socket, $this->botIp, $this->botPort)) {
+                
+            } else {
+                echo "can't bind " . $this->botIp . ":" . $this->botPort . "\n";
+                return;
+            }
+        } else {
+            echo "can't bind " . $this->botIp . ":" . $this->botPort . "\n";
+            return;
+        }
+
+
+        while (true) {
+            $data = "";
+            $int = @socket_recvfrom($socket, $line, 1500, 0, $from, $port);
+            if ($int) {
+                $ip = $from . ":" . $port;
+                $data = $line;
+            } else {
+                usleep(1000);
+            }
+
+            if ($data) {
+                $this->shared_array[] = $ip . "---" . $data;
+            }
+        }
+    }
+
+}
+
+$config = \eBot\Config\Config::getInstance();
+
+$loggerData = new LoggerArray();
+$thread = new LogReceiver($loggerData, $config->getBotIp(), $config->getBotPort());
+
 \eBot\Application\Application::getInstance()->run();
