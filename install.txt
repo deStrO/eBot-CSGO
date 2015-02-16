@@ -1,3 +1,4 @@
+apt-get install gcc make libxml2-dev autoconf
 mkdir /home/install
 cd /home/install
 wget http://be2.php.net/get/php-5.5.15.tar.bz2/from/this/mirror -O php-5.5.15.tar.bz2
