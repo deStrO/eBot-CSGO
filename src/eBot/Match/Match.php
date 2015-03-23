@@ -564,7 +564,7 @@ class Match implements Taskable {
                     }
                 }
             }
-            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 90));
+            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 10));
         } elseif ($name == self::REINIT_RCON) {
             $ip = explode(":", $this->server_ip);
             try {
@@ -895,7 +895,7 @@ class Match implements Taskable {
 			return;
 		}
 		
-		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($message->maps,$this->currentMap->getMapName()) !== false  ) {
+		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($this->currentMap->getMapName(), $message->maps) !== false  ) {
 			$this->addLog("Loading maps " . $message->maps);
 			$this->addMatchLog("Loading maps " . $message->maps);
 			$ip = explode(":", $this->server_ip);
@@ -928,7 +928,7 @@ class Match implements Taskable {
 			try {
 				$this->rcon = new Rcon($ip[0], $ip[1], $this->rconPassword);
 				$this->rcon->send("echo eBot;");
-				$this->rcon->send("changelevel ".$this->currentMap->getMapName());
+				// $this->rcon->send("changelevel ".$this->currentMap->getMapName());
 			} catch (\Exception $ex) {
 				Logger::error("Reinit rcon failed - " . $ex->getMessage());
 				TaskManager::getInstance()->addTask(new Task($this, self::REINIT_RCON, microtime(true) + 1));
@@ -1364,6 +1364,8 @@ class Match implements Taskable {
                 $this->rcon->send("mp_do_warmup_period 1");
                 $this->rcon->send("mp_warmuptime 30");
                 $this->rcon->send("mp_warmup_pausetimer 1");
+                $this->rcon->send("mp_ct_default_secondary \"weapon_hkp2000\"");
+                $this->rcon->send("mp_t_default_secondary \"weapon_glock\"");
                 $this->rcon->send("mp_warmup_start");
                 $this->say("nothing change, going to warmup");
             }
@@ -1379,6 +1381,8 @@ class Match implements Taskable {
                 $this->rcon->send("mp_do_warmup_period 1");
                 $this->rcon->send("mp_warmuptime 30");
                 $this->rcon->send("mp_warmup_pausetimer 1");
+                $this->rcon->send("mp_ct_default_secondary \"weapon_hkp2000\"");
+                $this->rcon->send("mp_t_default_secondary \"weapon_glock\"");
                 $this->rcon->send("mp_warmup_start");
                 $this->say("Swapping teams");
                 $this->rcon->send("mp_swapteams");
@@ -2714,7 +2718,7 @@ class Match implements Taskable {
 
                     $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_warmuptime 0; mp_halftime_pausetimer 1; mp_warmup_pausetimer 0;");
                     $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
-                    $this->rcon->send("mp_halftime_duration 1; mp_roundtime_defuse 60");
+                    $this->rcon->send("mp_halftime_duration 1; mp_roundtime_defuse 60; mp_ct_default_secondary \"\"; mp_t_default_secondary \"\"; mp_startmoney 0;");
                     $this->rcon->send("mp_warmup_end");
                     if (\eBot\Config\Config::getInstance()->getKo3Method() == "csay" && $this->pluginCsay) {
                         $this->rcon->send("csay_ko3");
@@ -2750,7 +2754,7 @@ class Match implements Taskable {
                             // NEW
                             $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_halftime_pausetimer 1;");
                             $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
-                            $this->rcon->send("mp_halftime_duration 1");
+                            $this->rcon->send("mp_halftime_duration 1; mp_ct_default_secondary \"weapon_hkp2000\"; mp_t_default_secondary \"weapon_glock\";");
                             $this->rcon->send("mp_warmup_end");
                             if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay" && $this->pluginCsay) {
                                 $this->rcon->send("csay_lo3");
