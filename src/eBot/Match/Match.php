@@ -1092,7 +1092,7 @@ class Match implements Taskable {
             $this->addLog($message->getUserName() . " ask his stats");
 
             if ($user) {
-                $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ":  \001stats pour \003" . $message->userName . "\"");
+                $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ":  \001stats for \003" . $message->userName . "\"");
                 if ($user->get("death") == 0) {
                     $ratio = $user->get("kill");
                 } else {
@@ -1107,15 +1107,15 @@ class Match implements Taskable {
 
                 $this->rcon->send("csay_to_player " . $message->userId . " \" \005Kill: \004" . $user->get("kill") . " \001- \005HS: \004" . $user->get("hs") . "\"");
                 $this->rcon->send("csay_to_player " . $message->userId . " \" \005Death: \004" . $user->get("death") . " \001- \005Score: \004" . $user->get("point") . "\"");
-                $this->rcon->send("csay_to_player " . $message->userId . " \" \005Ratio K/D: \004" . $ratio . " \001- \005HS%: \004" . $ratiohs . "\"");
+                $this->rcon->send("csay_to_player " . $message->userId . " \" \005K/D Ratio: \004" . $ratio . " \001- \005HS%: \004" . $ratiohs . "\"");
             } else {
-                $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ":  pas de stats pour le moment pour \003" . $message->userName . "\"");
+                $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ":  no stats at the moment for \003" . $message->userName . "\"");
             }
         } elseif ($text == "!morestats") {
             $this->addLog($message->getUserName() . " ask more stats");
 
             if ($user) {
-                $this->rcon->send('csay_to_player ' . $message->userId . . $chatprefix . ":  stats pour \003" . $message->userName . "\"");
+                $this->rcon->send('csay_to_player ' . $message->userId . . $chatprefix . ":  stats for \003" . $message->userName . "\"");
 
                 $stats = array();
                 for ($i = 1; $i <= 5; $i++) {
@@ -1129,7 +1129,7 @@ class Match implements Taskable {
                 }
 
                 if ($user->get("bombe") > 0) {
-                    $stats[] = array("name" => "Bombe", "val" => $user->get("bombe"));
+                    $stats[] = array("name" => "Bomb", "val" => $user->get("bombe"));
                 }
 
                 if ($user->get("defuse") > 0) {
@@ -1167,10 +1167,10 @@ class Match implements Taskable {
                 }
 
                 if ($doit) {
-                    $this->rcon->send('csay_to_player ' . $message->userId . . $chatprefix . ":  Pas de stats pour le moment\"");
+                    $this->rcon->send('csay_to_player ' . $message->userId . . $chatprefix . ":  No stats at the moment\"");
                 }
             } else {
-                $this->rcon->send('csay_to_player ' . $message->userId . . $chatprefix . ":  Pas de stats pour le moment pour \005" . $message->userName . '"');
+                $this->rcon->send('csay_to_player ' . $message->userId . . $chatprefix . ":  No stats at the moment for \005" . $message->userName . '"');
             }
         } elseif ($text == "!rules") {
             if ($this->pluginCsay) {
