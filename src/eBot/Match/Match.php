@@ -564,7 +564,7 @@ class Match implements Taskable {
                     }
                 }
             }
-            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 90));
+            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 10));
         } elseif ($name == self::REINIT_RCON) {
             $ip = explode(":", $this->server_ip);
             try {
@@ -620,6 +620,14 @@ class Match implements Taskable {
             // Warmup
             $this->rcon->send("mp_warmuptime 1");
             $this->rcon->send("mp_warmup_pausetimer 1; mp_halftime_duration 5;");
+			$this->rcon->send("exec eslwarmup.cfg");
+			
+			$curpass = $this->rcon->send("sv_password");
+			if ($this->matchData["config_password"] != "" && $this->matchData["config_password"] != preg_match('\ "(\w*)\"', $curpass, $preg)) {
+				$this->rcon->send("sv_password \"" . $this->matchData["config_password"] . "\"");
+				$this->addLog("Password is wrong, setting again...");
+			}
+			
             if ($this->config_full_score) {
                 $this->rcon->send("mp_match_can_clinch 0;");
             }
@@ -714,8 +722,10 @@ class Match implements Taskable {
                             break;
                     }
                     if ($this->mapIsEngaged && ($this->streamerReady || !$this->config_streamer)) {
+						$this->rcon->send("mp_warmup_pausetimer 1; mp_halftime_duration 5;");
                         $messages [] = "\003Please write \006!ready \003when your team is ready !";
                         $messages [] = "\003Available commands: !help, !rules, !ready, !notready";
+						$messages [] = "\003Don't forget to record your \005POVs\003!";
                     } elseif ($this->mapIsEngaged && (!$this->streamerReady || $this->config_streamer)) {
                         $messages [] = "\003Streamers are not ready yet !";
                     } else {
@@ -895,7 +905,7 @@ class Match implements Taskable {
 			return;
 		}
 		
-		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($message->maps,$this->currentMap->getMapName()) !== false  ) {
+		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($this->currentMap->getMapName(), $message->maps) !== false  ) {
 			$this->addLog("Loading maps " . $message->maps);
 			$this->addMatchLog("Loading maps " . $message->maps);
 			$ip = explode(":", $this->server_ip);
@@ -928,7 +938,7 @@ class Match implements Taskable {
 			try {
 				$this->rcon = new Rcon($ip[0], $ip[1], $this->rconPassword);
 				$this->rcon->send("echo eBot;");
-				$this->rcon->send("changelevel ".$this->currentMap->getMapName());
+				// $this->rcon->send("changelevel ".$this->currentMap->getMapName());
 			} catch (\Exception $ex) {
 				Logger::error("Reinit rcon failed - " . $ex->getMessage());
 				TaskManager::getInstance()->addTask(new Task($this, self::REINIT_RCON, microtime(true) + 1));
@@ -1364,6 +1374,8 @@ class Match implements Taskable {
                 $this->rcon->send("mp_do_warmup_period 1");
                 $this->rcon->send("mp_warmuptime 30");
                 $this->rcon->send("mp_warmup_pausetimer 1");
+                $this->rcon->send("mp_ct_default_secondary \"weapon_hkp2000\"");
+                $this->rcon->send("mp_t_default_secondary \"weapon_glock\"");
                 $this->rcon->send("mp_warmup_start");
                 $this->say("nothing change, going to warmup");
             }
@@ -1379,6 +1391,8 @@ class Match implements Taskable {
                 $this->rcon->send("mp_do_warmup_period 1");
                 $this->rcon->send("mp_warmuptime 30");
                 $this->rcon->send("mp_warmup_pausetimer 1");
+                $this->rcon->send("mp_ct_default_secondary \"weapon_hkp2000\"");
+                $this->rcon->send("mp_t_default_secondary \"weapon_glock\"");
                 $this->rcon->send("mp_warmup_start");
                 $this->say("Swapping teams");
                 $this->rcon->send("mp_swapteams");
@@ -1408,7 +1422,7 @@ class Match implements Taskable {
                     }
                 }
             }
-        } elseif (($text == "abort" || $text == ".abort") && $this->delay_ready_inprogress) {
+        } elseif (($text == "!abort" || $text == ".abort") && $this->delay_ready_inprogress) {
             if ($this->isWarmupRound() && $this->ready['ct'] && $this->ready['t'] && \eBot\Config\Config::getInstance()->getDelayReady()) {
                 $this->addLog($message->getUserName() . " (" . $message->getUserTeam() . ") say abort");
                 if ($message->getUserTeam() == "CT") {
@@ -1470,6 +1484,7 @@ class Match implements Taskable {
             $team = ($this->side['team_a'] == \strtolower($message->getTeamWin())) ? $this->teamAName : $this->teamBName;
 
             $this->say("\005$team won the knife, !stay or !switch");
+			$this->say("\005Don't forget to record your POVs!");
 
             $this->roundEndEvent = true;
             return;
@@ -2714,7 +2729,7 @@ class Match implements Taskable {
 
                     $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_warmuptime 0; mp_halftime_pausetimer 1; mp_warmup_pausetimer 0;");
                     $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
-                    $this->rcon->send("mp_halftime_duration 1; mp_roundtime_defuse 60");
+                    $this->rcon->send("mp_halftime_duration 1; mp_roundtime_defuse 60; mp_ct_default_secondary \"\"; mp_t_default_secondary \"\"; mp_startmoney 0;");
                     $this->rcon->send("mp_warmup_end");
                     if (\eBot\Config\Config::getInstance()->getKo3Method() == "csay" && $this->pluginCsay) {
                         $this->rcon->send("csay_ko3");
@@ -2750,7 +2765,7 @@ class Match implements Taskable {
                             // NEW
                             $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_halftime_pausetimer 1;");
                             $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
-                            $this->rcon->send("mp_halftime_duration 1");
+                            $this->rcon->send("mp_halftime_duration 1; mp_ct_default_secondary \"weapon_hkp2000\"; mp_t_default_secondary \"weapon_glock\";");
                             $this->rcon->send("mp_warmup_end");
                             if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay" && $this->pluginCsay) {
                                 $this->rcon->send("csay_lo3");
@@ -2900,7 +2915,6 @@ class Match implements Taskable {
         $this->rcon->send("mp_restartgame 1");
 
         $this->rcon->send("exec server.cfg");
-        $this->rcon->send("mp_teamname_1 \"\"; mp_teamname_2 \"\"; mp_teamflag_1 \"\"; mp_teamflag_2 \"\"");
 
         mysql_query("UPDATE `matchs` SET enable = 0, auto_start = 0 WHERE id = '" . $this->match_id . "'");
         $this->needDel = true;
