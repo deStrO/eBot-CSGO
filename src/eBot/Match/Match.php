@@ -564,7 +564,7 @@ class Match implements Taskable {
                     }
                 }
             }
-            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 10));
+            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 90));
         } elseif ($name == self::REINIT_RCON) {
             $ip = explode(":", $this->server_ip);
             try {
