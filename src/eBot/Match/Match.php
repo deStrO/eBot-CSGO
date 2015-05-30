@@ -722,7 +722,9 @@ class Match implements Taskable {
                             break;
                     }
                     if ($this->mapIsEngaged && ($this->streamerReady || !$this->config_streamer)) {
-						$this->rcon->send("mp_warmup_pausetimer 1; mp_halftime_duration 5;");
+						$this->rcon->send("mp_warmup_pausetimer 1");
+						$this->rcon->send("mp_halftime_duration 5");
+						$this->rcon->send("bot_kick");
                         $messages [] = "\003Please write \006!ready \003when your team is ready !";
                         $messages [] = "\003Available commands: !help, !rules, !ready, !notready";
 						$messages [] = "\003Don't forget to record your \005POVs\003!";
@@ -2200,9 +2202,9 @@ class Match implements Taskable {
         if ($this->waitForRestart && $this->getStatus() == self::STATUS_FIRST_SIDE && ( \eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "matchstart" || $this->forceRoundStartRecord)) {
             $this->waitRoundStartRecord = true;
             $this->forceRoundStartRecord = false;
-        } elseif ($this->waitForRestart && $this->getStatus() == self::STATUS_KNIFE && \eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "knifestart") {
-            $this->waitRoundStartRecord = true;
+			$this->addLog("Record activated by Matchstart");
         }
+		
         $this->roundRestartEvent = true;
     }
 
@@ -2724,6 +2726,11 @@ class Match implements Taskable {
 
                     $this->setStatus(self::STATUS_KNIFE, true);
                     $this->currentMap->setStatus(Map::STATUS_KNIFE, true);
+					
+					if ($this->getStatus() == self::STATUS_KNIFE && \eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "knifestart") {
+						$this->waitRoundStartRecord = true;
+						$this->addLog("Record activated by Knifestart");
+					}
 
                     // FIX for warmup
 
