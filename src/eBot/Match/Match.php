@@ -907,7 +907,7 @@ class Match implements Taskable {
 			return;
 		}
 		
-		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($this->currentMap->getMapName(), $message->maps) !== false  ) {
+		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($message->maps, $this->currentMap->getMapName()) !== false  ) {
 			$this->addLog("Loading maps " . $message->maps);
 			$this->addMatchLog("Loading maps " . $message->maps);
 			$ip = explode(":", $this->server_ip);
@@ -1486,7 +1486,7 @@ class Match implements Taskable {
             $team = ($this->side['team_a'] == \strtolower($message->getTeamWin())) ? $this->teamAName : $this->teamBName;
 
             $this->say("\005$team won the knife, !stay or !switch");
-			$this->say("\005Don't forget to record your POVs!");
+			$this->say("\005Don't forget to record your \005POVs\003!");
 
             $this->roundEndEvent = true;
             return;
