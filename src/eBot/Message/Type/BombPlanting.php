@@ -24,5 +24,3 @@ class BombPlanting extends Type {
     }
 
 }
-
-?>

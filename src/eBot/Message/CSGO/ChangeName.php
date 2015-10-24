@@ -30,5 +30,3 @@ class ChangeName extends Message {
     }
 
 }
-
-?>

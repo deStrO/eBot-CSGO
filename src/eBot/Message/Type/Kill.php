@@ -36,5 +36,3 @@ class Kill extends Type {
     }
 
 }
-
-?>

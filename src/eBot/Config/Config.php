@@ -320,5 +320,3 @@ class Config extends Singleton {
     }
 
 }
-
-?>

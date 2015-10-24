@@ -31,5 +31,3 @@ class Purchased extends Message {
     }
 
 }
-
-?>

@@ -24,5 +24,3 @@ class Connected extends Type {
     }
 
 }
-
-?>

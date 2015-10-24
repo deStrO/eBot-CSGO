@@ -19,5 +19,3 @@ class RoundEnd extends Type {
     }
 
 }
-
-?>

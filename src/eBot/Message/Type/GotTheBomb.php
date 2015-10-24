@@ -19,5 +19,3 @@ class GotTheBomb extends Type {
     }
 
 }
-
-?>

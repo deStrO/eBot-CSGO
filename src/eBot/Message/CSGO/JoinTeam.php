@@ -30,5 +30,3 @@ class JoinTeam extends Message {
     }
 
 }
-
-?>

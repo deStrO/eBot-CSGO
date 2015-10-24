@@ -158,5 +158,3 @@ class MatchManagerServer extends Singleton implements Taskable {
     }
 
 }
-
-?>

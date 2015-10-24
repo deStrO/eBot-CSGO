@@ -12,5 +12,3 @@ namespace eTools\Exception;
 class SocketException extends \Exception {
     
 }
-
-?>

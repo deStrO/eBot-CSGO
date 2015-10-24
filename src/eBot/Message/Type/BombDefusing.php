@@ -24,5 +24,3 @@ class BombDefusing extends Type {
     }
 
 }
-
-?>

@@ -27,5 +27,3 @@ class RoundSpawn extends Message {
     }
 
 }
-
-?>

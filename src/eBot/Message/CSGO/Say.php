@@ -32,5 +32,3 @@ class Say extends Message {
     }
 
 }
-
-?>

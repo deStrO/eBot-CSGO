@@ -28,5 +28,3 @@ class ThrewStuff extends Type {
     }
 
 }
-
-?>

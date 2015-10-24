@@ -260,5 +260,3 @@ class ApplicationServer extends AbstractApplication {
     }
 
 }
-
-?>

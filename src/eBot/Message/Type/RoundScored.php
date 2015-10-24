@@ -22,5 +22,3 @@ class RoundScored extends Type {
     }
 
 }
-
-?>

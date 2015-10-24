@@ -25,5 +25,3 @@ class ChangeMap extends Message {
     }
 
 }
-
-?>

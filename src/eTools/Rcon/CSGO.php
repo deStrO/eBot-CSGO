@@ -49,5 +49,3 @@ class CSGO extends Rcon {
     }
 
 }
-
-?>

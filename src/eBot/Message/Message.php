@@ -29,5 +29,3 @@ abstract class Message {
 	
 	abstract function process();
 }
-
-?>

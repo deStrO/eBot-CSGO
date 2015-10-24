@@ -27,5 +27,3 @@ class Kill extends Event {
     protected $headshot;
 
 }
-
-?>

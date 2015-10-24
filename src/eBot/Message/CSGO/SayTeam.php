@@ -32,5 +32,3 @@ class SayTeam extends Message {
     }
 
 }
-
-?>

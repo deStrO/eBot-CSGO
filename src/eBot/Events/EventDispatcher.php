@@ -68,5 +68,3 @@ class EventDispatcher extends Singleton {
     }
 
 }
-
-?>

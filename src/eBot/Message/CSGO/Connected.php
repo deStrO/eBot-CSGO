@@ -29,5 +29,3 @@ class Connected extends Message {
     }
 
 }
-
-?>
