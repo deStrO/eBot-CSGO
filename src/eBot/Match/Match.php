@@ -564,7 +564,7 @@ class Match implements Taskable {
                     }
                 }
             }
-            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 90));
+            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 10));
         } elseif ($name == self::REINIT_RCON) {
             $ip = explode(":", $this->server_ip);
             try {
@@ -850,7 +850,7 @@ class Match implements Taskable {
                 case "eBot\Message\Type\RoundEnd":
                     return $this->processRoundEnd($message);
                 default:
-                    $this->addLog("Message non traité: " . get_class($message));
+                    $this->addLog("Untreated message: " . get_class($message));
                     break;
             }
         }
@@ -895,7 +895,7 @@ class Match implements Taskable {
 			return;
 		}
 		
-		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($message->maps,$this->currentMap->getMapName()) !== false  ) {
+		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($this->currentMap->getMapName(), $message->maps) !== false  ) {
 			$this->addLog("Loading maps " . $message->maps);
 			$this->addMatchLog("Loading maps " . $message->maps);
 			$ip = explode(":", $this->server_ip);
@@ -1089,7 +1089,7 @@ class Match implements Taskable {
             $this->addLog($message->getUserName() . " ask his stats");
 
             if ($user) {
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: \001stats pour \003" . $message->userName . "\"");
+                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: \001stats for \003" . $message->userName . "\"");
                 if ($user->get("death") == 0) {
                     $ratio = $user->get("kill");
                 } else {
@@ -1106,13 +1106,13 @@ class Match implements Taskable {
                 $this->rcon->send("csay_to_player " . $message->userId . " \" \005Death: \004" . $user->get("death") . " \001- \005Score: \004" . $user->get("point") . "\"");
                 $this->rcon->send("csay_to_player " . $message->userId . " \" \005Ratio K/D: \004" . $ratio . " \001- \005HS%: \004" . $ratiohs . "\"");
             } else {
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: pas de stats pour le moment pour \003" . $message->userName . "\"");
+                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: No stats yet for \003" . $message->userName . "\"");
             }
         } elseif ($text == "!morestats") {
             $this->addLog($message->getUserName() . " ask more stats");
 
             if ($user) {
-                $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: stats pour \003" . $message->userName . "\"");
+                $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: stats for \003" . $message->userName . "\"");
 
                 $stats = array();
                 for ($i = 1; $i <= 5; $i++) {
@@ -1126,7 +1126,7 @@ class Match implements Taskable {
                 }
 
                 if ($user->get("bombe") > 0) {
-                    $stats[] = array("name" => "Bombe", "val" => $user->get("bombe"));
+                    $stats[] = array("name" => "Bomb", "val" => $user->get("bombe"));
                 }
 
                 if ($user->get("defuse") > 0) {
@@ -1164,10 +1164,10 @@ class Match implements Taskable {
                 }
 
                 if ($doit) {
-                    $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: Pas de stats pour le moment\"");
+                    $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: No stats yet.\"");
                 }
             } else {
-                $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: Pas de stats pour le moment pour \005" . $message->userName . '"');
+                $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: No stats yet for \005" . $message->userName . '"');
             }
         } elseif ($text == "!rules") {
             if ($this->pluginCsay) {
@@ -1531,14 +1531,14 @@ class Match implements Taskable {
                                 $this->specialSituation['id'] = $id;
 
                                 if ($nbAlive == 2) {
-                                    $this->addLog("Incohérence situation spéciale");
+                                    $this->addLog("Special situation inconsistent");
                                 } else {
                                     if ($this->players[$id]) {
                                         $bestActionType = "1v1";
                                         $bestActionParam = array("player" => $this->players[$id]->getId(), "playerName" => $this->players[$id]->get("name"));
                                         mysql_query("UPDATE players SET nb1 = nb1 + 1 WHERE id = '" . $this->players[$id]->getId() . "'") or Logger::error("Can't update " . $this->players[$id]->getId() . " situation");
-                                        $this->addLog("Situation spécial réussie 1v" . $this->specialSituation['situation'] . " (" . $this->players[$id]->get("name") . ")");
-                                        $this->addMatchLog("<b>" . htmlentities($this->players[$id]->get("name")) . "</b> a mis un 1v" . $this->specialSituation['situation'] . " !");
+                                        $this->addLog("Successful special situation 1v" . $this->specialSituation['situation'] . " (" . $this->players[$id]->get("name") . ")");
+                                        $this->addMatchLog("<b>" . htmlentities($this->players[$id]->get("name")) . "</b> won a 1v" . $this->specialSituation['situation'] . " !");
                                         $this->players[$id]->inc("v1");
 
                                         $text = \addslashes(\serialize(array("situation" => 1, "player" => $this->players[$id]->getId(), "playerName" => $this->players[$id]->get("name"))));
@@ -1558,10 +1558,10 @@ class Match implements Taskable {
                                     $bestActionType = "1v" . $this->specialSituation['situation'];
                                     $bestActionParam = array("player" => $this->players[$id]->getId(), "playerName" => $this->players[$id]->get("name"));
 
-                                    $this->addMatchLog("<b>" . htmlentities($this->players[$id]->get("name")) . "</b> a mis un 1v" . $this->specialSituation['situation'] . " !");
+                                    $this->addMatchLog("<b>" . htmlentities($this->players[$id]->get("name")) . "</b> won a 1v" . $this->specialSituation['situation'] . " !");
                                     mysql_query("UPDATE players SET nb" . $this->specialSituation['situation'] . " = nb" . $this->specialSituation['situation'] . " + 1 WHERE id='" . $this->players[$id]->getId() . "'") or Logger::error("Can't update " . $this->players[$id]->getId() . " situation");
                                     $this->players[$id]->inc("v" . $this->specialSituation['situation']);
-                                    $this->addLog("Situation spécial réussie 1v" . $this->specialSituation['situation'] . " (" . $this->players[$id]->get("name") . ")");
+                                    $this->addLog("Successful special situation 1v" . $this->specialSituation['situation'] . " (" . $this->players[$id]->get("name") . ")");
 
                                     $text = \addslashes(\serialize(array("situation" => $this->specialSituation['situation'], "player" => $this->players[$id]->getId(), "playerName" => $this->players[$id]->get("name"))));
 
@@ -1576,7 +1576,7 @@ class Match implements Taskable {
                             }
                         }
                     } else {
-                        $this->addLog("Situation ratée - alive players: $nbAlive");
+                        $this->addLog("Failed situation - alive players: $nbAlive");
                     }
                 }
             }
@@ -1632,7 +1632,7 @@ class Match implements Taskable {
             $this->say("\005" . $this->teamAName . " \004" . $this->currentMap->getScore1() . " \001- \004" . $this->currentMap->getScore2() . " \005" . $this->teamBName);
 
             $this->addLog($this->teamAName . " (" . $this->currentMap->getScore1() . ") - (" . $this->currentMap->getScore2() . ") " . $this->teamBName);
-            $this->addMatchLog("Un round a été marqué - " . $this->teamAName . " (" . $this->currentMap->getScore1() . ") - (" . $this->currentMap->getScore2() . ") " . $this->teamBName);
+            $this->addMatchLog("One round was marked - " . $this->teamAName . " (" . $this->currentMap->getScore1() . ") - (" . $this->currentMap->getScore2() . ") " . $this->teamBName);
 
             @mysql_query("UPDATE `matchs` SET score_a = '" . $this->score["team_a"] . "', score_b ='" . $this->score["team_b"] . "' WHERE id='" . $this->match_id . "'") or $this->addLog("Can't match " . $this->match_id . " scores", Logger::ERROR);
 
@@ -2355,8 +2355,8 @@ class Match implements Taskable {
                         $this->specialSituation['active'] = true;
                         $this->specialSituation['side'] = "ct";
 
-                        $this->addLog("Situation spécial ! 1v" . $nbAlive . " (" . $this->players[$id]->get("name") . ")");
-                        $this->addMatchLog("<b>Situation spécial ! 1v" . $nbAlive . " (" . htmlentities($this->players[$id]->get("name")) . ")</b>");
+                        $this->addLog("Special situation ! 1v" . $nbAlive . " (" . $this->players[$id]->get("name") . ")");
+                        $this->addMatchLog("<b>Special situation ! 1v" . $nbAlive . " (" . htmlentities($this->players[$id]->get("name")) . ")</b>");
 
                         \mysql_query("
                             INSERT INTO `round`
@@ -2385,8 +2385,8 @@ class Match implements Taskable {
                         $this->specialSituation['active'] = true;
                         $this->specialSituation['side'] = "t";
 
-                        $this->addLog("Situation spécial ! 1v" . $nbAlive . " (" . $this->players[$id]->get("name") . ")");
-                        $this->addMatchLog("<b>Situation spécial ! 1v" . $nbAlive . " (" . htmlentities($this->players[$id]->get("name")) . ")</b>");
+                        $this->addLog("Special situation ! 1v" . $nbAlive . " (" . $this->players[$id]->get("name") . ")");
+                        $this->addMatchLog("<b>Special situation ! 1v" . $nbAlive . " (" . htmlentities($this->players[$id]->get("name")) . ")</b>");
                         \mysql_query("
                             INSERT INTO `round`
                             (`match_id`,`map_id`,`event_name`, `event_text`,`event_time`,`round_id`,`created_at`,`updated_at`)
@@ -2400,8 +2400,8 @@ class Match implements Taskable {
             if (($this->specialSituation['side2'] != "both") && ($this->specialSituation['side'] != "both")) {
                 if (($this->nbLast['nb_ct'] == 1) && ($this->nbLast['nb_t'] == 1)) {
                     if ($this->players[$this->specialSituation['id']]) {
-                        $this->addLog("Situation spécial 1v1 ! - Le joueur " . $this->players[$this->specialSituation['id']]->get("name") . " est en 1v" . $this->specialSituation['situation']);
-                        $this->addMatchLog("<b>Situation spécial 1v1 ! - Le joueur " . htmlentities($this->players[$this->specialSituation['id']]->get("name")) . " est en 1v" . $this->specialSituation['situation'] . "</b>", false);
+                        $this->addLog("Special situation 1v1 ! - The player " . $this->players[$this->specialSituation['id']]->get("name") . " is in 1v" . $this->specialSituation['situation']);
+                        $this->addMatchLog("<b>Special situation 1v1 ! - The player " . htmlentities($this->players[$this->specialSituation['id']]->get("name")) . " is in 1v" . $this->specialSituation['situation'] . "</b>", false);
                         $this->specialSituation['side2'] = "both";
 
                         \mysql_query("
