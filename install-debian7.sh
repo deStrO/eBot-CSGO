@@ -34,7 +34,7 @@ apt-get install mysql-server
 curl --silent --location https://deb.nodesource.com/setup_0.12 | bash -
 apt-get install -y nodejs
 
-# Download and extract ebot
+# Download and extract ebot csgo interface
 # TODO: git clone this?
 mkdir /home/ebot
 cd /home/ebot
@@ -61,14 +61,15 @@ GRANT ALL PRIVILEGES ON ebotv3.* TO ebotv3@localhost;
 END_OF_SQL
 sed -i '/^MYSQL_PASS\s*=\s*/s/\(=\s*\).*"/\1"'$MYSQL_PASS'"/' config/config.ini
 
-
+# Download and extract ebot web application
 cd /home/ebot
 wget https://github.com/deStrO/eBot-CSGO-Web/archive/master.zip
 unzip master.zip
 mv eBot-CSGO-Web-master ebot-web
 cd ebot-web
-cp config/app_user.yml.default config/app_user.yml
 
+# Configure web application
+cp config/app_user.yml.default config/app_user.yml
 # TODO: what should it point at?
 # edit config config/app_user.yml with ebot_ip and ebot_port
 
