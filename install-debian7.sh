@@ -1,4 +1,4 @@
-# Start with Debian 7.9
+#!/bin/bash
 
 # Install prerequisite packages
 apt-get install gcc make libxml2-dev autoconf ca-certificates unzip curl libcurl4-openssl-dev pkg-config 
