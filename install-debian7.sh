@@ -3,7 +3,7 @@
 # Install prerequisite packages
 apt-get install gcc make libxml2-dev autoconf ca-certificates unzip curl libcurl4-openssl-dev pkg-config 
 
-# Install php from source
+# Install PHP from source
 mkdir /home/install
 cd /home/install
 wget http://be2.php.net/get/php-5.5.15.tar.bz2/from/this/mirror -O php-5.5.15.tar.bz2
@@ -13,7 +13,7 @@ cd php-5.5.15
 make
 make install
 
-# Install pthreads php module
+# Install pthreads PHP module
 cd /home/install
 wget http://pecl.php.net/get/pthreads-2.0.7.tgz
 tar -xvzf pthreads-2.0.7.tgz
