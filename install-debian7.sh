@@ -72,16 +72,15 @@ cp config/app_user.yml.default config/app_user.yml
 # TODO: what should it point at?
 # edit config config/app_user.yml with ebot_ip and ebot_port
 
-# Edit database config/database.yml
-sed -i '/username/s/\(username:\s*\).*/\1ebotv3/' config/databases.yml
-sed -i '/password/s/\(password:\s*\).*/\1'$MYSQL_PASS'/' config/databases.yml
-# TODO: Set host to 127.0.0.1 to force networking
+# Setup config/database.yml
+php symfony configure:database "mysql:host=127.0.0.1;dbname=ebotv3" ebotv3 $MYSQL_PASS
 
+# Initialize database
 mkdir cache
 php symfony cc
 php symfony doctrine:build --all --no-confirmation
 php symfony guard:create-user --is-super-admin admin@ebot admin admin
 
-#To start ebot daemon
+# Start ebot daemon
 /home/ebot/ebot-csgo
 php bootstrap.php
