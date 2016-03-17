@@ -68,12 +68,19 @@ unzip master.zip
 mv eBot-CSGO-Web-master ebot-web
 cd ebot-web
 cp config/app_user.yml.default config/app_user.yml
+
+# TODO: what should it point at?
 # edit config config/app_user.yml with ebot_ip and ebot_port
-# edit database config/database.yml
+
+# Edit database config/database.yml
+sed -i '/username/s/\(username:\s*\).*/\1ebotv3/' config/databases.yml
+sed -i '/password/s/\(password:\s*\).*/\1'$MYSQL_PASS'/' config/databases.yml
+# TODO: Set host to 127.0.0.1 to force networking
+
 mkdir cache
-php5 symfony cc
-php5 symfony doctrine:build --all --no-confirmation
-php5 symfony guard:create-user --is-super-admin admin@ebot admin admin
+php symfony cc
+php symfony doctrine:build --all --no-confirmation
+php symfony guard:create-user --is-super-admin admin@ebot admin admin
 
 #To start ebot daemon
 /home/ebot/ebot-csgo
