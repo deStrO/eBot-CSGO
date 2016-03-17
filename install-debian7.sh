@@ -82,5 +82,5 @@ php symfony doctrine:build --all --no-confirmation
 php symfony guard:create-user --is-super-admin admin@ebot admin admin
 
 # Start ebot daemon
-/home/ebot/ebot-csgo
+cd /home/ebot/ebot-csgo
 php bootstrap.php
