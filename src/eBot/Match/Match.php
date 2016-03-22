@@ -580,7 +580,7 @@ class Match implements Taskable {
             }
         } elseif ($name == self::STOP_RECORD) {
             $this->needDelTask = false;
-            $this->addLog("Stopping record & push");
+            $this->addLog("Stopping record and pushing demo...");
             $this->rcon->send("tv_stoprecord");
             if (\eBot\Config\Config::getInstance()->getDemoDownload())
                 $this->rcon->send('csay_tv_demo_push "' . $this->currentRecordName . '.dem" "http://' . \eBot\Config\Config::getInstance()->getBot_ip() . ':' . \eBot\Config\Config::getInstance()->getBot_port() . '/upload"');
@@ -783,7 +783,7 @@ class Match implements Taskable {
         $this->websocket['logger']->sendData('removeMatch_' . $this->match_id);
         TaskManager::getInstance()->removeAllTaskForObject($this);
         unset($this->rcon);
-        $this->addLog("Destructing match " . $this->match_id);
+        $this->addLog("Destroying match with id: " . $this->match_id . ".");
     }
 
     public function getNeedDel() {
