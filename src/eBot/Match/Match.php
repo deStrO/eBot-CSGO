@@ -2474,13 +2474,36 @@ class Match implements Taskable {
     }
 
     private function pauseMatch() {
-        if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm") {
-            if ($this->pause["ct"] && $this->pause["t"] && $this->isMatchRound() && !$this->isPaused) {
+        $doPause = false;
+        $pauseMethod = \eBot\Config\Config::getInstance()->getPauseMethod();
+        
+        $pauseMethods = array(
+             "instantConfirm"   => array( "text" => "The match is paused.", "method" => "pause" ),
+             "instantNoConfirm" => array( "text" => "The match is paused.", "method" => "pause" ),
+             "nextRound"        => array( "text" => "Match will be paused at the start of the next round!", "method" => "mp_pause_match" )
+        );
+        
+
+        
+        if ($pauseMethod == "instantConfirm") {
+            if ($this->pause["ct"] && $this->pause["t"] && $this->isMatchRound() && !$this->isPaused)
+                $doPause = true;
+        } elseif ($pauseMethod == "instantNoConfirm") {
+            if (($this->pause["ct"] || $this->pause["t"]) && $this->isMatchRound() && !$this->isPaused)
+                $doPause = true;
+        } elseif ($pauseMethod == "nextRound") {
+            if (($this->pause["ct"] || $this->pause["t"]) && $this->isMatchRound() && !$this->isPaused)
+                $doPause = true;
+        } else {
+            $this->addLog("pauseMatch(): Untreated pauseMethod: '$pauseMethod', cannot pause!", Logger::ERROR);
+        }
+        
+        if ( $pauseMethods["$pauseMethod"] && $doPause ) {
                 $this->isPaused = true;
-                $this->say("The match is paused.");
+                $this->say($pauseMethods["$pauseMethod"]["text"]);
                 $this->say("Write !unpause to remove the pause when your team is ready.");
                 $this->addMatchLog("Pausing the match.");
-                $this->rcon->send("pause");
+                $this->rcon->send($pauseMethods["$pauseMethod"]["method"]);
                 \mysql_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
                 $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id)));
 
@@ -2488,37 +2511,6 @@ class Match implements Taskable {
                 $this->pause["t"] = false;
                 $this->unpause["ct"] = false;
                 $this->unpause["t"] = false;
-            }
-        } elseif (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm") {
-            if (($this->pause["ct"] || $this->pause["t"]) && $this->isMatchRound() && !$this->isPaused) {
-                $this->isPaused = true;
-                $this->say("The match is paused.");
-                $this->say("Write !unpause to remove the pause when your team is ready.");
-                $this->addMatchLog("Pausing the match.");
-                $this->rcon->send("pause");
-                \mysql_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
-                $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id)));
-
-                $this->pause["ct"] = false;
-                $this->pause["t"] = false;
-                $this->unpause["ct"] = false;
-                $this->unpause["t"] = false;
-            }
-        } elseif (\eBot\Config\Config::getInstance()->getPauseMethod() == "nextRound") {
-            if (($this->pause["ct"] || $this->pause["t"]) && $this->isMatchRound() && !$this->isPaused) {
-                $this->isPaused = true;
-                $this->say("Match will be paused at the start of the next round!");
-                $this->say("Write !unpause to remove the pause when your team is ready.");
-                $this->addMatchLog("Pausing the match.");
-                $this->rcon->send("mp_pause_match");
-                \mysql_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
-                $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id)));
-
-                $this->pause["ct"] = false;
-                $this->pause["t"] = false;
-                $this->unpause["ct"] = false;
-                $this->unpause["t"] = false;
-            }
         }
     }
 
