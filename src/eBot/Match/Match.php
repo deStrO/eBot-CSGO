@@ -1420,7 +1420,7 @@ class Match implements Taskable {
                     }
                 }
             }
-        } elseif (($text == "abort" || $text == ".abort") && $this->delay_ready_inprogress) {
+        } elseif (($text == "!abort" || $text == ".abort") && $this->delay_ready_inprogress) {
             if ($this->isWarmupRound() && $this->ready['ct'] && $this->ready['t'] && \eBot\Config\Config::getInstance()->getDelayReady()) {
                 $this->addLog("User: '" . $message->getUserName() . "' (" . $message->getUserTeam() . ") wants to abort countdown.");
                 if ($message->getUserTeam() == "CT") {
