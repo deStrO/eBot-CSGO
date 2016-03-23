@@ -2482,9 +2482,7 @@ class Match implements Taskable {
              "instantNoConfirm" => array( "text" => "The match is paused.", "method" => "pause" ),
              "nextRound"        => array( "text" => "Match will be paused at the start of the next round!", "method" => "mp_pause_match" )
         );
-        
 
-        
         if ($pauseMethod == "instantConfirm") {
             if ($this->pause["ct"] && $this->pause["t"] && $this->isMatchRound() && !$this->isPaused)
                 $doPause = true;
