@@ -316,13 +316,16 @@ class Match implements Taskable {
             if ($this->currentMap->getMapName() != "tba") {
                 Logger::debug("Schedule task for first map");
                 TaskManager::getInstance()->addTask(new Task($this, self::TASK_ENGAGE_MAP, microtime(true) + 1));
+                $this->executeWarmupConfig();
             } else {
                 if ($this->config_kniferound) {
                     $this->setStatus(self::STATUS_WU_KNIFE, true);
                     $this->currentMap->setStatus(Map::STATUS_WU_KNIFE, true);
+                    $this->executeWarmupConfig();
                 } else {
                     $this->setStatus(self::STATUS_WU_1_SIDE, true);
                     $this->currentMap->setStatus(Map::STATUS_WU_1_SIDE, true);
+                    $this->executeWarmupConfig();
                 }
             }
         } else {
@@ -334,9 +337,11 @@ class Match implements Taskable {
                     if ($this->config_kniferound) {
                         $this->setStatus(self::STATUS_WU_KNIFE, true);
                         $this->currentMap->setStatus(Map::STATUS_WU_KNIFE, true);
+                        $this->executeWarmupConfig();
                     } else {
                         $this->setStatus(self::STATUS_WU_1_SIDE, true);
                         $this->currentMap->setStatus(Map::STATUS_WU_1_SIDE, true);
+                        $this->executeWarmupConfig();
                     }
                 }
             } else {
@@ -539,6 +544,7 @@ class Match implements Taskable {
                 $this->addLog("Waiting till GOTV broadcast is finished... Mapchange in " . (intval($preg['time']) + 1) . " seconds.");
             } else {
                 $this->engageMap();
+                $this->executeWarmupConfig();
             }
         } elseif ($name == self::CHANGE_HOSTNAME) {
             if ($this->rcon->getState()) {
@@ -617,9 +623,6 @@ class Match implements Taskable {
         if ((($this->currentMap->getStatus() == Map::STATUS_STARTING) || ($this->currentMap->getStatus() == Map::STATUS_NOT_STARTED)) OR !$this->mapIsEngaged) {
             $this->addLog("Engaging the first map...");
 
-            // Warmup
-            $this->rcon->send("mp_warmuptime 1");
-            $this->rcon->send("mp_warmup_pausetimer 1; mp_halftime_duration 5;");
             if ($this->config_full_score) {
                 $this->rcon->send("mp_match_can_clinch 0;");
             }
@@ -644,6 +647,8 @@ class Match implements Taskable {
             $this->websocket['match']->sendData(json_encode(array('message' => 'currentMap', 'mapname' => $this->currentMap->getMapName(), 'id' => $this->match_id)));
 
             TaskManager::getInstance()->addTask(new Task($this, self::CHANGE_HOSTNAME, microtime(true) + 3));
+            // Start warmup
+            $this->executeWarmupConfig();
         } else {
             $this->setStatus($this->currentMap->getStatus(), true);
             Logger::error("Map already engaged.");
@@ -929,6 +934,7 @@ class Match implements Taskable {
 				}
 
 				$this->sendTeamNames();
+                                $this->executeWarmupConfig();
 			} catch (\Exception $ex) {
 				Logger::error("Reinit rcon failed - " . $ex->getMessage());
 				TaskManager::getInstance()->addTask(new Task($this, self::REINIT_RCON, microtime(true) + 1));
@@ -941,6 +947,7 @@ class Match implements Taskable {
 				$this->rcon = new Rcon($ip[0], $ip[1], $this->rconPassword);
 				$this->rcon->send("echo eBot;");
 				$this->rcon->send("changelevel ".$this->currentMap->getMapName());
+                                $this->executeWarmupConfig();
 			} catch (\Exception $ex) {
 				Logger::error("Reinit rcon failed - " . $ex->getMessage());
 				TaskManager::getInstance()->addTask(new Task($this, self::REINIT_RCON, microtime(true) + 1));
@@ -1358,63 +1365,43 @@ class Match implements Taskable {
 
                 $this->unpauseMatch();
             }
-        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!stay" || $text == ".stay")) {
-            if ($message->getUserTeam() == $this->winKnife) {
-                $this->addLog($message->getUserName() . " wants to stay, going to warmup!");
+        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($message->getUserTeam() == $this->winKnife) && $this->isCommand($message, "stay")) {
+            $this->setStatus(self::STATUS_WU_1_SIDE, true);
+            $this->currentMap->setStatus(Map::STATUS_WU_1_SIDE, true);
 
-                $this->setStatus(self::STATUS_WU_1_SIDE, true);
-                $this->currentMap->setStatus(Map::STATUS_WU_1_SIDE, true);
+            $this->undoKnifeConfig()->executeMatchConfig()->executeWarmupConfig();
+            $this->say("Nothing changed, going to warmup!");
+        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($message->getUserTeam() == $this->winKnife) && ($this->isCommand($message, "switch") || $this->isCommand($message, "swap"))) {
+            $this->setStatus(self::STATUS_WU_1_SIDE, true);
+            $this->currentMap->setStatus(Map::STATUS_WU_1_SIDE, true);
 
-                $this->rcon->send("mp_do_warmup_period 1");
-                $this->rcon->send("mp_warmuptime 30");
-                $this->rcon->send("mp_warmup_pausetimer 1");
-                $this->rcon->send("mp_warmup_start");
-                $this->say("Nothing changed, going to warmup!");
-            }
-        } elseif (($this->getStatus() == self::STATUS_END_KNIFE) && ($text == "!switch" || $text == ".switch" || $text == "!swap" || $text == ".swap")) {
-            if ($message->getUserTeam() == $this->winKnife) {
-                $this->addLog("User: '" . $message->getUserName() . "' (" . $message->getUserTeam() . ") wants to stay, going to warmup!");
+            $this->swapSides();
+            $this->undoKnifeConfig()->executeMatchConfig()->executeWarmupConfig();
+            $this->say("Swapping teams.");
+            $this->rcon->send("mp_swapteams");
+            TaskManager::getInstance()->addTask(new Task($this, self::TASK_SEND_TEAM_NAMES, microtime(true) + 10));
+        } elseif ($this->isWarmupRound() && $this->mapIsEngaged && $this->isCommand($message, "notready") || $this->isCommand($message, "unready")) {
+            if ($message->getUserTeam() == "CT") {
+                $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
 
-                $this->setStatus(self::STATUS_WU_1_SIDE, true);
-                $this->currentMap->setStatus(Map::STATUS_WU_1_SIDE, true);
+                if ($this->ready['ct']) {
+                    $this->ready['ct'] = false;
+                    $this->say($team . " (CT) is now " . $this->formatText("not ready.", "green"));
+                } else {
+                    $this->say($team . " (CT) is already " . $this->formatText("not ready.", "green"));
+                }
+            } elseif ($message->getUserTeam() == "TERRORIST") {
+                $team = ($this->side['team_a'] == "t") ? $this->teamAName : $this->teamBName;
 
-                $this->swapSides();
-
-                $this->rcon->send("mp_do_warmup_period 1");
-                $this->rcon->send("mp_warmuptime 30");
-                $this->rcon->send("mp_warmup_pausetimer 1");
-                $this->rcon->send("mp_warmup_start");
-                $this->say("Swapping teams.");
-                $this->rcon->send("mp_swapteams");
-                TaskManager::getInstance()->addTask(new Task($this, self::TASK_SEND_TEAM_NAMES, microtime(true) + 10));
-            }
-        } elseif ($text == "!notready" || $text == ".notready" || $text == "!unready" || $text == ".unready") {
-            if ($this->isWarmupRound() && $this->mapIsEngaged) {
-                $this->addLog("User: '" . $message->getUserName() . "' (" . $message->getUserTeam() . ") said team is not ready.");
-
-                if ($message->getUserTeam() == "CT") {
-                    $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
-
-                    if ($this->ready['ct']) {
-                        $this->ready['ct'] = false;
-                        $this->say($team . " (CT) is now " . $this->formatText("not ready.", "green"));
-                    } else {
-                        $this->say($team . " (CT) is already " . $this->formatText("not ready.", "green"));
-                    }
-                } elseif ($message->getUserTeam() == "TERRORIST") {
-                    $team = ($this->side['team_a'] == "t") ? $this->teamAName : $this->teamBName;
-
-                    if ($this->ready['t']) {
-                        $this->ready['t'] = false;
-                        $this->say($team . " (T) is now " . $this->formatText("not ready.", "green"));
-                    } else {
-                        $this->say($team . " (T) is already " . $this->formatText("not ready.", "green"));
-                    }
+                if ($this->ready['t']) {
+                    $this->ready['t'] = false;
+                    $this->say($team . " (T) is now " . $this->formatText("not ready.", "green"));
+                } else {
+                    $this->say($team . " (T) is already " . $this->formatText("not ready.", "green"));
                 }
             }
-        } elseif (($text == "!abort" || $text == ".abort") && $this->delay_ready_inprogress) {
-            if ($this->isWarmupRound() && $this->ready['ct'] && $this->ready['t'] && \eBot\Config\Config::getInstance()->getDelayReady()) {
-                $this->addLog("User: '" . $message->getUserName() . "' (" . $message->getUserTeam() . ") wants to abort countdown.");
+        } elseif ($this->isWarmupRound() && $this->delay_ready_inprogress && $this->isCommand($message, "abort")) {
+            if ($this->ready['ct'] && $this->ready['t'] && \eBot\Config\Config::getInstance()->getDelayReady()) {
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
                     $this->say($team . " (CT) " . $this->formatText("aborted", "green") . "the ready countdown.");
@@ -1433,7 +1420,7 @@ class Match implements Taskable {
                     $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Current status: \002" . $this->getStatusText() . " - Match paused\".");
                 }
             }
-        } elseif ($text == "!status") {
+        } elseif ($this->isCommand($message, "status2")) { // DUPLICATE - REMOVE? TODO
             if ($this->pluginCsay) {
                 $this->addLog("User: '" . $message->getUserName() . "' asked for status (userId=" . $message->userId . ").");
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: \005" . $this->teamAName . " \004" . $this->currentMap->getScore1() . " \001- \004" . $this->currentMap->getScore2() . " \005" . $this->teamBName . "\"");
@@ -2686,6 +2673,51 @@ class Match implements Taskable {
         $this->delay_ready_inprogress = false;
     }
 
+    private function executeKnifeConfig() {
+        $this->say("Executing knife config.");
+        $this->rcon->send("mp_halftime_duration 1; mp_roundtime 60; mp_roundtime_defuse 60; mp_roundtime_hostage 60; mp_ct_default_secondary ''; mp_t_default_secondary ''; mp_free_armor 1; mp_give_player_c4 0; mp_maxmoney 0");
+        return $this;
+    }
+
+    private function undoKnifeConfig() {
+        $this->rcon->send("mp_halftime_duration 15; mp_roundtime 5; mp_roundtime_defuse 0; mp_roundtime_hostage 0; mp_ct_default_secondary \"weapon_hkp2000\"; mp_t_default_secondary \"weapon_glock\"; mp_free_armor 0; mp_give_player_c4 1; mp_maxmoney 16000");
+        return $this;
+    }
+
+    private function executeWarmupConfig() {
+        $this->rcon->send("mp_warmuptime 3600; mp_warmup_pausetimer 1; mp_maxmoney 60000; mp_startmoney 60000; mp_free_armor 1; mp_warmup_start");
+        return $this;
+    }
+
+    private function undoWarmupConfig() {
+        $this->rcon->send("mp_warmuptime 30; mp_warmup_pausetimer 0; mp_maxmoney 16000; mp_startmoney 800; mp_free_armor 0; mp_warmup_end");
+        return $this;
+    }
+
+    private function executeMatchConfig() {
+        $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_warmuptime 0; mp_halftime_pausetimer 1; mp_maxrounds " . ($this->maxRound * 2));
+        return $this;
+    }
+
+    private function goLive($type) {
+        $types = array(
+            "KNIFE" => array( "restartMethod" => "ko3", "eslAnnounce" => "KNIFE LIVE!" ),
+            "LIVE" => array( "restartMethod" => "lo3", "eslAnnounce" => "1st Side: LIVE!" )
+        );
+
+        if (\eBot\Config\Config::getInstance()->getKo3Method() == "csay" && $this->pluginCsay) {
+            $this->rcon->send("csay_" . $types["$type"]["restartMethod"]);
+        } elseif (\eBot\Config\Config::getInstance()->getKo3Method() == "esl" && $this->pluginESL) {
+            $this->rcon->send("esl_" . $types["$type"]["restartMethod"]);
+            $this->say($types["$type"]["eslAnnounce"]);
+        } else {
+            $this->rcon->send("mp_restartgame 3");
+            for ($i = 0; $i < 3; $i += 1)
+                $this->say("$type!");
+        }
+        return $this;
+    }
+
     private function startMatch($force_ready = false) {
         if (\eBot\Config\Config::getInstance()->getDelayReady() && !$force_ready && $this->ready['ct'] && $this->ready['t']) {
             if ($this->delay_ready_abort)
@@ -2694,7 +2726,9 @@ class Match implements Taskable {
             TaskManager::getInstance()->addTask(new Task($this, self::TASK_DELAY_READY, microtime(true) + 1));
         } else {
             if ($this->ready['ct'] && $this->ready['t']) {
+                $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
                 if ($this->getStatus() == self::STATUS_WU_KNIFE) {
+                    // KNIFE ROUND
                     $this->stop['t'] = false;
                     $this->stop['ct'] = false;
 
@@ -2704,29 +2738,11 @@ class Match implements Taskable {
                     $this->setStatus(self::STATUS_KNIFE, true);
                     $this->currentMap->setStatus(Map::STATUS_KNIFE, true);
 
-                    // FIX for warmup
-
-                    $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_warmuptime 0; mp_halftime_pausetimer 1; mp_warmup_pausetimer 0;");
-                    $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
-                    $this->rcon->send("mp_halftime_duration 1; mp_roundtime_defuse 60");
-                    $this->rcon->send("mp_warmup_end");
-                    if (\eBot\Config\Config::getInstance()->getKo3Method() == "csay" && $this->pluginCsay) {
-                        $this->rcon->send("csay_ko3");
-                    } elseif (\eBot\Config\Config::getInstance()->getKo3Method() == "esl" && $this->pluginESL) {
-                        $this->rcon->send("esl_ko3");
-                        $this->say("KNIFE LIVE!");
-                    } else {
-                        $this->rcon->send("mp_restartgame 3");
-                        $this->say("KNIFE!");
-                        $this->say("KNIFE!");
-                        $this->say("KNIFE!");
-                    }
-
+                    // Undo changes from warmup and go live with knife
+                    $this->undoWarmupConfig()->executeMatchConfig()->executeKnifeConfig()->goLive("KNIFE");
                     $this->waitForRestart = true;
                 } else {
-                    // FIX for warmup
-                    $this->rcon->send("mp_warmup_pausetimer 0;");
-
+                    // NO KNIFE ROUND
                     $this->stop['t'] = false;
                     $this->stop['ct'] = false;
                     $this->waitForRestart = true;
@@ -2739,24 +2755,9 @@ class Match implements Taskable {
                         case Map::STATUS_WU_1_SIDE:
                             $this->currentMap->setStatus(Map::STATUS_FIRST_SIDE, true);
                             $this->setStatus(self::STATUS_FIRST_SIDE, true);
-                            $fichier = $this->matchData["rules"] . ".cfg; mp_maxrounds " . ($this->maxRound * 2);
 
-                            // NEW
-                            $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_halftime_pausetimer 1;");
-                            $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
-                            $this->rcon->send("mp_halftime_duration 1");
-                            $this->rcon->send("mp_warmup_end");
-                            if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay" && $this->pluginCsay) {
-                                $this->rcon->send("csay_lo3");
-                            } elseif (\eBot\Config\Config::getInstance()->getLo3Method() == "esl" && $this->pluginESL) {
-                                $this->rcon->send("esl_lo3");
-                                $this->say("1st Side: LIVE!");
-                            } else {
-                                $this->rcon->send("mp_restartgame 3");
-                                $this->say("LIVE!");
-                                $this->say("LIVE!");
-                                $this->say("LIVE!");
-                            }
+                            // Undo changes from warmup (turn back to default values) and go live with first side of regulation
+                            $this->undoWarmupConfig()->executeMatchConfig()->goLive("LIVE");
                             break;
                         case Map::STATUS_WU_2_SIDE :
                             $this->currentMap->setStatus(Map::STATUS_SECOND_SIDE, true);
