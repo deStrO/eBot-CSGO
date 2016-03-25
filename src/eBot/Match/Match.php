@@ -64,6 +64,7 @@ class Match implements Taskable {
     private $userToEnter;
     private $nbLast = array("nb_max_ct" => 0, "nb_max_t" => 0, "nb_ct" => 0, "nb_ct" => 0);
     private $winKnife = "";
+    private $winKnifeTeamName = "";
     private $needDel = false;
     private $firstFrag = false;
     private $rsKnife = false;
@@ -708,8 +709,6 @@ class Match implements Taskable {
                     switch ($this->getStatus()) {
                         case self::STATUS_WU_KNIFE: $message = "Warmup Knife Round";
                             break;
-                        case self::STATUS_END_KNIFE: $message = "Waiting for team select from knife winner (!stay/!switch)";
-                            break;
                         case self::STATUS_WU_1_SIDE: $message = "Warmup First Side";
                             break;
                         case self::STATUS_WU_2_SIDE: $message = "Warmup Second Side";
@@ -720,8 +719,13 @@ class Match implements Taskable {
                             break;
                     }
                     if ($this->mapIsEngaged && ($this->streamerReady || !$this->config_streamer)) {
-                        $messages [] = "Please write " . $this->formatText("!ready", "yellow") . " when your team is ready!";
-                        $messages [] = "Available commands: !help, !rules, !ready, !notready.";
+                        if ($this->getStatus() == self::STATUS_END_KNIFE) {
+                            $messages [] =  "Waiting for " . $this->formatText($this->winKnifeTeamName, "green") . " (" . $this->winKnife . ") to choose side (!stay/!switch).";
+                            $messages [] = "Available commands: !help, !rules, !stay, !switch, !restart.";
+                        } else {
+                            $messages [] = "Please write " . $this->formatText("!ready", "yellow") . " when your team is ready!";
+                            $messages [] = "Available commands: !help, !rules, !ready, !notready.";
+                        }
                     } elseif ($this->mapIsEngaged && (!$this->streamerReady || $this->config_streamer)) {
                         $messages [] = "Streamers are not ready yet!";
                     } else {
@@ -1478,6 +1482,7 @@ class Match implements Taskable {
             $this->currentMap->setStatus(Map::STATUS_END_KNIFE, true);
 
             $team = ($this->side['team_a'] == \strtolower($message->getTeamWin())) ? $this->teamAName : $this->teamBName;
+            $this->winKnifeTeamName = "$team";
 
             $this->say("$team won the knife, choose side by saying: !stay or !switch.", "ltGreen");
 
