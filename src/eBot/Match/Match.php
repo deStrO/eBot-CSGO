@@ -2227,6 +2227,10 @@ class Match implements Taskable {
             $this->currentMap->setTvRecordFile($record_name);
             $this->waitRoundStartRecord = false;
 
+            // remind players of recording their own demos if needed to do so
+            for ($i = 0; $i < 3; $i++)
+                $this->say("Remember to record your own POV demos if needed!", "red");
+
             \mysql_query("UPDATE `maps` SET tv_record_file='" . $record_name . "' WHERE id='" . $this->currentMap->getMapId() . "'") or $this->addLog("Error while updating tv record name - " . mysql_error(), Logger::ERROR);
         }
 
@@ -2757,6 +2761,10 @@ class Match implements Taskable {
                     $this->setStatus(self::STATUS_KNIFE, true);
                     $this->currentMap->setStatus(Map::STATUS_KNIFE, true);
 
+                    // Start demo record if RECORD_METHOD is "knifestart" in config.ini
+                    if (\eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "knifestart")
+                        $this->waitRoundStartRecord = true;
+
                     // Undo changes from warmup and go live with knife
                     $this->undoWarmupConfig()->executeMatchConfig()->executeKnifeConfig()->goLive("KNIFE");
                     $this->waitForRestart = true;
@@ -2775,13 +2783,16 @@ class Match implements Taskable {
                             $this->currentMap->setStatus(Map::STATUS_FIRST_SIDE, true);
                             $this->setStatus(self::STATUS_FIRST_SIDE, true);
 
+                            // Start demo record if RECORD_METHOD is "matchstart" in config.ini
+                            if (\eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "matchstart")
+                                $this->waitRoundStartRecord = true;
+
                             // Undo changes from warmup (turn back to default values) and go live with first side of regulation
                             $this->undoWarmupConfig()->executeMatchConfig()->goLive("LIVE");
                             break;
                         case Map::STATUS_WU_2_SIDE :
                             $this->currentMap->setStatus(Map::STATUS_SECOND_SIDE, true);
                             $this->setStatus(self::STATUS_SECOND_SIDE, true);
-                            $fichier = $this->matchData["rules"] . ".cfg";
 
                             // NEW
                             $this->waitForRestart = false;
