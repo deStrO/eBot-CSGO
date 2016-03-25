@@ -119,6 +119,7 @@ class Match implements Taskable {
     private $delay_ready_countdown = 10;
     private $delay_ready_abort = false;
     private $roundRestartEvent = false;
+    private $warmupManualFixIssued = false;
 
     public function __construct($match_id, $server_ip, $rcon) {
         Logger::debug("Registring MessageManager");
@@ -1425,6 +1426,19 @@ class Match implements Taskable {
                 $this->addLog("User: '" . $message->getUserName() . "' asked for status (userId=" . $message->userId . ").");
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: \005" . $this->teamAName . " \004" . $this->currentMap->getScore1() . " \001- \004" . $this->currentMap->getScore2() . " \005" . $this->teamBName . "\"");
             }
+        } elseif ($this->isCommand($message, "version")) {
+            // NYI - TODO
+        } elseif ($this->isCommand($message, "debug")) {
+            // NOT FINISHED - TODO
+            $this->say("Status = '" . $this->getStatus() . "' (" . $this->getStatusText() . ").");
+        } elseif ($text == "!fixwarmup") {
+            if (($this->getStatus() == self::STATUS_WU_1_SIDE || $this->getStatus() == self::STATUS_WU_KNIFE) && !$this->warmupManualFixIssued) {
+                $this->say("Executing warmup config again.");
+                $this->executeWarmupConfig();
+                $this->warmupManualFixIssued = true;
+            }
+        } elseif ($this->isCommand($message, "connect")) {
+            $this->say("CONNECT " . $this->server_ip . "; PASSWORD " . $this->matchData["config_password"] . ";");
         } else {
             // Dispatching events
             $event = new \eBot\Events\Event\Say();
