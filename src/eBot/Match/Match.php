@@ -1048,6 +1048,17 @@ class Match implements Taskable {
         }
     }
 
+    private function isCommand(\eBot\Message\Type\Say $message, $command) {
+        // ignore case sensitivity
+        $text = strtolower(trim($message->getText()));
+        if ($text == "!$command" || $text == ".$command" ) {
+            $this->addLog("User: '" . $message->getUserName() . "' (Team: '" . $message->getUserTeam() . "', userId: '" . $message->userId . "') executes command: '$command'.");
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /**
      * Processing say message
      * Made action with the message
@@ -1097,9 +1108,7 @@ class Match implements Taskable {
             } else {
                 $this->addLog("Veto isn't enabled.");
             }
-        } elseif ($text == "!stats") {
-            $this->addLog("User: '" . $message->getUserName() . "' asked for stats (userId=" . $message->userId . ").");
-
+        } elseif ($this->isCommand($message, "stats")) {
             if ($user) {
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: \001stats for \003" . $message->userName . "\"");
                 if ($user->get("death") == 0) {
@@ -1120,9 +1129,7 @@ class Match implements Taskable {
             } else {
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: No stats yet for \003" . $message->userName . "\"");
             }
-        } elseif ($text == "!morestats") {
-            $this->addLog("User: '" . $message->getUserName() . "' asked for more stats (userId=" . $message->userId . ").");
-
+        } elseif ($this->isCommand($message, "morestats")) {
             if ($user) {
                 $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: stats for \003" . $message->userName . "\"");
 
@@ -1181,20 +1188,17 @@ class Match implements Taskable {
             } else {
                 $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: No stats yet for \005" . $message->userName . '"');
             }
-        } elseif ($text == "!rules") {
+        } elseif ($this->isCommand($message, "rules")) {
             if ($this->pluginCsay) {
-                $this->addLog("User: '" . $message->getUserName() . "' asked for rules (userId=" . $message->userId . ").");
-
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Full Score: \005" . (($this->config_full_score) ? "yes" : "no") . " \001:: Switch Auto: \005" . (($this->config_switch_auto) ? "yes" : "no") . "\"");
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Over Time: \005" . (($this->config_ot) ? "yes" : "no") . " \001:: MaxRound: \005" . $this->maxRound . "\"");
             }
-        } elseif ($text == "!help") {
+        } elseif ($this->isCommand($message, "help")) {
             if ($this->pluginCsay) {
                 $this->addLog("User: '" . $message->getUserName() . "' asked for help (userId=" . $message->userId . ").");
                 $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: commands available: !help, !status, !stats, !morestats, !score, !ready, !notready, !stop, !restart (for knife round), !stay, !switch\"");
             }
-        } elseif ($text == "!restart") {
-            $this->addLog("User: '" . $message->getUserName() . "' asked to restart round (userId=" . $message->userId . ").");
+        } elseif ($this->isCommand($message, "restart")) {
             if (($this->getStatus() == self::STATUS_KNIFE) || ($this->getStatus() == self::STATUS_END_KNIFE)) {
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
@@ -1227,10 +1231,8 @@ class Match implements Taskable {
                     $this->startMatch(true);
                 }
             }
-        } elseif (($text == "!stop"  || $text == ".stop") && !\eBot\Config\Config::getInstance()->getConfigStopDisabled()) {
-            if ($this->isMatchRound() && $this->enable) {
-                $this->addLog("User: '" . $message->getUserName() . "' (" . $message->getUserTeam() . ") asked to stop match.");
-
+        } elseif (!\eBot\Config\Config::getInstance()->getConfigStopDisabled() && $this->isMatchRound() && $this->isCommand($message, "stop")) {
+            if ($this->enable) {
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
 
@@ -1249,12 +1251,10 @@ class Match implements Taskable {
 
                 $this->stopMatch();
             } else {
-                if (!$this->enable) {
-                    $this->addLog("Can't stop match, it's already stopped.");
-                }
+                $this->addLog("Can't stop match, it's already stopped.");
             }
-        } elseif ($text == "!continue" || $text == ".continue") {
-            if ($this->isMatchRound() && !$this->enable) {
+        } elseif ($this->isMatchRound() && $this->isCommand($message, "continue")) {
+            if (!$this->enable) {
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
 
@@ -1273,53 +1273,47 @@ class Match implements Taskable {
 
                 $this->continueMatch();
             }
-        } elseif ($text == "!ready" || $text == ".ready") {
-            if ($this->isWarmupRound() && $this->mapIsEngaged) {
-                if ($this->config_streamer && !$this->getStreamerReady()) {
-                    $this->say("Streamers are not ready yet.", "red");
-                    $this->say("Please wait until they are ready.");
-                } else {
-                    $this->addLog("User: '" . $message->getUserName() . "' (" . $message->getUserTeam() . ") said team is ready.");
-
-                    if ($message->getUserTeam() == "CT") {
-                        if (($this->getStatus() == self::STATUS_WU_2_SIDE) || ($this->getStatus() == self::STATUS_WU_OT_2_SIDE)) {
-                            $team = ($this->side['team_a'] == "ct") ? $this->teamBName : $this->teamAName;
-                        } else {
-                            $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
-                        }
-
-                        if (!$this->ready['ct']) {
-                            $this->ready['ct'] = true;
-                            $this->say($team . " (CT) is now " . $this->formatText("ready.", "green"));
-                        } else {
-                            $this->say($team . " (CT) is already " . $this->formatText("ready.", "green"));
-                        }
-                    } elseif ($message->getUserTeam() == "TERRORIST") {
-                        if (($this->getStatus() == self::STATUS_WU_2_SIDE) || ($this->getStatus() == self::STATUS_WU_OT_2_SIDE)) {
-                            $team = ($this->side['team_a'] == "t") ? $this->teamBName : $this->teamAName;
-                        } else {
-                            $team = ($this->side['team_a'] == "t") ? $this->teamAName : $this->teamBName;
-                        }
-
-
-                        if (!$this->ready['t']) {
-                            $this->ready['t'] = true;
-                            $this->say($team . " (T) is now " . $this->formatText("ready.", "green"));
-                        } else {
-                            $this->say($team . " (T) is already " . $this->formatText("ready.", "green"));
-                        }
+        } elseif ($this->isWarmupRound() && $this->mapIsEngaged && $this->isCommand($message, "ready")) {
+            if ($this->config_streamer && !$this->getStreamerReady()) {
+                $this->say("Streamers are not ready yet.", "red");
+                $this->say("Please wait until they are ready.");
+            } else {
+                if ($message->getUserTeam() == "CT") {
+                    if (($this->getStatus() == self::STATUS_WU_2_SIDE) || ($this->getStatus() == self::STATUS_WU_OT_2_SIDE)) {
+                        $team = ($this->side['team_a'] == "ct") ? $this->teamBName : $this->teamAName;
+                    } else {
+                        $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
                     }
 
-                    $this->startMatch();
+                    if (!$this->ready['ct']) {
+                        $this->ready['ct'] = true;
+                        $this->say($team . " (CT) is now " . $this->formatText("ready.", "green"));
+                    } else {
+                        $this->say($team . " (CT) is already " . $this->formatText("ready.", "green"));
+                    }
+                } elseif ($message->getUserTeam() == "TERRORIST") {
+                    if (($this->getStatus() == self::STATUS_WU_2_SIDE) || ($this->getStatus() == self::STATUS_WU_OT_2_SIDE)) {
+                        $team = ($this->side['team_a'] == "t") ? $this->teamBName : $this->teamAName;
+                    } else {
+                        $team = ($this->side['team_a'] == "t") ? $this->teamAName : $this->teamBName;
+                    }
+
+
+                    if (!$this->ready['t']) {
+                        $this->ready['t'] = true;
+                        $this->say($team . " (T) is now " . $this->formatText("ready.", "green"));
+                    } else {
+                        $this->say($team . " (T) is already " . $this->formatText("ready.", "green"));
+                    }
                 }
+
+                $this->startMatch();
             }
-        } elseif ($text == "!pause" || $text == ".pause") {
+        } elseif ($this->isCommand($message, "pause")) {
             if ($this->isMatchRound() && !$this->isPaused && $this->enable) {
-                $this->addLog("User: '" . $message->getUserName() . "' (" . $message->getUserTeam() . ") wants to pause match.");
 
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
-
                     if (!$this->pause['ct']) {
                         $this->pause['ct'] = true;
                         if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm")
@@ -1344,10 +1338,8 @@ class Match implements Taskable {
                 }
                 $this->pauseMatch();
             }
-        } elseif ($text == "!unpause" || $text == ".unpause") {
+        } elseif ($this->isCommand($message, "unpause")) {
             if ($this->isMatchRound() && $this->isPaused && $this->enable) {
-                $this->addLog("User: '" . $message->getUserName() . "' (" . $message->getUserTeam() . ") wants to unpause match.");
-
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
 
@@ -1432,7 +1424,7 @@ class Match implements Taskable {
                 }
                 $this->abortReady();
             }
-        } elseif ($text == "!status") {
+        } elseif ($this->isCommand($message, "status")) {
             if ($this->pluginCsay) {
                 $this->addLog("User: '" . $message->getUserName() .  "' asked for status (userId=" . $message->userId . ").");
                 if ($this->enable) {
