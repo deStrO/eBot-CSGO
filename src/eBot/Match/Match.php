@@ -778,9 +778,8 @@ class Match implements Taskable {
 
     public function say($message, $color) {
         // Want whole line in a certain color?
-        if ( $color ) {
+        if ( $color )
             $message = $this->formatText($message, $color);
-        }
 
         // temporary fix because of ugly chatcolor after last csgo update
         $message = str_replace("\003", "\001", $message);
@@ -797,6 +796,14 @@ class Match implements Taskable {
         } catch (\Exception $ex) {
             Logger::error("Say failed - " . $ex->getMessage());
         }
+    }
+
+    public function say_player($playerId, $message, $color) {
+        if ($color)
+            $message = $this->formatText($message, $color);
+
+        $this->rcon->send("csay_to_player $playerId \"e" . $this->formatText("Bot", "green") . ": $message\"");
+        return $this;
     }
 
     public function destruct() {
@@ -1119,7 +1126,7 @@ class Match implements Taskable {
             }
         } elseif ($this->isCommand($message, "stats")) {
             if ($user) {
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: \001stats for \003" . $message->userName . "\"");
+                $this->say_player($message->userId, "Stats for " . $message->userName . ":");
                 if ($user->get("death") == 0) {
                     $ratio = $user->get("kill");
                 } else {
@@ -1132,15 +1139,15 @@ class Match implements Taskable {
                     $ratiohs = round(($user->get("hs") / $user->get("kill")) * 100, 2);
                 }
 
-                $this->rcon->send("csay_to_player " . $message->userId . " \" \005Kill: \004" . $user->get("kill") . " \001- \005HS: \004" . $user->get("hs") . "\"");
-                $this->rcon->send("csay_to_player " . $message->userId . " \" \005Death: \004" . $user->get("death") . " \001- \005Score: \004" . $user->get("point") . "\"");
-                $this->rcon->send("csay_to_player " . $message->userId . " \" \005Ratio K/D: \004" . $ratio . " \001- \005HS%: \004" . $ratiohs . "\"");
+                $this->say_player($message->userId, $this->formatText("Kill: ", "ltGreen") . $this->formatText($user->get("kill"), "green") . " - " . $this->formatText("HS: ", "ltGreen") . $this->formatText($user->get("hs"), "green"));
+                $this->say_player($message->userId, $this->formatText("Death: ", "ltGreen") . $this->formatText($user->get("death"), "green") . " - " . $this->formatText("Score: ", "ltGreen") . $this->formatText($user->get("point"), "green"));
+                $this->say_player($message->userId, $this->formatText("Ratio K/D: ", "ltGreen") . $this->formatText($ratio, "green") . " - " . $this->formatText("\005HS%: ", "ltGreen") . $this->formatText($ratiohs, "green"));
             } else {
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: No stats yet for \003" . $message->userName . "\"");
+                $this->say_player($message->userId, "No stats yet for " . $message->userName);
             }
         } elseif ($this->isCommand($message, "morestats")) {
             if ($user) {
-                $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: stats for \003" . $message->userName . "\"");
+                $this->say_player($message->userId, "Stats for " . $message->userName . ":");
 
                 $stats = array();
                 for ($i = 1; $i <= 5; $i++) {
@@ -1181,31 +1188,30 @@ class Match implements Taskable {
                         $messageText .= " - " . $this->formatText($v["name"], "ltGreen") . ": " . $this->formatText($v["val"], "green");
 
                     if ($count == 2) {
-                        $this->rcon->send('csay_to_player ' . $message->userId . ' "' . $messageText . '"');
+                        $this->say_player($message->userId, "$messageText");
                         $messageText = "";
                         $count = 0;
                     }
                 }
 
                 if ($count > 0) {
-                    $this->rcon->send('csay_to_player ' . $message->userId . ' "' . $messageText . '"');
+                    $this->say_player($message->userId, "$messageText");
                 }
 
                 if ($doit) {
-                    $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: No stats yet.\"");
+                    $this->say_player($message->userId, "No stats yet.");
                 }
             } else {
-                $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: No stats yet for \005" . $message->userName . '"');
+                $this->say_player($message->userId, "No stats yet for " . $this->formatText($message->userName, "ltGreen") . ".");
             }
         } elseif ($this->isCommand($message, "rules")) {
             if ($this->pluginCsay) {
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Full Score: \005" . (($this->config_full_score) ? "yes" : "no") . " \001:: Switch Auto: \005" . (($this->config_switch_auto) ? "yes" : "no") . "\"");
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Over Time: \005" . (($this->config_ot) ? "yes" : "no") . " \001:: MaxRound: \005" . $this->maxRound . "\"");
+                $this->say_player($message->userId, "Full Score: " . $this->formatText((($this->config_full_score) ? "yes" : "no"), "ltGreen") . " :: Switch Auto: " . $this->formatText((($this->config_switch_auto) ? "yes" : "no"), "ltGreen"));
+                $this->say_player($message->userId, "Over Time: " . $this->formatText((($this->config_ot) ? "yes" : "no"), "ltGreen") . " :: MaxRound: " . $this->formatText($this->maxRound, "ltGreen"));
             }
         } elseif ($this->isCommand($message, "help")) {
             if ($this->pluginCsay) {
-                $this->addLog("User: '" . $message->getUserName() . "' asked for help (userId=" . $message->userId . ").");
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: commands available: !help, !status, !stats, !morestats, !score, !ready, !notready, !stop, !restart (for knife round), !stay, !switch\"");
+                $this->say_player($message->userId, "commands available: !help, !status, !stats, !morestats, !score, !ready, !notready, !stop, !restart (for knife round), !stay, !switch");
             }
         } elseif ($this->isCommand($message, "restart")) {
             if (($this->getStatus() == self::STATUS_KNIFE) || ($this->getStatus() == self::STATUS_END_KNIFE)) {
@@ -1415,17 +1421,15 @@ class Match implements Taskable {
             }
         } elseif ($this->isCommand($message, "status")) {
             if ($this->pluginCsay) {
-                $this->addLog("User: '" . $message->getUserName() .  "' asked for status (userId=" . $message->userId . ").");
                 if ($this->enable) {
-                    $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Current status: \002" . $this->getStatusText() . "\".");
+                    $this->say_player($message->userId, "Current status: " . $this->formatText($this->getStatusText(), "red") . ".");
                 } else {
-                    $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Current status: \002" . $this->getStatusText() . " - Match paused\".");
+                    $this->say_player($message->userId, "Current status: " . $this->formatText($this->getStatusText(), "red") . " - Match paused.");
                 }
             }
         } elseif ($this->isCommand($message, "status2")) { // DUPLICATE - REMOVE? TODO
             if ($this->pluginCsay) {
-                $this->addLog("User: '" . $message->getUserName() . "' asked for status (userId=" . $message->userId . ").");
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: \005" . $this->teamAName . " \004" . $this->currentMap->getScore1() . " \001- \004" . $this->currentMap->getScore2() . " \005" . $this->teamBName . "\"");
+                $this->say_player($message->userId, $this->formatText($this->teamAName, "ltGreen") . " " . $this->formatText($this->currentMap->getScore1(), "green") . " - " . $this->formatText($this->currentMap->getScore2(), "green") . " " . $this->formatText($this->teamBName, "ltGreen"));
             }
         } elseif ($this->isCommand($message, "version")) {
             // NYI - TODO
