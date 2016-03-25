@@ -855,6 +855,8 @@ class Match implements Taskable {
                     return $this->processGotTheBomb($message);
                 case "eBot\Message\Type\JoinTeam":
                     return $this->processJoinTeam($message);
+                case "eBot\Message\Type\Attacked":
+                    return $this->processAttacked($message);
                 case "eBot\Message\Type\Kill":
                     return $this->processKill($message);
                 case "eBot\Message\Type\KillAssist":
@@ -1986,6 +1988,12 @@ class Match implements Taskable {
 
     private function processChangeName(\eBot\Message\Type\ChangeName $message) {
         $this->processPlayer($message->getUserId(), $message->newName, $message->getUserTeam(), $message->getUserSteamid());
+    }
+
+    private function processAttacked(\eBot\Message\Type\Attacked $message) {
+        if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
+            // TO BE DONE
+        }
     }
 
     private function processKillAssist(\eBot\Message\Type\KillAssist $message) {
