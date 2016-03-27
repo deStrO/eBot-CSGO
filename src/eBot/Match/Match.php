@@ -2865,6 +2865,10 @@ class Match implements Taskable {
                             if (\eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "matchstart")
                                 $this->waitRoundStartRecord = true;
 
+                            // Start demo record if RECORD_METHOD is "knifestart" in config.ini and no knife round was done
+                            if (\eBot\Config\Config::getInstance()->getConfigKnifeMethod() == "knifestart" && $this->winKnife == "")
+                                $this->waitRoundStartRecord = true;
+
                             // Undo changes from warmup (turn back to default values) and go live with first side of regulation
                             $this->undoWarmupConfig()->executeMatchConfig()->goLive("LIVE");
                             break;
