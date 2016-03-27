@@ -1991,6 +1991,44 @@ class Match implements Taskable {
         $this->processPlayer($message->getUserId(), $message->newName, $message->getUserTeam(), $message->getUserSteamid());
     }
 
+    private function generateDamageReports() {
+        foreach ($this->players as $player) {
+        // Determine own and enemy team for current player to generate report for
+        $ownTeam = strtoupper($player->currentSide);
+        $enemyTeam = "";
+        if ($ownTeam == "T") {
+            $ownTeam = "TERRORIST";
+            $enemyTeam = "CT";
+        } else {
+            $enemyTeam = "TERRORIST";
+        }
+
+        $this->say_player($userId, "Damage report for " . $player->name . " :::");
+
+        // Process each enemy player to generate report
+        foreach ($this->roundData[$this->getNbRound()][$enemyTeam]["HEALTH_LEFT"] as $enemyPlayer => $hpLeft) {
+            // set all to 0 incase player did not do/take any damage to enemy player
+            $dmgDone = $dmgDoneHits = $dmgTaken = $dmgTakenHits = 0;
+
+            // did player do damage to enemy player?
+            if ($this->roundData[$this->getNbRound()][$ownTeam]["DAMAGE_DONE"][$player->name][$enemyPlayer]) {
+                $dmgDone = $this->roundData[$this->getNbRound()][$ownTeam]["DAMAGE_DONE"][$player->name][$enemyPlayer]["DAMAGE"];
+                $dmgDoneHits = $this->roundData[$this->getNbRound()][$ownTeam]["DAMAGE_DONE"][$player->name][$enemyPlayer]["HITS"];
+            }
+
+            // did player take damage from enemy player?
+            if ($this->roundData[$this->getNbRound()][$ownTeam]["DAMAGE_TAKEN"][$player->name][$enemyPlayer]) {
+                $dmgTaken = $this->roundData[$this->getNbRound()][$ownTeam]["DAMAGE_TAKEN"][$player->name][$enemyPlayer]["DAMAGE"];
+                $dmgTakenHits = $this->roundData[$this->getNbRound()][$ownTeam]["DAMAGE_TAKEN"][$player->name][$enemyPlayer]["HITS"];
+            }
+
+            $this->say_player($userId, "(" . $this->formatText($dmgDone, "green") . " / " . $this->formatText($dmgDoneHits, "green") . " hits) to (" .
+                $this->formatText($dmgTaken, "red") . " / " . $this->formatText($dmgTakenHits, "red") . " hits) from " .
+                    $this->formatText($enemyPlayer, "yellow") . " ($hpLeft hp).");
+        }
+        }
+    }
+
     private function processAttacked(\eBot\Message\Type\Attacked $message) {
         if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
             // check if damage exceeds hp of victim, if so change HP to 0 and atackerDamage to victimHP so that AWP hits f.eks dont show 447 damage on HS
