@@ -121,6 +121,7 @@ class Match implements Taskable {
     private $delay_ready_abort = false;
     private $roundRestartEvent = false;
     private $warmupManualFixIssued = false;
+    private $roundData = array();
 
     public function __construct($match_id, $server_ip, $rcon) {
         Logger::debug("Registring MessageManager");
@@ -1992,7 +1993,23 @@ class Match implements Taskable {
 
     private function processAttacked(\eBot\Message\Type\Attacked $message) {
         if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
-            // TO BE DONE
+            // check if damage exceeds hp of victim, if so change HP to 0 and atackerDamage to victimHP so that AWP hits f.eks dont show 447 damage on HS
+            if (isset($this->roundData[$this->getNbRound()][$message->victimTeam]["HEALTH_LEFT"][$message->victimName]) && ($this->roundData[$this->getNbRound()][$message->victimTeam]["HEALTH_LEFT"][$message->victimName] - $message->attackerDamage) < 0) {
+                $message->attackerDamage = $this->roundData[$this->getNbRound()][$message->victimTeam]["HEALTH_LEFT"][$message->victimName];
+                $this->roundData[$this->getNbRound()][$message->victimTeam]["HEALTH_LEFT"][$message->victimName] = 0;
+            } else {
+                $this->roundData[$this->getNbRound()][$message->victimTeam]["HEALTH_LEFT"][$message->victimName] -= $message->attackerDamage;
+            }
+
+            // check if attacker is on own team if so then don't append data, we dont want damage report for own team members
+            if ($message->attackerTeam != $message->victimTeam) {
+                $this->roundData[$this->getNbRound()][$message->attackerTeam]["DAMAGE_DONE"][$message->attackerName][$message->victimName]["DAMAGE"] += $message->attackerDamage;
+                $this->roundData[$this->getNbRound()][$message->attackerTeam]["DAMAGE_DONE"][$message->attackerName][$message->victimName]["HITS"] += 1;
+                $this->roundData[$this->getNbRound()][$message->victimTeam]["DAMAGE_TAKEN"][$message->victimName][$message->attackerName]["DAMAGE"] += $message->attackerDamage;
+                $this->roundData[$this->getNbRound()][$message->victimTeam]["DAMAGE_TAKEN"][$message->victimName][$message->attackerName]["HITS"] += 1;
+            }
+
+//            $this->say($message->attackerName . " (" . $message->attackerTeam . ") hit " . $message->victimName . " (" . $message->victimTeam . ") for " . $message->attackerDamage . " in round " . $this->getNbRound() . " (hp left: " . $this->roundData[$this->getNbRound()]["HEALTH_LEFT"][$message->victimName] . ") with " . $message->attackerWeapon . " hit in " . $message->attackerHitGroup);
         }
     }
 
