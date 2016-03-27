@@ -1494,6 +1494,8 @@ class Match implements Taskable {
         }
 
         if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
+            // Generate damage report for players at the end of the round
+            $this->generateDamageReports();
             // Add point
             foreach ($this->players as $player)
                 $player->saveKillRound();
