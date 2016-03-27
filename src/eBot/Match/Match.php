@@ -2071,6 +2071,8 @@ class Match implements Taskable {
         $this->processPlayer($message->getKilledUserId(), $message->getKilledUserName(), $message->getKilledUserTeam(), $message->getKilledUserSteamid());
 
         if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
+            // set HP of killed to 0 incase killed player took fall/world damage during game, this is not loogged so we can't process it manually unfortunately.
+            $this->roundData[$this->getNbRound()][$message->killedUserTeam]["HP_LEFT"][$message->killedUserName] = 0;
             $killer = $this->findPlayer($message->userId, $message->userSteamid);
             $killed = $this->findPlayer($message->killedUserId, $message->killedUserSteamid);
 
