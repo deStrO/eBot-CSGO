@@ -2214,6 +2214,12 @@ class Match implements Taskable {
         $this->roundRestartEvent = false;
         if ($this->roundEndEvent) {
             foreach ($this->players as $k => &$v) {
+                // for damage report purposes set player HP to 100 at start of round
+                $team = strtoupper($v->get("currentSide"));
+                if ($team == "T")
+                    $team = "TERRORIST";
+                $this->roundData[$this->getNbRound()][$team]["HEALTH_LEFT"][$v->name] = 100;
+
                 if ($this->getNbRound() > 1) {
                     $v->snapshot($this->getNbRound() - 1);
                 }
