@@ -1443,7 +1443,7 @@ class Match implements Taskable {
         } elseif ($this->isCommand($message, "debug")) {
             // NOT FINISHED - TODO
             $this->say("Status = '" . $this->getStatus() . "' (" . $this->getStatusText() . ").");
-        } elseif ($text == "!fixwarmup") {
+        } elseif ($this->isCommand($message, "fixwarmup")) {
             if (($this->getStatus() == self::STATUS_WU_1_SIDE || $this->getStatus() == self::STATUS_WU_KNIFE) && !$this->warmupManualFixIssued) {
                 $this->say("Executing warmup config again.");
                 $this->executeWarmupConfig();
