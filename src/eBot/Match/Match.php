@@ -1996,7 +1996,7 @@ class Match implements Taskable {
     }
 
     private function generateDamageReports() {
-        foreach ($this->players as $player) {
+        foreach ($this->players as $userId => $player) {
         // Determine own and enemy team for current player to generate report for
         $ownTeam = strtoupper($player->currentSide);
         $enemyTeam = "";
