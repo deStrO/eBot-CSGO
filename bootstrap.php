@@ -9,7 +9,8 @@
  */
 $check["php"] = (function_exists('version_compare') && version_compare(phpversion(), '5.3.1', '>='));
 $check["php5.4"] = (function_exists('version_compare') && version_compare(phpversion(), '5.4', '>='));
-$check["mysql"] = extension_loaded('mysql');
+//Newer versions of php use mysqli instead of mysql
+$check["mysql"] = (extension_loaded('mysql') or extension_loaded('mysqli') ? true : false);
 $check["spl"] = extension_loaded('spl');
 $check["sockets"] = extension_loaded("sockets");
 $check["pthreads"] = extension_loaded("pthreads");
