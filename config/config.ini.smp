@@ -23,6 +23,8 @@ PAUSE_METHOD = "nextRound" ; nextRound or instantConfirm or instantNoConfirm
 LO3_METHOD = "restart" ; restart or csay or esl
 KO3_METHOD = "restart" ; restart or csay or esl
 DEMO_DOWNLOAD = true ; true or false :: whether gotv demos will be downloaded from the gameserver after matchend or not
+REMIND_RECORD = true ; true will print the 3x "Remember to record your own POV demos if needed!" messages, false will not
+DAMAGE_REPORT = true; true will print damage reports at end of round to players, false will not
 
 [MAPS]
 MAP[] = "de_dust2_se"
