@@ -591,10 +591,11 @@ class Match implements Taskable {
         } elseif ($name == self::STOP_RECORD) {
             $this->needDelTask = false;
             $this->addLog("Stopping record and pushing demo...");
+//            $this->rcon->send("tv_stoprecord");
             if (\eBot\Config\Config::getInstance()->getDemoDownload()) {
                 $this->rcon->send('tv_stoprecord; ' . 'csay_tv_demo_push "' . $this->currentRecordName . '.dem" "http://' . \eBot\Config\Config::getInstance()->getBot_ip() . ':' . \eBot\Config\Config::getInstance()->getBot_port() . '/upload"');
             } else {
-                $this->rcon->send('tv_stoprecord');
+                $this->rcon->send("tv_stoprecord");
             }
             $this->currentRecordName = "";
             $this->rcon->send("exec server.cfg;");
@@ -1996,6 +1997,10 @@ class Match implements Taskable {
     }
 
     private function generateDamageReports() {
+        // return if damage report is disabled
+        if (\eBot\Config\Config::getInstance()->getDamageReportConfig() == false)
+            return;
+
         foreach ($this->players as $userId => $player) {
         // Determine own and enemy team for current player to generate report for
         $ownTeam = strtoupper($player->currentSide);
@@ -2307,9 +2312,11 @@ class Match implements Taskable {
             $this->currentMap->setTvRecordFile($record_name);
             $this->waitRoundStartRecord = false;
 
-            // remind players of recording their own demos if needed to do so
-            for ($i = 0; $i < 3; $i++)
-                $this->say("Remember to record your own POV demos if needed!", "red");
+            // remind players of recording their own demos if needed to do so, if enabled
+            if (\eBot\Config\Config::getInstance()->getRememberRecordmsgConfig() != false) {
+                for ($i = 0; $i < 3; $i++)
+                    $this->say("Remember to record your own POV demos if needed!", "red");
+            }
 
             \mysql_query("UPDATE `maps` SET tv_record_file='" . $record_name . "' WHERE id='" . $this->currentMap->getMapId() . "'") or $this->addLog("Error while updating tv record name - " . mysql_error(), Logger::ERROR);
         }
