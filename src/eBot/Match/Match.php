@@ -163,7 +163,7 @@ class Match implements Taskable {
             $this->rcon = new Rcon($ip[0], $ip[1], $rcon);
             $this->rconPassword = $rcon;
             Logger::log("RCON init ok");
-            $this->rcon->send("log on; mp_logdetail 0; logaddress_del " . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . \eBot\Config\Config::getInstance()->getBot_port() . ";logaddress_add " . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . \eBot\Config\Config::getInstance()->getBot_port());
+            $this->rcon->send("log on; logaddress_del " . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . \eBot\Config\Config::getInstance()->getBot_port() . ";logaddress_add " . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . \eBot\Config\Config::getInstance()->getBot_port());
             $this->addMatchLog("- RCON connection OK", true, false);
         } catch (\Exception $ex) {
             $this->needDel = true;
@@ -564,7 +564,7 @@ class Match implements Taskable {
                     }
                 }
             }
-            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 10));
+            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 90));
         } elseif ($name == self::REINIT_RCON) {
             $ip = explode(":", $this->server_ip);
             try {
@@ -895,7 +895,7 @@ class Match implements Taskable {
 			return;
 		}
 		
-		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($this->currentMap->getMapName(), $message->maps) !== false  ) {
+		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($message->maps,$this->currentMap->getMapName()) !== false  ) {
 			$this->addLog("Loading maps " . $message->maps);
 			$this->addMatchLog("Loading maps " . $message->maps);
 			$ip = explode(":", $this->server_ip);
