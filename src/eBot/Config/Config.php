@@ -39,19 +39,13 @@ class Config extends Singleton {
     private $config_stop_disabled = false;
     private $config_knife_method = false;
     private $delay_ready = false;
+    private $damage_report = true;
+    private $remember_recordmsg = true;
 
     public function __construct() {
-        $options = getopt("", array("config::"));  
-        $file = APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini";
-        if (@$options['config']) {
-            if (file_exists(APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . $options['config'])) {
-                $file = APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . $options['config'];
-            }
-        }
-        
-        Logger::debug("Loading " . $file);
-        if (file_exists($file)) {
-            $config = parse_ini_file($file);
+        Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
+        if (file_exists(APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini")) {
+            $config = parse_ini_file(APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
 
             $this->mysql_ip = $config["MYSQL_IP"];
             $this->mysql_port = $config["MYSQL_PORT"];
@@ -77,6 +71,12 @@ class Config extends Singleton {
             $this->config_stop_disabled = (bool) $config['COMMAND_STOP_DISABLED'];
             $this->config_knife_method = ($config['RECORD_METHOD'] == "knifestart") ? "knifestart" : "matchstart";
             $this->delay_ready = (bool)$config['DELAY_READY'];
+
+            if ( isset($config['DAMAGE_REPORT']) && is_bool((bool)$config['DAMAGE_REPORT']) )
+                $this->damage_report = (bool) $config['DAMAGE_REPORT'];
+
+            if ( isset($config['REMIND_RECORD']) && is_bool((bool)$config['REMIND_RECORD']) )
+                $this->remember_recordmsg = (bool) $config['REMIND_RECORD'];
 
             Logger::debug("Configuration loaded");
         }
@@ -108,6 +108,22 @@ class Config extends Singleton {
         foreach ($this->maps as $map) {
             Logger::log("-> ".$map);
         }
+    }
+
+    public function getRememberRecordmsgConfig() {
+        return $this->remember_recordmsg;
+    }
+
+    public function setRememberRecordmsgConfig($remember_recordmsg) {
+        $this->remember_recordmsg = $remember_recordmsg;
+    }
+
+    public function getDamageReportConfig() {
+        return $this->damage_report;
+    }
+
+    public function setDamageReportConfig($damage_report) {
+        $this->damage_report = $damage_report;
     }
 
     public function getMysql_ip() {
