@@ -40,7 +40,7 @@ class Config extends Singleton {
     private $config_knife_method = false;
     private $delay_ready = false;
     private $damage_report = true;
-    private $remember_recordmsg = true;
+    private $remember_recordmsg = false;
 
     public function __construct() {
         Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
