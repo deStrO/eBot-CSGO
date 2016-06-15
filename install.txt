@@ -28,9 +28,9 @@ apt-get install mysql-server
 
 mkdir /home/ebot
 cd /home/ebot
-wget https://github.com/deStrO/eBot-CSGO/archive/threads.zip
-unzip threads.zip
-mv eBot-CSGO-threads ebot-csgo
+wget https://github.com/deStrO/eBot-CSGO/archive/master.zip
+unzip master.zip
+mv eBot-CSGO-master ebot-csgo
 cd ebot-csgo
 curl --silent --location https://deb.nodesource.com/setup_0.12 | bash -
 apt-get install -y nodejs
