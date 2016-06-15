@@ -54,7 +54,7 @@ class Player {
         $this->match_id = $match_id;
         $this->steamid = $steamid;
 
-        Logger::debug("Creating objet Player $match_id $map_id $steamid");
+        Logger::debug("Creating object Player $match_id $map_id $steamid");
 
         $sql = \mysql_query("SELECT * FROM players WHERE match_id='" . $this->match_id . "' AND map_id='" . $this->map_id . "' AND steamid = '" . $this->steamid . "'") or dir(mysql_error());
         $req = \mysql_fetch_array($sql);

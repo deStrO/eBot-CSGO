@@ -27,6 +27,7 @@ class Application extends AbstractApplication {
     private $clientsConnected = false;
 
     public function run() {
+        global $loggerData;
         // Loading Logger instance
         Logger::getInstance();
         Logger::log($this->getName());
@@ -52,12 +53,12 @@ class Application extends AbstractApplication {
         // Starting application
         Logger::log("Starting eBot Application");
 
-        try {
-            $this->socket = new Socket(Config::getInstance()->getBot_ip(), Config::getInstance()->getBot_port());
-        } catch (Exception $ex) {
-            Logger::error("Unable to bind socket");
-            die();
-        }
+        /* try {
+          $this->socket = new Socket(Config::getInstance()->getBot_ip(), Config::getInstance()->getBot_port());
+          } catch (Exception $ex) {
+          Logger::error("Unable to bind socket");
+          die();
+          } */
 
         try {
             $this->websocket['match'] = new \WebSocket("ws://" . \eBot\Config\Config::getInstance()->getBot_ip() . ":" . (\eBot\Config\Config::getInstance()->getBot_port()) . "/match");
@@ -79,7 +80,21 @@ class Application extends AbstractApplication {
 
         $time = time();
         while (true) {
-            $data = $this->socket->recvfrom($ip);
+            $data = "";
+            $ip = "";
+            $nbMessage = count($loggerData);
+            if ($nbMessage > 0) {
+                if ($nbMessage > 5) {
+                    Logger::log($nbMessage . " in queue!");
+                }
+                $d = explode("---", $loggerData->shift());
+                $ip = array_shift($d);
+                $data = implode("---", $d);
+                $nbMessage--;
+            } else {
+                usleep(500);
+            }
+            //$data = $this->socket->recvfrom($ip);
             if ($data) {
                 if (!preg_match("/L+\s+\d+\/\d+\/\d+/", $data)) {
                     if ($data == '__true__') {
@@ -229,10 +244,10 @@ class Application extends AbstractApplication {
                                 $match = \eBot\Manager\MatchManager::getInstance()->getMatch($preg["ip"]);
                                 if ($match) {
                                     $reply = $match->adminSkipMap();
-                                    /*if ($reply) {
-                                        $send = json_encode(array('message' => 'button', 'content' => 'stop', 'id' => $preg["id"]));
-                                        $this->websocket['match']->sendData($send);
-                                    }*/
+                                    /* if ($reply) {
+                                      $send = json_encode(array('message' => 'button', 'content' => 'stop', 'id' => $preg["id"]));
+                                      $this->websocket['match']->sendData($send);
+                                      } */
                                 } else {
                                     Logger::error($preg["ip"] . " is not managed !");
                                 }
@@ -266,8 +281,10 @@ class Application extends AbstractApplication {
                 $this->websocket['aliveCheck']->send(json_encode(array("message" => "ping")));
             }
 
-            \eBot\Manager\MatchManager::getInstance()->sendPub();
-            \eTools\Task\TaskManager::getInstance()->runTask();
+            if ($nbMessage < 100) {
+                \eBot\Manager\MatchManager::getInstance()->sendPub();
+                \eTools\Task\TaskManager::getInstance()->runTask();
+            }
         }
     }
 
@@ -275,12 +292,12 @@ class Application extends AbstractApplication {
         $conn = @\mysql_connect(Config::getInstance()->getMysql_ip(), Config::getInstance()->getMysql_user(), Config::getInstance()->getMysql_pass());
         if (!$conn) {
             Logger::error("Can't login into database " . Config::getInstance()->getMysql_user() . "@" . Config::getInstance()->getMysql_ip());
-            exit(1);
+            die(1);
         }
 
         if (!\mysql_select_db(Config::getInstance()->getMysql_base(), $conn)) {
             Logger::error("Can't select database " . Config::getInstance()->getMysql_base());
-            exit(1);
+            die(1);
         }
     }
 

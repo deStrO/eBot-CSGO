@@ -23,6 +23,8 @@ PAUSE_METHOD = "nextRound" ; nextRound or instantConfirm or instantNoConfirm
 LO3_METHOD = "restart" ; restart or csay or esl
 KO3_METHOD = "restart" ; restart or csay or esl
 DEMO_DOWNLOAD = true ; true or false :: whether gotv demos will be downloaded from the gameserver after matchend or not
+REMIND_RECORD = false ; true will print the 3x "Remember to record your own POV demos if needed!" messages, false will not
+DAMAGE_REPORT = true; true will print damage reports at end of round to players, false will not
 
 [MAPS]
 MAP[] = "de_dust2_se"
@@ -37,20 +39,10 @@ MAP[] = "de_nuke"
 MAP[] = "de_inferno"
 MAP[] = "de_train"
 MAP[] = "de_mirage"
+MAP[] = "de_cbble"
+MAP[] = "de_overpass"
 
 [WORKSHOP IDs]
-WORKSHOP["de_dust2_se"] = "125488374"
-WORKSHOP["de_nuke_se"] = "125498553"
-WORKSHOP["de_inferno_se"] = "125499116"
-WORKSHOP["de_mirage_ce"] = "123769103"
-WORKSHOP["de_train_se"] = "125498231"
-WORKSHOP["de_cache"] = "163589843"
-WORKSHOP["de_season"] = "125689191"
-WORKSHOP["de_dust2"] = "125438255"
-WORKSHOP["de_nuke"] = "125439125"
-WORKSHOP["de_inferno"] = "125438669"
-WORKSHOP["de_mirage"] = "152508932"
-WORKSHOP["de_train"] = "125438372"
 
 [Settings]
 COMMAND_STOP_DISABLED = false
