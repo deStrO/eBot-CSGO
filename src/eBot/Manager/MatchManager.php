@@ -159,6 +159,10 @@ class MatchManager extends Singleton implements Taskable {
             }
         }
     }
+
+    public function getMatchesCount() {
+        return count($this->matchs);
+    }
 }
 
 ?>

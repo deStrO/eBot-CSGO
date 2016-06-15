@@ -10,6 +10,7 @@
 
 namespace eBot\Application;
 
+use eBot\Manager\ReportManager;
 use eTools\Utils\Logger;
 use eTools\Application\AbstractApplication;
 use eTools\Socket\UDPSocket as Socket;
@@ -49,6 +50,9 @@ class Application extends AbstractApplication {
 
         Logger::log("Registering PluginsManager");
         PluginsManager::getInstance();
+
+        Logger::log("Registering ReportManager");
+        ReportManager::getInstance();
 
         // Starting application
         Logger::log("Starting eBot Application");
