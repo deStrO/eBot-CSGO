@@ -4,3 +4,4 @@ composer.lock
 config/config.ini
 demos/*.dem*
 logs/*
+.idea/

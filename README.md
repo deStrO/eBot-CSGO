@@ -1,3 +1,7 @@
+## Before going further
+
+If you want some help about eBot, check the new forum instead of creating a new issue: http://forum.esport-tools.net
+
 eBot-CSGO
 ==============
 
