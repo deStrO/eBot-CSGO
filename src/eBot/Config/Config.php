@@ -24,6 +24,8 @@ class Config extends Singleton {
     private $mysql_pass;
     private $mysql_base;
     private $bot_ip;
+    private $external_ip;
+    private $url_root;
     private $bot_port;
     private $messages = array();
     private $record_name = "ebot";
@@ -54,7 +56,18 @@ class Config extends Singleton {
             $this->mysql_base = $config["MYSQL_BASE"];
 
             $this->bot_ip = $config["BOT_IP"];
+            $this->external_ip = $config["EXTERNAL_IP"];
+            
+            if($this->external_ip == ""){
+                $this->external_ip = $this->bot_ip;
+            }
+            
+            $this->url_root = $config["URL_ROOT"];
             $this->bot_port = $config["BOT_PORT"];
+
+            if($this->url_root == ""){
+                $this->url_root = 'http://'.$this->bot_ip.':'.$this->bot_port;
+            }
 
             $this->delay_busy_server = $config["DELAY_BUSY_SERVER"];
 
@@ -172,6 +185,20 @@ class Config extends Singleton {
 
     public function setBot_ip($bot_ip) {
         $this->bot_ip = $bot_ip;
+    }
+    public function getExternal_ip() {
+        return $this->external_ip;
+    }
+
+    public function setExternal_ip($external_ip) {
+        $this->external_ip = $external_ip;
+    }
+    public function getUrl_root() {
+        return $this->url_root;
+    }
+
+    public function setUrl_root($url_root) {
+        $this->url_root = $url_root;
     }
 
     public function getBot_port() {

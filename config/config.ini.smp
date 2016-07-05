@@ -12,7 +12,9 @@ MYSQL_PASS = "ebotv3"
 MYSQL_BASE = "ebotv3"
 
 [Config]
-BOT_IP = "127.0.0.1"
+; EXTERNAL_IP = "" ; External IP address. Uncomment if you are behind NAT or using virtualization like lxc/docker.
+; URL_ROOT="http://ebot.example.com" ; without trailing slash. Used for demo upload. Uncomment if CS:GO is on different server.
+BOT_IP = "127.0.0.1" ; IP of interface to listen on. Make sure it is not 127.0.0.1 if CS:GO server is on different server.
 BOT_PORT = 12360
 MANAGE_PLAYER = 1
 DELAY_BUSY_SERVER = 120
