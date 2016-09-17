@@ -41,6 +41,7 @@ class Config extends Singleton {
     private $delay_ready = false;
     private $damage_report = true;
     private $remember_recordmsg = false;
+    private $external_log_ip = "";
 
     public function __construct() {
         Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
@@ -65,6 +66,7 @@ class Config extends Singleton {
             $this->ko3_method = $config["KO3_METHOD"];
 
             $this->demo_download = (bool) $config["DEMO_DOWNLOAD"];
+            $this->external_log_ip = $config['EXTERNAL_LOG_IP'];
 
             $this->pause_method = $config["PAUSE_METHOD"];
 
@@ -333,6 +335,31 @@ class Config extends Singleton {
 
     public function setDelayReady($delay_ready) {
         $this->delay_ready = $delay_ready;
+    }
+
+    /**
+     * @return string
+     */
+    public function getExternalLogIp()
+    {
+        return $this->external_log_ip;
+    }
+
+    /**
+     * @param string $external_log_ip
+     */
+    public function setExternalLogIp($external_log_ip)
+    {
+        $this->external_log_ip = $external_log_ip;
+    }
+
+
+    public function getLogAddressIp() {
+        if ($this->external_log_ip != "") {
+            return $this->external_log_ip ;
+        }
+
+        return $this->bot_ip;
     }
 
 }
