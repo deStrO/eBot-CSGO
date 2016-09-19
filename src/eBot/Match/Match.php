@@ -167,7 +167,7 @@ class Match implements Taskable {
             $this->rconPassword = $rcon;
             Logger::log("RCON init ok");
             $this->rcon->send("log on; mp_logdetail 3; logaddress_del " . \eBot\Config\Config::getInstance()->getLogAddressIp() . ":" . \eBot\Config\Config::getInstance()->getBot_port() . ";logaddress_add " . \eBot\Config\Config::getInstance()->getLogAddressIp() . ":" . \eBot\Config\Config::getInstance()->getBot_port());
-            $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
+            $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getLogAddressIp() . "\"");
             $this->addMatchLog("- RCON connection OK", true, false);
         } catch (\Exception $ex) {
             $this->needDel = true;
@@ -593,7 +593,7 @@ class Match implements Taskable {
             $this->addLog("Stopping record and pushing demo...");
 //            $this->rcon->send("tv_stoprecord");
             if (\eBot\Config\Config::getInstance()->getDemoDownload()) {
-                $this->rcon->send('tv_stoprecord; ' . 'csay_tv_demo_push "' . $this->currentRecordName . '.dem" "http://' . \eBot\Config\Config::getInstance()->getBot_ip() . ':' . \eBot\Config\Config::getInstance()->getBot_port() . '/upload"');
+                $this->rcon->send('tv_stoprecord; ' . 'csay_tv_demo_push "' . $this->currentRecordName . '.dem" "http://' . \eBot\Config\Config::getInstance()->getLogAddressIp() . ':' . \eBot\Config\Config::getInstance()->getBot_port() . '/upload"');
             } else {
                 $this->rcon->send("tv_stoprecord");
             }
@@ -763,7 +763,7 @@ class Match implements Taskable {
     /**
      * Function formats text, currently only supports color
      * Used for color with in-game chat via the say() function.
-     * This function will be called from say() if say() is passed a color, aka the whole line will be in that color, 
+     * This function will be called from say() if say() is passed a color, aka the whole line will be in that color,
      * or it can be called at will to easily format parts of text.
      */
     public function formatText($text, $color){
@@ -925,12 +925,12 @@ class Match implements Taskable {
 
     private function processChangeMap(\eBot\Message\Type\ChangeMap $message) {
         Logger::debug("Processing Change Map");
-		
+
 		if (preg_match("!CRC!", $message->maps)) {
 			$this->addLog("Wrong map name: '" . $message->maps . "'.");
 			return;
 		}
-		
+
 		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($this->currentMap->getMapName(), $message->maps) !== false  ) {
 			$this->addLog("Loading map: '" . $message->maps . "'.");
 			$this->addMatchLog("Loading map: '" . $message->maps . "'.");
@@ -2535,7 +2535,7 @@ class Match implements Taskable {
 
     private function saveScore() {
         foreach ($this->players as $player) {
-            
+
         }
     }
 
@@ -2565,7 +2565,7 @@ class Match implements Taskable {
     private function pauseMatch() {
         $doPause = false;
         $pauseMethod = \eBot\Config\Config::getInstance()->getPauseMethod();
-        
+
         $pauseMethods = array(
              "instantConfirm"   => array( "text" => "The match is paused.", "method" => "pause" ),
              "instantNoConfirm" => array( "text" => "The match is paused.", "method" => "pause" ),
@@ -2584,7 +2584,7 @@ class Match implements Taskable {
         } else {
             $this->addLog("pauseMatch(): Untreated pauseMethod: '$pauseMethod', cannot pause!", Logger::ERROR);
         }
-        
+
         if ( $pauseMethods["$pauseMethod"] && $doPause ) {
                 $this->isPaused = true;
                 $this->say($pauseMethods["$pauseMethod"]["text"]);
@@ -2692,7 +2692,7 @@ class Match implements Taskable {
             foreach ($this->players as &$player) {
                 $player->restoreSnapshot($this->getNbRound() - 1);
             }
-			
+
             $this->say("Round restored, going LIVE!");
             \mysql_query("UPDATE `matchs` SET ingame_enable = 1 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
             TaskManager::getInstance()->addTask(new Task($this, self::SET_LIVE, microtime(true) + 2));
@@ -2836,7 +2836,7 @@ class Match implements Taskable {
             TaskManager::getInstance()->addTask(new Task($this, self::TASK_DELAY_READY, microtime(true) + 1));
         } else {
             if ($this->ready['ct'] && $this->ready['t']) {
-                $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
+                $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getLogAddressIp() . "\"");
                 if ($this->getStatus() == self::STATUS_WU_KNIFE) {
                     // KNIFE ROUND
                     $this->stop['t'] = false;
@@ -3237,7 +3237,7 @@ class Match implements Taskable {
             \mysql_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '" . $this->match_id . "'");
             $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_unpaused', 'id' => $this->match_id)));
         }
-		
+
 		$this->rcon->send("mp_unpause_match");
 
         $this->score["team_a"] = $req['score_a'];
