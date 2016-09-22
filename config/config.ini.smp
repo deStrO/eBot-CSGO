@@ -19,6 +19,7 @@ MANAGE_PLAYER = 1
 DELAY_BUSY_SERVER = 120
 NB_MAX_MATCHS = 0
 PAUSE_METHOD = "nextRound" ; nextRound or instantConfirm or instantNoConfirm
+NODE_STARTUP_METHOD = "node" ; binary file name or none in case you are starting it with forever or manually
 
 [Match]
 LO3_METHOD = "restart" ; restart or csay or esl
