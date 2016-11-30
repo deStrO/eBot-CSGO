@@ -68,7 +68,7 @@ class MatchManager extends Singleton implements Taskable {
                     $teamA = $this->getTeamDetails($req['team_a'], 'a', $req);
                     $teamB = $this->getTeamDetails($req['team_a'], 'b', $req);
                     Logger::log("New match detected - " . $teamA['name'] . " vs " . $teamB['name'] . " on " . $req['server_ip']);
-                    //\mysql_query("UPDATE `matchs` SET `enable` = 1, `status` = " . Match::STATUS_STARTING . " WHERE `id` = " . $req["match_id"] . "");
+                    //\mysqli_query($this->mysqli_link, "UPDATE `matchs` SET `enable` = 1, `status` = " . Match::STATUS_STARTING . " WHERE `id` = " . $req["match_id"] . "");
                     $this->newMatch($req["match_id"], $req['server_ip'], $req['server_rcon'], $req['config_authkey']);
                 } catch (MatchException $ex) {
                     Logger::error("Error while creating the match");

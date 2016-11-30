@@ -42,6 +42,7 @@ class Map {
     private $currentScore = null;
     private $nbMaxRound = 15;
     private $tvRecordFile = "";
+	private $mysqli_link = null;
 
     public function __construct($mapData) {
         Logger::debug("Creating maps " . $mapData["id"]);

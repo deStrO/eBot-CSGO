@@ -19,6 +19,7 @@ class Score {
     private $score2Side1 = 0;
     private $score2Side2 = 0;
     private $id = 0;
+	private $mysqli_link = null;
 
     public function __construct($scoreData) {
         Logger::debug("Creating score " . $scoreData["id"]);
@@ -91,7 +92,7 @@ class Score {
     }
 
     public function saveScore() {
-        mysql_query("UPDATE maps_score SET score1_side1='" . $this->score1Side1 . "',score1_side2='" . $this->score1Side2 . "',score2_side1='" . $this->score2Side1 . "',score2_side2='" . $this->score2Side2 . "' WHERE id='" . $this->id . "' ");
+        mysqli_query("UPDATE maps_score SET score1_side1='" . $this->score1Side1 . "',score1_side2='" . $this->score1Side2 . "',score2_side1='" . $this->score2Side1 . "',score2_side2='" . $this->score2Side2 . "' WHERE id='" . $this->id . "' ");
     }
 
 }

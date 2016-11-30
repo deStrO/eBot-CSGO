@@ -122,6 +122,7 @@ class Match implements Taskable {
     private $roundRestartEvent = false;
     private $warmupManualFixIssued = false;
     private $roundData = array();
+	private $mysqli_link = null;
 
     public function __construct($match_id, $server_ip, $rcon) {
         Logger::debug("Registring MessageManager");
