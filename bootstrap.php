@@ -143,7 +143,7 @@ $config = \eBot\Config\Config::getInstance();
 
 if ($config->getNodeStartupMethod() != "none") {
     // Starting ebot Websocket Server
-    if (PHP_OS == "Linux") {
+    if (PHP_OS == "Linux" || PHP_OS == "Darwin") {
         echo "| Starting eBot Websocket-Server !" . PHP_EOL;
         echo "| Using ".$config->getNodeStartupMethod().PHP_EOL;
         $descriptorspec = array(

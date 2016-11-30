@@ -66,7 +66,7 @@ gc_enable();
 function handleShutdown() {
     global $webSocketProcess;
     
-    if (PHP_OS == "Linux")
+    if (PHP_OS == "Linux" || PHP_OS == "Darwin")
         proc_terminate($webSocketProcess,9);
     
     $error = error_get_last();

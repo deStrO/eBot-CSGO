@@ -66,7 +66,7 @@ gc_enable();
 function handleShutdown() {
     global $webSocketProcess;
 
-    if (PHP_OS == "Linux") {
+    if (PHP_OS == "Linux" || PHP_OS == "Darwin") {
         proc_terminate($webSocketProcess,9);
         foreach (\eBot\Application\ApplicationServer::getInstance()->instance as $proc) {
             proc_terminate($proc,9);
@@ -85,7 +85,7 @@ register_shutdown_function('handleShutdown');
 
 
 // Starting ebot Websocket Server
-if (PHP_OS == "Linux") {
+if (PHP_OS == "Linux" || PHP_OS == "Darwin") {
     echo "| Starting eBot Websocket-Server !" . PHP_EOL;
     $descriptorspec = array(
         0 => array("pipe", "r"),
