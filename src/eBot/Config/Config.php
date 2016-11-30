@@ -89,11 +89,11 @@ class Config extends Singleton
         }
     }
 
-    public function scanAdvertising()
+    public function scanAdvertising($mysqli_link)
     {
         unset($this->advertising);
-        $q = \mysql_query("SELECT a.`season_id`, a.`message`, s.`name` FROM `advertising` a LEFT JOIN `seasons` s ON a.`season_id` = s.`id` WHERE a.`active` = 1");
-        while ($row = mysql_fetch_array($q, MYSQL_ASSOC)) {
+        $q = \mysqli_query($mysqli_link, "SELECT a.`season_id`, a.`message`, s.`name` FROM `advertising` a LEFT JOIN `seasons` s ON a.`season_id` = s.`id` WHERE a.`active` = 1");
+        while ($row = mysqli_fetch_array($q, MYSQL_ASSOC)) {
             $this->advertising['message'][] = $row['message'];
             if ($row['season_id'] == null) {
                 $row['season_id'] = 0;

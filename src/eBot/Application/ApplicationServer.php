@@ -26,6 +26,7 @@ class ApplicationServer extends AbstractApplication {
     private $websocket = null;
     private $clientsConnected = false;
     public $instance = array();
+    private $mysqli_link = null;
 
     public function run() {
         // Loading Logger instance
@@ -38,11 +39,11 @@ class ApplicationServer extends AbstractApplication {
         Config::getInstance()->printConfig();
 
         // Initializing database
-        $this->initDatabase();
+		$this->mysqli_link = $this->initDatabase();
 
         // Registring components
         Logger::log("Registering MatchManagerServer");
-        MatchManagerServer::getInstance();
+		MatchManagerServer::getInstance();
 
         Logger::log("Registering Messages");
         MessageManager::createFromConfigFile();
@@ -231,16 +232,18 @@ class ApplicationServer extends AbstractApplication {
     }
 
     private function initDatabase() {
-        $conn = @\mysql_connect(Config::getInstance()->getMysql_ip(), Config::getInstance()->getMysql_user(), Config::getInstance()->getMysql_pass());
+        $conn = @\mysqli_connect(Config::getInstance()->getMysql_ip(), Config::getInstance()->getMysql_user(), Config::getInstance()->getMysql_pass());
         if (!$conn) {
             Logger::error("Can't login into database " . Config::getInstance()->getMysql_user() . "@" . Config::getInstance()->getMysql_ip());
             exit(1);
         }
 
-        if (!\mysql_select_db(Config::getInstance()->getMysql_base(), $conn)) {
+        if (!\mysqli_select_db($conn, Config::getInstance()->getMysql_base())) {
             Logger::error("Can't select database " . Config::getInstance()->getMysql_base());
             exit(1);
         }
+
+        return $conn;
     }
 
     public function getName() {

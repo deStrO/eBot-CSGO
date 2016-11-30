@@ -26,6 +26,7 @@ class Application extends AbstractApplication {
     private $socket = null;
     public $websocket = null;
     private $clientsConnected = false;
+    private $mysqli_link = null;
 
     public function run() {
         global $loggerData;
@@ -34,16 +35,17 @@ class Application extends AbstractApplication {
         Logger::log($this->getName());
 
         // Initializing database
-        $this->initDatabase();
+		$this->mysqli_link = $this->initDatabase();
 
         // Loading eBot configuration
         Logger::log("Loading config");
-        Config::getInstance()->scanAdvertising();
+        Config::getInstance()->scanAdvertising($this->mysqli_link);
         Config::getInstance()->printConfig();
 
         // Registring components
         Logger::log("Registering MatchManager");
-        MatchManager::getInstance();
+        $match_manager = MatchManager::getInstance();
+		$match_manager->setMySqliLink($this->mysqli_link);
 
         Logger::log("Registering Messages");
         MessageManager::createFromConfigFile();
@@ -293,16 +295,18 @@ class Application extends AbstractApplication {
     }
 
     private function initDatabase() {
-        $conn = @\mysql_connect(Config::getInstance()->getMysql_ip(), Config::getInstance()->getMysql_user(), Config::getInstance()->getMysql_pass());
+        $conn = @\mysqli_connect(Config::getInstance()->getMysql_ip(), Config::getInstance()->getMysql_user(), Config::getInstance()->getMysql_pass());
         if (!$conn) {
             Logger::error("Can't login into database " . Config::getInstance()->getMysql_user() . "@" . Config::getInstance()->getMysql_ip());
             die(1);
         }
 
-        if (!\mysql_select_db(Config::getInstance()->getMysql_base(), $conn)) {
+        if (!\mysqli_select_db($conn, Config::getInstance()->getMysql_base())) {
             Logger::error("Can't select database " . Config::getInstance()->getMysql_base());
             die(1);
         }
+
+        return $conn;
     }
 
     public function getName() {
