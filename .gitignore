@@ -1,6 +1,5 @@
 vendor
 composer.phar
-composer.lock
 config/config.ini
 demos/*.dem*
 logs/*
