@@ -133,7 +133,7 @@ class MatchManagerClient extends Singleton implements Taskable {
 
         if (!@$this->busyServers[$ip]) {
             if (!@$this->matchs[$ip]) {
-                $this->matchs[$ip] = new Match($match_id, $ip, $rcon);
+                $this->matchs[$ip] = new Match($this->mysqli_link, $match_id, $ip, $rcon);
                 $this->authkeys[$ip] = $authkey;
             } else {
                 $socket = \eBot\Application\ApplicationClient::getInstance()->getSocket();

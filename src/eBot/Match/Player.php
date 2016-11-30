@@ -30,7 +30,7 @@ class Player {
     private $tk = 0;
     private $point = 0;
     private $name = "";
-    private $mysql_id = 0;
+    private $mysqli_id = 0;
     private $currentSide = "";
     private $killRound = 0;
     private $alive = true;
@@ -50,18 +50,19 @@ class Player {
     private $gotFirstKill = false;
 	private $mysqli_link = null;
 
-    public function __construct($match_id, $map_id, $steamid) {
+    public function __construct($mysqli_link, $match_id, $map_id, $steamid) {
+		$this->mysqli_link = $mysqli_link;
         $this->map_id = $map_id;
         $this->match_id = $match_id;
         $this->steamid = $steamid;
 
         Logger::debug("Creating object Player $match_id $map_id $steamid");
 
-        $sql = \mysqli_query("SELECT * FROM players WHERE match_id='" . $this->match_id . "' AND map_id='" . $this->map_id . "' AND steamid = '" . $this->steamid . "'") or dir(mysqli_error());
+        $sql = \mysqli_query($this->mysqli_link, "SELECT * FROM players WHERE match_id='" . $this->match_id . "' AND map_id='" . $this->map_id . "' AND steamid = '" . $this->steamid . "'") or dir(mysqli_error());
         $req = \mysqli_fetch_array($sql);
         if ($req) {
             Logger::log("Restoring player " . $this->steamid . " from match " . $this->match_id);
-            $this->mysql_id = $req['id'];
+            $this->mysqli_id = $req['id'];
             $this->firstSide = $req['first_side'];
             $this->currentSide = $req['current_side'];
             $this->name = $req['pseudo'];
@@ -86,8 +87,8 @@ class Player {
             $this->firstKill = $req['firstkill'];
         } else {
             Logger::log("Creating players " . $this->steamid . " on match " . $this->match_id);
-            \mysqli_query("INSERT INTO `players` (`match_id`,`map_id`,`steamid`,`first_side`,`created_at`, `updated_at`) VALUES ('{$this->match_id}','{$this->map_id}', '{$this->steamid}', 'other', NOW(), NOW())") or die(mysqli_error());
-            $this->mysql_id = \mysqli_insert_id();
+            \mysqli_query($this->mysqli_link, "INSERT INTO `players` (`match_id`,`map_id`,`steamid`,`first_side`,`created_at`, `updated_at`) VALUES ('{$this->match_id}','{$this->map_id}', '{$this->steamid}', 'other', NOW(), NOW())") or die(mysqli_error());
+            $this->mysqli_id = \mysqli_insert_id();
         }
     }
 
@@ -113,9 +114,9 @@ class Player {
             }
 
             if ($this->team != null) {
-                mysqli_query("UPDATE `players` SET team = '{$this->team}', updated_at = NOW() WHERE id='{$this->mysql_id}'");
+                mysqli_query($this->mysqli_link, "UPDATE `players` SET team = '{$this->team}', updated_at = NOW() WHERE id='{$this->mysqli_id}'");
             } else {
-                mysqli_query("UPDATE `players` SET team = 'other' WHERE id='{$this->mysql_id}'");
+                mysqli_query($this->mysqli_link, "UPDATE `players` SET team = 'other' WHERE id='{$this->mysqli_id}'");
             }
         }
     }
@@ -129,7 +130,7 @@ class Player {
     }
 
     public function getId() {
-        return $this->mysql_id;
+        return $this->mysqli_id;
     }
 
     public function setOnline($online) {
@@ -162,8 +163,8 @@ class Player {
 
     public function setIp($ip) {
         $this->ip = $ip;
-        Logger::debug("Setting $ip to " . $this->steamid . " (players #" . $this->mysql_id . ")");
-        mysqli_query("UPDATE `player` SET ip='{$ip}' WHERE id='{$this->mysql_id}'");
+        Logger::debug("Setting $ip to " . $this->steamid . " (players #" . $this->mysqli_id . ")");
+        mysqli_query($this->mysqli_link, "UPDATE `player` SET ip='{$ip}' WHERE id='{$this->mysqli_id}'");
     }
 
     public function setCurrentTeam($team, $teamDefault = null) {
@@ -198,7 +199,7 @@ class Player {
     }
 
     public function save() {
-        mysqli_query("UPDATE `players` SET pseudo='" . \mysqli_real_escape_string($this->name) . "', current_side='" . $this->currentSide . "' WHERE id='{$this->mysql_id}'") or Logger::error(mysqli_error());
+        mysqli_query($this->mysqli_link, "UPDATE `players` SET pseudo='" . \mysqli_real_escape_string($this->name) . "', current_side='" . $this->currentSide . "' WHERE id='{$this->mysqli_id}'") or Logger::error(mysqli_error());
     }
 
     public function saveScore() {
@@ -214,7 +215,7 @@ class Player {
                     firstkill='" . $this->firstKill . "',
                     updated_at = NOW()
                       
-                 WHERE id='" . $this->mysql_id . "'";
+                 WHERE id='" . $this->mysqli_id . "'";
 
         if (!mysqli_query($query)) {
             Logger::error(mysqli_error());
@@ -224,7 +225,7 @@ class Player {
     public function saveKillRound() {
         if ($this->killRound > 0) {
             if ($this->killRound <= 5) {
-                mysqli_query("UPDATE players SET nb" . $this->killRound . "kill = nb" . $this->killRound . "kill + 1 WHERE id='" . $this->mysql_id . "'");
+                mysqli_query($this->mysqli_link, "UPDATE players SET nb" . $this->killRound . "kill = nb" . $this->killRound . "kill + 1 WHERE id='" . $this->mysqli_id . "'");
                 $k = "k" . $this->killRound;
                 $this->inc($k);
             }
@@ -232,16 +233,16 @@ class Player {
     }
 
     public function snapshot($round) {
-        @\mysqli_query("DELETE FROM players_snapshot WHERE player_id = '" . $this->mysql_id . "' AND round_id='" . $round . "'");
+        @\mysqli_query($this->mysqli_link, "DELETE FROM players_snapshot WHERE player_id = '" . $this->mysqli_id . "' AND round_id='" . $round . "'");
 
-        \mysqli_query("INSERT INTO players_snapshot 
+        \mysqli_query($this->mysqli_link, "INSERT INTO players_snapshot 
             (`player_id`,`nb_kill`,`death`,`assist`,`point`,`hs`,`defuse`,`bombe`,`tk`,`nb1`,`nb2`,`nb3`,`nb4`,`nb5`,`nb1kill`,`nb2kill`,`nb3kill`,`nb4kill`,`nb5kill`,`firstkill`,`round_id`,`created_at`,`updated_at`)
             VALUES
-            ({$this->mysql_id}, {$this->kill}, {$this->death}, {$this->assist}, {$this->point}, {$this->hs}, {$this->defuse}, {$this->bombe}, {$this->tk}, {$this->v1}, {$this->v2}, {$this->v3}, {$this->v4}, {$this->v5}, {$this->k1}, {$this->k2}, {$this->k3}, {$this->k4}, {$this->k5}, {$this->firstKill}, {$round}, NOW(), NOW())") or Logger::error("Error while snapshoting");
+            ({$this->mysqli_id}, {$this->kill}, {$this->death}, {$this->assist}, {$this->point}, {$this->hs}, {$this->defuse}, {$this->bombe}, {$this->tk}, {$this->v1}, {$this->v2}, {$this->v3}, {$this->v4}, {$this->v5}, {$this->k1}, {$this->k2}, {$this->k3}, {$this->k4}, {$this->k5}, {$this->firstKill}, {$round}, NOW(), NOW())") or Logger::error("Error while snapshoting");
     }
 
     public function restoreSnapshot($round) {
-        $sql = \mysqli_query("SELECT * FROM players_snapshot WHERE player_id ='" . $this->mysql_id . "' AND round_id='" . $round . "' ") or dir(mysql_error());
+        $sql = \mysqli_query($this->mysqli_link, "SELECT * FROM players_snapshot WHERE player_id ='" . $this->mysqli_id . "' AND round_id='" . $round . "' ") or dir(mysqli_error());
         $req = \mysqli_fetch_array($sql);
         if ($req) {
             Logger::log("Restoring player " . $this->steamid . " from match " . $this->match_id . " for round " . $round);
