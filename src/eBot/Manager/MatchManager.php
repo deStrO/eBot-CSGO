@@ -155,7 +155,7 @@ class MatchManager extends Singleton implements Taskable {
 
     private function getTeamDetails($id, $t, $data) {
         if (is_numeric($id) && $id > 0) {
-            $ds = mysqli_fetch_array(mysql_query("SELECT * FROM `teams` WHERE `id` = '$id'"));
+            $ds = mysqli_fetch_array(mysqli_query($this->mysqli_link, "SELECT * FROM `teams` WHERE `id` = '$id'"));
             return $ds;
         } else {
             if ($t == "a") {
