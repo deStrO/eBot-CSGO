@@ -39,6 +39,7 @@ class Config extends Singleton {
     private $config_stop_disabled = false;
     private $config_knife_method = false;
     private $delay_ready = false;
+    private $chat_prefix;
 
     public function __construct() {
         $options = getopt("", array("config::"));  
@@ -69,6 +70,7 @@ class Config extends Singleton {
 
             $this->lo3_method = $config["LO3_METHOD"];
             $this->ko3_method = $config["KO3_METHOD"];
+            $this->chat_prefix = $config["CHAT_PREFIX"]
 
             $this->demo_download = (bool) $config["DEMO_DOWNLOAD"];
 
@@ -318,7 +320,10 @@ class Config extends Singleton {
     public function setDelayReady($delay_ready) {
         $this->delay_ready = $delay_ready;
     }
-
+    
+    public function getChatPrefix(){
+        return $this->chat_prefix
+    }
 }
 
 ?>

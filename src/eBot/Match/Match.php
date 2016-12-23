@@ -119,6 +119,7 @@ class Match implements Taskable {
     private $delay_ready_countdown = 10;
     private $delay_ready_abort = false;
     private $roundRestartEvent = false;
+	private $chatprefix = \eBot\Config\Config::getInstance()->getChatPrefix();
 
     public function __construct($match_id, $server_ip, $rcon) {
         Logger::debug("Registring MessageManager");
@@ -203,7 +204,9 @@ class Match implements Taskable {
                 $this->pluginPrintPlayers = true;
                 $this->pluginSwitch = true;
                 $this->addMatchLog("- CSay version " . $match[1], false, false);
-            }
+            }else{
+				$chatprefix = str_replace(array("\001", "\002", "\003", "\004", "\005", "\006", "\007"), array("", "", "", "", "", "", ""), $chatprefix);
+			}
         } catch (\Exception $ex) {
             Logger::error("Error while getting plugins information");
         }
@@ -564,7 +567,7 @@ class Match implements Taskable {
                     }
                 }
             }
-            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 90));
+            TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 10));
         } elseif ($name == self::REINIT_RCON) {
             $ip = explode(":", $this->server_ip);
             try {
@@ -770,10 +773,10 @@ class Match implements Taskable {
             if (!$this->pluginCsay) {
                 $message = str_replace(array("\001", "\002", "\003", "\004", "\005", "\006", "\007"), array("", "", "", "", "", "", ""), $message);
                 $message = str_replace(";", ",", $message);
-                $this->rcon->send('say eBot: ' . addslashes($message) . '');
+                $this->rcon->send('say' . $chatprefix . " : " . addslashes($message) . '');
             } else {
                 $message = str_replace('"', '\\"', $message);
-                $this->rcon->send('csay_all "' . "e\004Bot\001: " . $message . '"');
+                $this->rcon->send('csay_all "' . $chatprefix . " : "  . $message . '"');
             }
         } catch (\Exception $ex) {
             Logger::error("Say failed - " . $ex->getMessage());
@@ -895,7 +898,7 @@ class Match implements Taskable {
 			return;
 		}
 		
-		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($message->maps,$this->currentMap->getMapName()) !== false  ) {
+		if ($this->currentMap->getMapName() == "tba" || $this->getStatus() > 2 || strpos($this->currentMap->getMapName(), $message->maps) !== false  ) {
 			$this->addLog("Loading maps " . $message->maps);
 			$this->addMatchLog("Loading maps " . $message->maps);
 			$ip = explode(":", $this->server_ip);
@@ -928,7 +931,7 @@ class Match implements Taskable {
 			try {
 				$this->rcon = new Rcon($ip[0], $ip[1], $this->rconPassword);
 				$this->rcon->send("echo eBot;");
-				$this->rcon->send("changelevel ".$this->currentMap->getMapName());
+				// $this->rcon->send("changelevel ".$this->currentMap->getMapName());
 			} catch (\Exception $ex) {
 				Logger::error("Reinit rcon failed - " . $ex->getMessage());
 				TaskManager::getInstance()->addTask(new Task($this, self::REINIT_RCON, microtime(true) + 1));
@@ -1089,7 +1092,7 @@ class Match implements Taskable {
             $this->addLog($message->getUserName() . " ask his stats");
 
             if ($user) {
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: \001stats pour \003" . $message->userName . "\"");
+                $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ":  \001stats for \003" . $message->userName . "\"");
                 if ($user->get("death") == 0) {
                     $ratio = $user->get("kill");
                 } else {
@@ -1104,15 +1107,15 @@ class Match implements Taskable {
 
                 $this->rcon->send("csay_to_player " . $message->userId . " \" \005Kill: \004" . $user->get("kill") . " \001- \005HS: \004" . $user->get("hs") . "\"");
                 $this->rcon->send("csay_to_player " . $message->userId . " \" \005Death: \004" . $user->get("death") . " \001- \005Score: \004" . $user->get("point") . "\"");
-                $this->rcon->send("csay_to_player " . $message->userId . " \" \005Ratio K/D: \004" . $ratio . " \001- \005HS%: \004" . $ratiohs . "\"");
+                $this->rcon->send("csay_to_player " . $message->userId . " \" \005K/D Ratio: \004" . $ratio . " \001- \005HS%: \004" . $ratiohs . "\"");
             } else {
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: pas de stats pour le moment pour \003" . $message->userName . "\"");
+                $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ":  no stats at the moment for \003" . $message->userName . "\"");
             }
         } elseif ($text == "!morestats") {
             $this->addLog($message->getUserName() . " ask more stats");
 
             if ($user) {
-                $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: stats pour \003" . $message->userName . "\"");
+                $this->rcon->send('csay_to_player ' . $message->userId . . $chatprefix . ":  stats for \003" . $message->userName . "\"");
 
                 $stats = array();
                 for ($i = 1; $i <= 5; $i++) {
@@ -1126,7 +1129,7 @@ class Match implements Taskable {
                 }
 
                 if ($user->get("bombe") > 0) {
-                    $stats[] = array("name" => "Bombe", "val" => $user->get("bombe"));
+                    $stats[] = array("name" => "Bomb", "val" => $user->get("bombe"));
                 }
 
                 if ($user->get("defuse") > 0) {
@@ -1164,22 +1167,22 @@ class Match implements Taskable {
                 }
 
                 if ($doit) {
-                    $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: Pas de stats pour le moment\"");
+                    $this->rcon->send('csay_to_player ' . $message->userId . . $chatprefix . ":  No stats at the moment\"");
                 }
             } else {
-                $this->rcon->send('csay_to_player ' . $message->userId . " \"e\004Bot\001: Pas de stats pour le moment pour \005" . $message->userName . '"');
+                $this->rcon->send('csay_to_player ' . $message->userId . . $chatprefix . ":  No stats at the moment for \005" . $message->userName . '"');
             }
         } elseif ($text == "!rules") {
             if ($this->pluginCsay) {
                 $this->addLog($message->getUserName() . " ask rules");
 
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Full Score: \005" . (($this->config_full_score) ? "yes" : "no") . " \001:: Switch Auto: \005" . (($this->config_switch_auto) ? "yes" : "no") . "\"");
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Over Time: \005" . (($this->config_ot) ? "yes" : "no") . " \001:: MaxRound: \005" . $this->maxRound . "\"");
+                $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ":  Full Score: \005" . (($this->config_full_score) ? "yes" : "no") . " \001:: Switch Auto: \005" . (($this->config_switch_auto) ? "yes" : "no") . "\"");
+                $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ":  Over Time: \005" . (($this->config_ot) ? "yes" : "no") . " \001:: MaxRound: \005" . $this->maxRound . "\"");
             }
         } elseif ($text == "!help") {
             if ($this->pluginCsay) {
                 $this->addLog($message->getUserName() . " ask help");
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: commands available: !help, !status, !stats, !morestats, !score, !ready, !notready, !stop, !restart (for knife round), !stay, !switch\"");
+                $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ":  commands available: !help, !status, !stats, !morestats, !score, !ready, !notready, !stop, !restart (for knife round), !stay, !switch\"");
             }
         } elseif ($text == "!restart") {
             $this->addLog($message->getUserName() . " say restart");
@@ -1364,6 +1367,8 @@ class Match implements Taskable {
                 $this->rcon->send("mp_do_warmup_period 1");
                 $this->rcon->send("mp_warmuptime 30");
                 $this->rcon->send("mp_warmup_pausetimer 1");
+                $this->rcon->send("mp_ct_default_secondary \"weapon_hkp2000\"");
+                $this->rcon->send("mp_t_default_secondary \"weapon_glock\"");
                 $this->rcon->send("mp_warmup_start");
                 $this->say("nothing change, going to warmup");
             }
@@ -1379,6 +1384,8 @@ class Match implements Taskable {
                 $this->rcon->send("mp_do_warmup_period 1");
                 $this->rcon->send("mp_warmuptime 30");
                 $this->rcon->send("mp_warmup_pausetimer 1");
+                $this->rcon->send("mp_ct_default_secondary \"weapon_hkp2000\"");
+                $this->rcon->send("mp_t_default_secondary \"weapon_glock\"");
                 $this->rcon->send("mp_warmup_start");
                 $this->say("Swapping teams");
                 $this->rcon->send("mp_swapteams");
@@ -1424,15 +1431,15 @@ class Match implements Taskable {
             if ($this->pluginCsay) {
                 $this->addLog($message->getUserName() . " ask status");
                 if ($this->enable) {
-                    $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Current status: \002" . $this->getStatusText() . "\"");
+                    $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ":  Current status: \002" . $this->getStatusText() . "\"");
                 } else {
-                    $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: Current status: \002" . $this->getStatusText() . " - Match paused\"");
+                    $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ":  Current status: \002" . $this->getStatusText() . " - Match paused\"");
                 }
             }
         } elseif ($text == "!status") {
             if ($this->pluginCsay) {
                 $this->addLog($message->getUserName() . " ask status");
-                $this->rcon->send("csay_to_player " . $message->userId . " \"e\004Bot\001: \005" . $this->teamAName . " \004" . $this->currentMap->getScore1() . " \001- \004" . $this->currentMap->getScore2() . " \005" . $this->teamBName . "\"");
+                $this->rcon->send("csay_to_player " . $message->userId . . $chatprefix . ": \005" . $this->teamAName . " \004" . $this->currentMap->getScore1() . " \001- \004" . $this->currentMap->getScore2() . " \005" . $this->teamBName . "\"");
             }
         } else {
             // Dispatching events
@@ -2714,7 +2721,7 @@ class Match implements Taskable {
 
                     $this->rcon->send("exec " . $this->matchData["rules"] . ".cfg; mp_warmuptime 0; mp_halftime_pausetimer 1; mp_warmup_pausetimer 0;");
                     $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
-                    $this->rcon->send("mp_halftime_duration 1; mp_roundtime_defuse 60");
+                    $this->rcon->send("mp_halftime_duration 1; mp_roundtime_defuse 60; mp_ct_default_secondary \"\"; mp_t_default_secondary \"\"; mp_startmoney 0;");
                     $this->rcon->send("mp_warmup_end");
                     if (\eBot\Config\Config::getInstance()->getKo3Method() == "csay" && $this->pluginCsay) {
                         $this->rcon->send("csay_ko3");
@@ -2750,7 +2757,7 @@ class Match implements Taskable {
                             // NEW
                             $this->rcon->send("exec $fichier; mp_warmuptime 0; mp_halftime_pausetimer 1;");
                             $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getBot_ip() . "\"");
-                            $this->rcon->send("mp_halftime_duration 1");
+                            $this->rcon->send("mp_halftime_duration 1; mp_ct_default_secondary \"weapon_hkp2000\"; mp_t_default_secondary \"weapon_glock\";");
                             $this->rcon->send("mp_warmup_end");
                             if (\eBot\Config\Config::getInstance()->getLo3Method() == "csay" && $this->pluginCsay) {
                                 $this->rcon->send("csay_lo3");
