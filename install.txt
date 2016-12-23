@@ -8,14 +8,7 @@ cd php-5.5.15
 ./configure --prefix /usr/local --with-mysql --enable-maintainer-zts --enable-sockets --with-openssl --with-pdo-mysql 
 make
 make install
-cd /home/install
-wget http://pecl.php.net/get/pthreads-2.0.7.tgz
-tar -xvzf pthreads-2.0.7.tgz
-cd pthreads-2.0.7
-/usr/local/bin/phpize
-./configure
-make
-make install
+pecl install pthreads-2.0.10
 echo 'date.timezone = Europe/Paris' >> /usr/local/lib/php.ini
 echo 'extension=pthreads.so' >> /usr/local/lib/php.ini
 
