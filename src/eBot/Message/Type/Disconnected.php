@@ -24,5 +24,3 @@ class Disconnected extends Type {
     }
 
 }
-
-?>

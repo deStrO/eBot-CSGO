@@ -28,5 +28,3 @@ class EnteredTheGame extends Message {
     }
 
 }
-
-?>

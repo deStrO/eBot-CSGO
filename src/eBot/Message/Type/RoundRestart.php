@@ -18,5 +18,3 @@ class RoundRestart extends Type {
     }
 
 }
-
-?>

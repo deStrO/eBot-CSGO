@@ -160,5 +160,3 @@ class MatchManager extends Singleton implements Taskable {
         }
     }
 }
-
-?>

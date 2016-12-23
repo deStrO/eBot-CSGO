@@ -25,5 +25,3 @@ class SwitchTeam extends Type {
     }
 
 }
-
-?>

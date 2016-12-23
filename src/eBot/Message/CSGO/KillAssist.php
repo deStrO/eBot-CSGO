@@ -36,5 +36,3 @@ class KillAssist extends Message {
     }
 
 }
-
-?>

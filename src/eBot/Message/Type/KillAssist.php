@@ -28,5 +28,3 @@ class KillAssist extends Type {
     }
 
 }
-
-?>

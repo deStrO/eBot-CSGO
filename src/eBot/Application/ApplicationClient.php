@@ -302,5 +302,3 @@ class ApplicationClient extends AbstractApplication {
     }
 
 }
-
-?>

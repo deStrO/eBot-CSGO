@@ -22,5 +22,3 @@ class Say extends Event {
 	protected $text;
 	
 }
-
-?>

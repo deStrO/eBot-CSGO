@@ -29,5 +29,3 @@ class BombPlanting extends Message {
     }
 
 }
-
-?>

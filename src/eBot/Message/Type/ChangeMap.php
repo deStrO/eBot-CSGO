@@ -21,5 +21,3 @@ class ChangeMap extends Type {
     }
 
 }
-
-?>

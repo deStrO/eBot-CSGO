@@ -29,5 +29,3 @@ class BombDefusing extends Message {
     }
 
 }
-
-?>

@@ -44,5 +44,3 @@ class Kill extends Message {
     }
 
 }
-
-?>

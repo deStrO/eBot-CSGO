@@ -35,5 +35,3 @@ class TeamScored extends Message {
     }
 
 }
-
-?>

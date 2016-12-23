@@ -49,5 +49,3 @@ class RemindRoundScored extends Message {
     }
 
 }
-
-?>

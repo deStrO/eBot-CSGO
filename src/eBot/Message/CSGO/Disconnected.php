@@ -29,5 +29,3 @@ class Disconnected extends Message {
     }
 
 }
-
-?>

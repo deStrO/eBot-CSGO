@@ -26,5 +26,3 @@ class RoundEnd extends Message {
     }
 
 }
-
-?>

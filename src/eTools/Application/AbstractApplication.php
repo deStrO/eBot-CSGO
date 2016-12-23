@@ -17,5 +17,3 @@ abstract class AbstractApplication extends Singleton {
     public abstract function getName();
     public abstract function getVersion();
 }
-
-?>

@@ -21,5 +21,3 @@ interface Plugin {
 	public function onEvent($event);
 	
 }
-
-?>

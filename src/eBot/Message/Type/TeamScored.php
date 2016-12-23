@@ -23,5 +23,3 @@ class TeamScored extends Type {
     }
 
 }
-
-?>

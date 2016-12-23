@@ -25,5 +25,3 @@ class JoinTeam extends Type {
     }
 
 }
-
-?>

@@ -44,5 +44,3 @@ abstract class Event {
 	}
 
 }
-
-?>

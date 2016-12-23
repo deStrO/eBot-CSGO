@@ -34,5 +34,3 @@ class ThrewStuff extends Message {
     }
 
 }
-
-?>

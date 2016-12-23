@@ -22,5 +22,3 @@ class RemindRoundScored extends Type {
     }
 
 }
-
-?>

@@ -11,4 +11,3 @@ class MatchStart extends Event {
     protected $score2;
 	
 }
-?>

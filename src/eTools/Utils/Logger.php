@@ -160,5 +160,3 @@ class Logger extends Singleton {
     }
 
 }
-
-?>

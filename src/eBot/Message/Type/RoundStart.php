@@ -21,5 +21,3 @@ class RoundStart extends Type {
     }
 
 }
-
-?>

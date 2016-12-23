@@ -51,5 +51,3 @@ abstract class Rcon {
 
     public abstract function send($cmd);
 }
-
-?>

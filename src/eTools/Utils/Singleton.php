@@ -30,5 +30,3 @@ abstract class Singleton {
     }
 
 }
-
-?>

@@ -102,5 +102,3 @@ class PluginsManager extends Singleton {
     }
 
 }
-
-?>
