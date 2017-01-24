@@ -163,31 +163,36 @@ udpServer.on('listening', function() {
 });
 
 udpServer.on('message', function(message, remote) {
-    var messageObject = JSON.parse(message);
-    var body = messageObject.data;
+    var messageObject;
+    var body;
     var data = {};
     try {
+        messageObject = JSON.parse(message);
+        body = messageObject.data;
         var data = JSON.parse(body);
         if (data.message == "ping") {
-            return;
+             return;
+             }
+        } catch (e) {
+             
         }
-    } catch (e) {
-
-    }
-    if (messageObject.scope == "alive") {
-        io.sockets.in('alive').emit('aliveHandler', {data: body});
-        io.sockets.in('relay').emit('relay', {channel: 'alive', 'method': 'aliveHandler', content: body});
-    } else if (messageObject.scope == "rcon") {
-        io.sockets.in('rcon-' + data.id).emit('rconHandler', body);
-    } else if (messageObject.scope == "logger") {
-        io.sockets.in('logger-' + data.id).emit('loggerHandler', body);
-        io.sockets.in('loggersGlobal').emit('loggerGlobalHandler', body);
-    } else if (messageObject.scope == "match") {
-        io.sockets.in('matchs').emit('matchsHandler', body);
-        io.sockets.in('relay').emit('relay', {channel: 'matchs', 'method': 'matchsHandler', content: body});
-    } else if (messageObject.scope == "livemap") {
-        io.sockets.in('livemap-' + data.id).emit('livemapHandler', body);
-        io.sockets.in('relay').emit('relay', {channel: 'livemap-' + data.id, 'method': 'livemapHandler', content: body});
+    
+    if (messageObject != null){
+        if (messageObject.scope == "alive") {
+            io.sockets.in('alive').emit('aliveHandler', {data: body});
+            io.sockets.in('relay').emit('relay', {channel: 'alive', 'method': 'aliveHandler', content: body});
+        } else if (messageObject.scope == "rcon") {
+                io.sockets.in('rcon-' + data.id).emit('rconHandler', body);
+        } else if (messageObject.scope == "logger") {
+                io.sockets.in('logger-' + data.id).emit('loggerHandler', body);
+                io.sockets.in('loggersGlobal').emit('loggerGlobalHandler', body);
+        } else if (messageObject.scope == "match") {
+                io.sockets.in('matchs').emit('matchsHandler', body);
+                io.sockets.in('relay').emit('relay', {channel: 'matchs', 'method': 'matchsHandler', content: body});
+        } else if (messageObject.scope == "livemap") {
+                io.sockets.in('livemap-' + data.id).emit('livemapHandler', body);
+                io.sockets.in('relay').emit('relay', {channel: 'livemap-' + data.id, 'method': 'livemapHandler', content: body});
+             }
     }
 });
 
