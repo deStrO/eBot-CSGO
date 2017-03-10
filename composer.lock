@@ -4,8 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "4f90e6834f435cecf3b94787615aa304",
-    "content-hash": "6670a11d9a11c91d48eab63057de313d",
+    "content-hash": "8196f70b55fb94b13c113b0649834f6d",
     "packages": [
         {
             "name": "koraktor/steam-condenser",
@@ -51,7 +50,7 @@
                 "steam",
                 "webapi"
             ],
-            "time": "2015-03-19 09:43:24"
+            "time": "2015-03-19T09:43:24+00:00"
         }
     ],
     "packages-dev": [],
@@ -61,7 +60,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=5.3.0"
+        "php": ">=7.0.0"
     },
     "platform-dev": []
 }
