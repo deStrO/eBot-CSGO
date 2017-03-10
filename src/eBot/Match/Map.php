@@ -42,9 +42,11 @@ class Map {
     private $currentScore = null;
     private $nbMaxRound = 15;
     private $tvRecordFile = "";
+	private $mysqli_link = null;
 
-    public function __construct($mapData) {
+    public function __construct($mysqli_link, $mapData) {
         Logger::debug("Creating maps " . $mapData["id"]);
+		$this->mysqli_link = $mysqli_link;
         $this->setMapId($mapData["id"]);
         $this->setMapName($mapData["map_name"]);
         $this->setScore1($mapData["score_1"]);
@@ -57,14 +59,14 @@ class Map {
 
         Logger::log("Maps loaded " . $this->getMapName() . " (score: " . $this->getScore1() . " - " . $this->getScore2() . ") - Current left side: " . $this->getCurrentSide() . " - Current status: " . $this->getStatusText());
 
-        $query = mysql_query("SELECT * FROM maps_score WHERE map_id = '" . $this->map_id . "' ORDER BY created_at DESC");
-        while ($r = mysql_fetch_array($query)) {
+        $query = mysqli_query($this->mysqli_link, "SELECT * FROM maps_score WHERE map_id = '" . $this->map_id . "' ORDER BY created_at DESC");
+        while ($r = mysqli_fetch_array($query)) {
             $this->scores[] = new Score($r);
         }
 
         if (count($this->scores) == 0) {
-            mysql_query("INSERT INTO maps_score (`map_id`,`type_score`,`score1_side1`,`score1_side2`,`score2_side1`,`score2_side2`, `created_at`,`updated_at`) VALUES ('" . $mapData["id"] . "', 'normal',0,0,0,0, NOW(), NOW())");
-            $r = mysql_fetch_array(mysql_query("SELECT * FROM maps_score WHERE id='" . \mysql_insert_id() . "'"));
+            mysqli_query($this->mysqli_link, "INSERT INTO maps_score (`map_id`,`type_score`,`score1_side1`,`score1_side2`,`score2_side1`,`score2_side2`, `created_at`,`updated_at`) VALUES ('" . $mapData["id"] . "', 'normal',0,0,0,0, NOW(), NOW())");
+            $r = mysqli_fetch_array(mysqli_query($this->mysqli_link, "SELECT * FROM maps_score WHERE id='" . \mysqli_insert_id() . "'"));
 
             $this->scores[] = new Score($r);
         }
@@ -103,7 +105,7 @@ class Map {
         $this->score1 += $score_teamA;
         $this->score2 += $score_teamB;
 
-        @mysql_query("UPDATE `maps` SET score_1 = '" . $this->score1 . "', score_2 = '" . $this->score2 . "' WHERE id='" . $this->map_id . "'");
+        @mysqli_query($this->mysqli_link, "UPDATE `maps` SET score_1 = '" . $this->score1 . "', score_2 = '" . $this->score2 . "' WHERE id='" . $this->map_id . "'");
 
         return $team;
     }
@@ -151,17 +153,17 @@ class Map {
 
         $this->setScore1($a);
         $this->setScore2($b);
-        @mysql_query("UPDATE `maps` SET score_1 = '" . $this->score1 . "', score_2 = '" . $this->score2 . "' WHERE id='" . $this->map_id . "'");
+        @mysqli_query($this->mysqli_link, "UPDATE `maps` SET score_1 = '" . $this->score1 . "', score_2 = '" . $this->score2 . "' WHERE id='" . $this->map_id . "'");
     }
 
     public function addOvertime() {
-        mysql_query("INSERT INTO maps_score (`map_id`,`type_score`,`score1_side1`,`score1_side2`,`score2_side1`,`score2_side2`, `created_at`,`updated_at`) VALUES ('" . $this->map_id . "', 'ot',0,0,0,0, NOW(), NOW())");
-        $r = mysql_fetch_array(mysql_query("SELECT * FROM maps_score WHERE id='" . \mysql_insert_id() . "'"));
+        mysqli_query($this->mysqli_link, "INSERT INTO maps_score (`map_id`,`type_score`,`score1_side1`,`score1_side2`,`score2_side1`,`score2_side2`, `created_at`,`updated_at`) VALUES ('" . $this->map_id . "', 'ot',0,0,0,0, NOW(), NOW())");
+        $r = mysqli_fetch_array(mysqli_query($this->mysqli_link, "SELECT * FROM maps_score WHERE id='" . \mysqli_insert_id() . "'"));
 
         $this->scores[] = new Score($r);
 
         $this->nb_ot++;
-        mysql_query("UPDATE `maps` SET nb_ot = '" . $this->nb_ot . "' WHERE id = '" . $this->map_id . "'");
+        mysqli_query($this->mysqli_link, "UPDATE `maps` SET nb_ot = '" . $this->nb_ot . "' WHERE id = '" . $this->map_id . "'");
     }
 
     public function getStatusText() {
@@ -250,7 +252,7 @@ class Map {
             $this->current_side = $current_side;
 
             if ($save) {
-                mysql_query("UPDATE `maps` SET current_side='" . $current_side . "' WHERE id='" . $this->map_id . "'") or Logger::error("Error while updating current side " . mysql_error());
+                mysqli_query($this->mysqli_link, "UPDATE `maps` SET current_side='" . $current_side . "' WHERE id='" . $this->map_id . "'") or Logger::error("Error while updating current side " . mysqli_error());
             }
         }
     }
@@ -264,7 +266,7 @@ class Map {
 
         if ($save) {
             Logger::debug("Updating status to " . $this->getStatusText() . " in database");
-            mysql_query("UPDATE `maps` SET status='" . $newStatus . "' WHERE id='" . $this->map_id . "'");
+            mysqli_query($this->mysqli_link, "UPDATE `maps` SET status='" . $newStatus . "' WHERE id='" . $this->map_id . "'");
         }
     }
 

@@ -1,0 +1,66 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "8196f70b55fb94b13c113b0649834f6d",
+    "packages": [
+        {
+            "name": "koraktor/steam-condenser",
+            "version": "1.3.10",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/koraktor/steam-condenser-php.git",
+                "reference": "a75269e9ff9444d3bf1dfd49a0dfe072316373e6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/koraktor/steam-condenser-php/zipball/a75269e9ff9444d3bf1dfd49a0dfe072316373e6",
+                "reference": "a75269e9ff9444d3bf1dfd49a0dfe072316373e6",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.0.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "~3.7.0"
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "include-path": [
+                "lib/"
+            ],
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Sebastian Staudt",
+                    "email": "koraktor@gmail.com"
+                }
+            ],
+            "description": "The Steam Condenser is a library for querying the Steam Community, Source and GoldSrc game servers",
+            "homepage": "http://koraktor.de/steam-condenser",
+            "keywords": [
+                "community",
+                "goldsrc",
+                "query",
+                "source",
+                "steam",
+                "webapi"
+            ],
+            "time": "2015-03-19T09:43:24+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": ">=7.0.0"
+    },
+    "platform-dev": []
+}

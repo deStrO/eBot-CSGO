@@ -12,8 +12,8 @@
         }
     ],
     "require": {
-        "koraktor/steam-condenser": "1.3.5",
-        "php": ">=5.3.0"
+        "koraktor/steam-condenser": "1.3.10",
+        "php": ">=7.0.0"
     },
     "autoload": {
         "psr-0": { "": "src/" }

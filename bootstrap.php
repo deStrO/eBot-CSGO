@@ -9,7 +9,7 @@
  */
 $check["php"] = (function_exists('version_compare') && version_compare(phpversion(), '5.3.1', '>='));
 $check["php5.4"] = (function_exists('version_compare') && version_compare(phpversion(), '5.4', '>='));
-$check["mysql"] = extension_loaded('mysql');
+$check["mysql"] = extension_loaded('mysqli');
 $check["spl"] = extension_loaded('spl');
 $check["sockets"] = extension_loaded("sockets");
 $check["pthreads"] = extension_loaded("pthreads");
@@ -70,7 +70,7 @@ gc_enable();
 function handleShutdown() {
     global $webSocketProcess;
 
-    if (PHP_OS == "Linux")
+    if (PHP_OS == "Linux" || PHP_OS == "Darwin")
         proc_terminate($webSocketProcess, 9);
 
     $error = error_get_last();
@@ -85,7 +85,7 @@ register_shutdown_function('handleShutdown');
 
 error_reporting(E_ERROR);
 
-class LoggerArray extends Stackable {
+class LoggerArray extends \Threaded {
 
     public function run() {
         
@@ -93,7 +93,7 @@ class LoggerArray extends Stackable {
 
 }
 
-class LogReceiver extends Thread {
+class LogReceiver extends \Thread {
 
     public $shared_array;
     public $botIp;
@@ -143,7 +143,7 @@ $config = \eBot\Config\Config::getInstance();
 
 if ($config->getNodeStartupMethod() != "none") {
     // Starting ebot Websocket Server
-    if (PHP_OS == "Linux") {
+    if (PHP_OS == "Linux" || PHP_OS == "Darwin") {
         echo "| Starting eBot Websocket-Server !" . PHP_EOL;
         echo "| Using ".$config->getNodeStartupMethod().PHP_EOL;
         $descriptorspec = array(

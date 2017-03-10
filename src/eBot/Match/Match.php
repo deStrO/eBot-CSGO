@@ -122,21 +122,24 @@ class Match implements Taskable {
     private $roundRestartEvent = false;
     private $warmupManualFixIssued = false;
     private $roundData = array();
+	private $mysqli_link = null;
 
-    public function __construct($match_id, $server_ip, $rcon) {
+    public function __construct($mysqli_link, $match_id, $server_ip, $rcon) {
         Logger::debug("Registring MessageManager");
         $this->messageManager = \eBot\Manager\MessageManager::getInstance("CSGO");
+
+		$this->mysqli_link = $mysqli_link;
 
         Logger::debug("Creating match #" . $match_id . " on $server_ip");
 
         $this->match_id = $match_id;
         $this->server_ip = $server_ip;
 
-        $query = \mysql_query("SELECT * FROM `matchs` WHERE id = '" . $match_id . "'");
+        $query = \mysqli_query($this->mysqli_link, "SELECT * FROM `matchs` WHERE id = '" . $match_id . "'");
         if (!$query) {
             throw new MatchException();
         }
-        $this->matchData = \mysql_fetch_assoc($query);
+        $this->matchData = \mysqli_fetch_assoc($query);
 
         // SETTING TEAMNAME AND FLAG
         $teama_details = $this->getTeamDetails($this->matchData["team_a"], "a");
@@ -173,16 +176,16 @@ class Match implements Taskable {
             $this->needDel = true;
             if (!is_numeric(\eBot\Manager\MatchManager::getInstance()->getRetry($this->match_id))) {
                 if ($this->status == 1) {
-                    \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0, `status` = 0 WHERE `id` = '" . $this->match_id . "'");
+                    \mysqli_query($this->mysqli_link, "UPDATE `matchs` SET `enable` = 0, `auto_start` = 0, `status` = 0 WHERE `id` = '" . $this->match_id . "'");
                 } else {
-                    \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0 WHERE `id` = '" . $this->match_id . "'");
+                    \mysqli_query($this->mysqli_link, "UPDATE `matchs` SET `enable` = 0, `auto_start` = 0 WHERE `id` = '" . $this->match_id . "'");
                 }
             } else {
                 if (\eBot\Manager\MatchManager::getInstance()->getRetry($this->match_id) > 3) {
                     if ($this->status == 1) {
-                        \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0, `status` = 0 WHERE `id` = '" . $this->match_id . "'");
+                        \mysqli_query($this->mysqli_link, "UPDATE `matchs` SET `enable` = 0, `auto_start` = 0, `status` = 0 WHERE `id` = '" . $this->match_id . "'");
                     } else {
-                        \mysql_query("UPDATE `matchs` SET `enable` = 0, `auto_start` = 0 WHERE `id` = '" . $this->match_id . "'");
+                        \mysqli_query($this->mysqli_link, "UPDATE `matchs` SET `enable` = 0, `auto_start` = 0 WHERE `id` = '" . $this->match_id . "'");
                     }
                 } else {
                     $this->addLog("Next retry (" . \eBot\Manager\MatchManager::getInstance()->getRetry($this->match_id) . "/3)");
@@ -259,13 +262,13 @@ class Match implements Taskable {
         // Map Start
 
         Logger::debug("Loading maps");
-        $query = \mysql_query("SELECT * FROM `maps` WHERE match_id = '" . $match_id . "'");
+        $query = \mysqli_query($this->mysqli_link, "SELECT * FROM `maps` WHERE match_id = '" . $match_id . "'");
         if (!$query) {
             throw new MatchException();
         }
 
-        while ($data = \mysql_fetch_assoc($query)) {
-            $this->maps[$data["id"]] = new Map($data);
+        while ($data = \mysqli_fetch_assoc($query)) {
+            $this->maps[$data["id"]] = new Map($this->mysqli_link, $data);
             $this->maps[$data["id"]]->setNbMaxRound($this->maxRound);
         }
 
@@ -281,7 +284,7 @@ class Match implements Taskable {
                     $this->currentMap = $map;
                     $this->matchData["current_map"] = $map->getMapId();
                     Logger::debug("Map #" . $map->getMapId() . " selected");
-                    mysql_query("UPDATE `matchs` SET current_map='" . $map->getMapId() . "' WHERE id='" . $this->match_id . "'");
+                    mysqli_query($this->mysqli_link, "UPDATE `matchs` SET current_map='" . $map->getMapId() . "' WHERE id='" . $this->match_id . "'");
                     break;
                 }
             }
@@ -296,7 +299,7 @@ class Match implements Taskable {
 
         if ($this->currentMap == null) {
             $this->addLog("No map found, exiting matchs", Logger::ERROR);
-            mysql_query("UPDATE `matchs` SET enable='0', status='" . self::STATUS_END_MATCH . "' WHERE id='" . $this->match_id . "'");
+            mysqli_query($this->mysqli_link, "UPDATE `matchs` SET enable='0', status='" . self::STATUS_END_MATCH . "' WHERE id='" . $this->match_id . "'");
             throw new MatchException();
         }
 
@@ -372,7 +375,7 @@ class Match implements Taskable {
         $this->score["team_a"] = $this->currentMap->getScore1();
         $this->score["team_b"] = $this->currentMap->getScore2();
 
-        @mysql_query("UPDATE `matchs` SET score_a = '" . $this->score["team_a"] . "', score_b ='" . $this->score["team_b"] . "' WHERE id='" . $this->match_id . "'");
+        @mysqli_query($this->mysqli_link, "UPDATE `matchs` SET score_a = '" . $this->score["team_a"] . "', score_b ='" . $this->score["team_b"] . "' WHERE id='" . $this->match_id . "'");
 
         // Setting nb OverTime
         $this->nbOT = $this->currentMap->getNbOt();
@@ -423,7 +426,7 @@ class Match implements Taskable {
             unset($this->players);
             $this->players = array();
             $this->addLog("Deleting all players in BDD.");
-            mysql_query("DELETE FROM players WHERE map_id='" . $this->currentMap->getMapId() . "'");
+            mysqli_query($this->mysqli_link, "DELETE FROM players WHERE map_id='" . $this->currentMap->getMapId() . "'");
         }
 
         if ($this->pluginPrintPlayers) {
@@ -509,7 +512,7 @@ class Match implements Taskable {
             Logger::debug("Updating status to " . $this->getStatusText() . " in database");
             if ($newStatus == self::STATUS_END_MATCH)
                 $setDisable = ", enable = '0'";
-            mysql_query("UPDATE `matchs` SET status='" . $newStatus . "' " . $setDisable . " WHERE id='" . $this->match_id . "'");
+            mysqli_query($this->mysqli_link, "UPDATE `matchs` SET status='" . $newStatus . "' " . $setDisable . " WHERE id='" . $this->match_id . "'");
         }
     }
 
@@ -526,7 +529,7 @@ class Match implements Taskable {
 
     private function getTeamDetails($id, $t) {
         if (is_numeric($id) && $id > 0) {
-            $ds = mysql_fetch_array(mysql_query("SELECT * FROM `teams` WHERE `id` = '$id'"));
+            $ds = mysqli_fetch_array(mysqli_query("SELECT * FROM `teams` WHERE `id` = '$id'"));
             return $ds;
         } else {
             if ($t == "a") {
@@ -1000,7 +1003,7 @@ class Match implements Taskable {
 
         // Round TimeLine
         $text = addslashes(serialize(array("id" => $user->getId(), "name" => $message->getUserName())));
-        \mysql_query("
+        \mysqli_query($this->mysqli_link, "
                     INSERT INTO `round`
                     (`match_id`,`map_id`,`event_name`,`event_text`,`event_time`,`round_id`,`created_at`,`updated_at`)
                         VALUES
@@ -1033,7 +1036,7 @@ class Match implements Taskable {
 
         // Round TimeLine
         $text = addslashes(serialize(array("id" => $user->getId(), "name" => $message->getUserName())));
-        \mysql_query("
+        \mysqli_query($this->mysqli_link, "
                     INSERT INTO `round`
                     (`match_id`,`map_id`,`event_name`,`event_text`,`event_time`,`round_id`,`created_at`,`updated_at`)
                         VALUES
@@ -1047,7 +1050,7 @@ class Match implements Taskable {
         if (!$this->waitForRestart && $this->enable && in_array($this->getStatus(), array(self::STATUS_FIRST_SIDE, self::STATUS_SECOND_SIDE, self::STATUS_OT_FIRST_SIDE, self::STATUS_OT_SECOND_SIDE))) {
             $user = $this->processPlayer($message->getUserId(), $message->getUserName(), $message->getUserTeam(), $message->getUserSteamid());
 
-            \mysql_query("INSERT INTO `players_heatmap` (`match_id`,`map_id`,`event_name`,`event_x`,`event_y`,`event_z`,`player_name`,`player_id`,`player_team`,`round_id`,`round_time`, `created_at`,`updated_at`)
+            \mysqli_query($this->mysqli_link, "INSERT INTO `players_heatmap` (`match_id`,`map_id`,`event_name`,`event_x`,`event_y`,`event_z`,`player_name`,`player_id`,`player_team`,`round_id`,`round_time`, `created_at`,`updated_at`)
                 VALUES
                 (" . $this->match_id . ", " . $this->currentMap->getMapId() . ", '" . $message->stuff . "', '" . $message->posX . "', '" . $message->posY . "', '" . $message->posZ . "', '" . addslashes($message->userName) . "', '" . $user->getId() . "', '" . $message->userTeam . "', '" . $this->getNbRound() . "', '" . $this->getRoundTime() . "', NOW(), NOW())
                 ");
@@ -1063,7 +1066,7 @@ class Match implements Taskable {
 
             $text = \addslashes(\serialize(array("item" => $message->object, "player" => $user->getId(), "playerName" => $user->get("name"))));
 
-            \mysql_query("
+            \mysqli_query($this->mysqli_link, "
                         INSERT INTO `round`
                         (`match_id`,`map_id`,`event_name`,`event_text`,`event_time`,`round_id`,`created_at`,`updated_at`)
                             VALUES
@@ -1559,7 +1562,7 @@ class Match implements Taskable {
                                     if ($this->players[$id]) {
                                         $bestActionType = "1v1";
                                         $bestActionParam = array("player" => $this->players[$id]->getId(), "playerName" => $this->players[$id]->get("name"));
-                                        mysql_query("UPDATE players SET nb1 = nb1 + 1 WHERE id = '" . $this->players[$id]->getId() . "'") or Logger::error("Can't update " . $this->players[$id]->getId() . " situation");
+                                        mysqli_query("UPDATE players SET nb1 = nb1 + 1 WHERE id = '" . $this->players[$id]->getId() . "'") or Logger::error("Can't update " . $this->players[$id]->getId() . " situation");
                                         $this->addLog("Successful special situation 1v" . $this->specialSituation['situation'] . " for player '" . $this->players[$id]->get("name") . "'.");
                                         $this->addMatchLog("<b>" . htmlentities($this->players[$id]->get("name")) . "</b> won a 1v" . $this->specialSituation['situation'] . "!");
                                         $this->players[$id]->inc("v1");
@@ -1567,7 +1570,7 @@ class Match implements Taskable {
                                         $text = \addslashes(\serialize(array("situation" => 1, "player" => $this->players[$id]->getId(), "playerName" => $this->players[$id]->get("name"))));
 
                                         // Round TimeLine
-                                        \mysql_query("
+                                        \mysqli_query($this->mysqli_link, "
                                             INSERT INTO `round`
                                             (`match_id`,`map_id`,`event_name`,`event_text`,`event_time`,`round_id`,`created_at`,`updated_at`)
                                                 VALUES
@@ -1582,14 +1585,14 @@ class Match implements Taskable {
                                     $bestActionParam = array("player" => $this->players[$id]->getId(), "playerName" => $this->players[$id]->get("name"));
 
                                     $this->addMatchLog("<b>" . htmlentities($this->players[$id]->get("name")) . "</b> won a 1v" . $this->specialSituation['situation'] . "!");
-                                    mysql_query("UPDATE players SET nb" . $this->specialSituation['situation'] . " = nb" . $this->specialSituation['situation'] . " + 1 WHERE id='" . $this->players[$id]->getId() . "'") or Logger::error("Can't update " . $this->players[$id]->getId() . " situation");
+                                    mysqli_query($this->mysqli_link, "UPDATE players SET nb" . $this->specialSituation['situation'] . " = nb" . $this->specialSituation['situation'] . " + 1 WHERE id='" . $this->players[$id]->getId() . "'") or Logger::error("Can't update " . $this->players[$id]->getId() . " situation");
                                     $this->players[$id]->inc("v" . $this->specialSituation['situation']);
                                     $this->addLog("Successful special situation 1v" . $this->specialSituation['situation'] . " for player '" . $this->players[$id]->get("name") . "'.");
 
                                     $text = \addslashes(\serialize(array("situation" => $this->specialSituation['situation'], "player" => $this->players[$id]->getId(), "playerName" => $this->players[$id]->get("name"))));
 
                                     // Round TimeLine
-                                    \mysql_query("
+                                    \mysqli_query($this->mysqli_link, "
                                     INSERT INTO `round`
                                     (`match_id`,`map_id`,`event_name`,`event_text`,`event_time`,`round_id`,`created_at`,`updated_at`)
                                         VALUES
@@ -1611,7 +1614,7 @@ class Match implements Taskable {
                     $this->gameBombDefuser->saveScore();
 
                     // Round TimeLine
-                    \mysql_query("
+                    \mysqli_query($this->mysqli_link, "
                         INSERT INTO `round`
                         (`match_id`,`map_id`,`event_name`,`event_time`,`round_id`,`created_at`,`updated_at`)
                             VALUES
@@ -1627,7 +1630,7 @@ class Match implements Taskable {
                     $this->gameBombPlanter->saveScore();
 
                     // Round TimeLine
-                    \mysql_query("
+                    \mysqli_query($this->mysqli_link, "
                         INSERT INTO `round`
                         (`match_id`,`map_id`,`event_name`,`event_time`,`round_id`,`created_at`,`updated_at`)
                             VALUES
@@ -1637,7 +1640,7 @@ class Match implements Taskable {
             }
 
             // Round TimeLine
-            \mysql_query("
+            \mysqli_query($this->mysqli_link, "
                         INSERT INTO `round`
                         (`match_id`,`map_id`,`event_name`,`event_time`,`round_id`,`created_at`,`updated_at`)
                             VALUES
@@ -1657,7 +1660,7 @@ class Match implements Taskable {
             $this->addLog($this->teamAName . " (" . $this->currentMap->getScore1() . ") - (" . $this->currentMap->getScore2() . ") " . $this->teamBName . ".");
             $this->addMatchLog("One round was marked - " . $this->teamAName . " (" . $this->currentMap->getScore1() . ") - (" . $this->currentMap->getScore2() . ") " . $this->teamBName . ".");
 
-            @mysql_query("UPDATE `matchs` SET score_a = '" . $this->score["team_a"] . "', score_b ='" . $this->score["team_b"] . "' WHERE id='" . $this->match_id . "'") or $this->addLog("Can't match " . $this->match_id . " scores", Logger::ERROR);
+            @mysqli_query($this->mysqli_link, "UPDATE `matchs` SET score_a = '" . $this->score["team_a"] . "', score_b ='" . $this->score["team_b"] . "' WHERE id='" . $this->match_id . "'") or $this->addLog("Can't match " . $this->match_id . " scores", Logger::ERROR);
 
             // ROUND SUMMARY
             $nb = 0;
@@ -1699,7 +1702,7 @@ class Match implements Taskable {
                 }
             }
 
-            mysql_query("INSERT INTO round_summary
+            mysqli_query($this->mysqli_link, "INSERT INTO round_summary
                             (`match_id`,`map_id`,`score_a`,`score_b`,`bomb_planted`,`bomb_defused`,`bomb_exploded`,`ct_win`, `t_win`,`round_id`,`win_type`,`team_win`,`best_killer`,`best_killer_fk`,`best_killer_nb`,`best_action_type`,`best_action_param`, `backup_file_name`,`created_at`,`updated_at`)
                             VALUES
                             ('" . $this->match_id . "', '" . $this->currentMap->getMapId() . "', '" . $this->score["team_a"] . "', '" . $this->score["team_b"] . "',
@@ -1714,7 +1717,7 @@ class Match implements Taskable {
                                                                 " . $backupFile . ",
                                                                 NOW(),
                                                                     NOW()
-                                                                    )") or $this->addLog("Can't insert round summary match " . $this->match_id . " - " . mysql_error(), Logger::ERROR);
+                                                                    )") or $this->addLog("Can't insert round summary match " . $this->match_id . " - " . mysqli_error(), Logger::ERROR);
             // END ROUND SUMMARY
             // Prevent the OverTime bug
             if ($this->config_ot) {
@@ -1962,7 +1965,7 @@ class Match implements Taskable {
             if ($this->currentMap != null) {
                 $this->currentMap->setStatus(Map::STATUS_STARTING, true);
                 $this->setStatus(self::STATUS_STARTING, true);
-                \mysql_query("UPDATE `matchs` SET `current_map` = '" . $this->currentMap->getMapId() . "' WHERE `id` = '" . $this->match_id . "'");
+                \mysqli_query($this->mysqli_link, "UPDATE `matchs` SET `current_map` = '" . $this->currentMap->getMapId() . "' WHERE `id` = '" . $this->match_id . "'");
 
                 Logger::debug("Setting need knife round on map");
                 $this->currentMap->setNeedKnifeRound(true);
@@ -2132,17 +2135,17 @@ class Match implements Taskable {
             }
 
             //getNbRound
-            \mysql_query("INSERT INTO player_kill
+            \mysqli_query($this->mysqli_link, "INSERT INTO player_kill
                 (`match_id`,`map_id`, `killer_team`,`killer_name`,`killer_id`,`killed_team`,`killed_name`,`killed_id`,`weapon`,`headshot`,`round_id`,`created_at`,`updated_at`)
                 VALUES
                 ('" . $this->match_id . "','" . $this->currentMap->getMapId() . "', '" . $message->userTeam . "', '" . addslashes($killer_name) . "', " . (($killer_id != null) ? $killer_id : "NULL") . ", '" . $message->killedUserTeam . "' ,'" . addslashes($killed_name) . "', " . (($killed_id != null) ? $killed_id : "NULL") . ", '" . $message->weapon . "', '" . $message->headshot . "','" . (($this->roundEndEvent) ? $this->getNbRound() - 1 : $this->getNbRound() ) . "', NOW(), NOW())
-                    ") or $this->addLog("Can't insert player_kill " . mysql_error(), Logger::ERROR);
+                    ") or $this->addLog("Can't insert player_kill " . mysqli_error(), Logger::ERROR);
 
             // Round Event
-            $id = \mysql_insert_id();
+            $id = \mysqli_insert_id();
             if (is_numeric($id)) {
                 // Inserting round event
-                \mysql_query("
+                \mysqli_query($this->mysqli_link, "
                     INSERT INTO `round`
                     (`match_id`,`map_id`,`event_name`,`event_time`,`kill_id`,`round_id`,`created_at`,`updated_at`)
                         VALUES
@@ -2151,7 +2154,7 @@ class Match implements Taskable {
             }
 
             // HeatMap !
-            \mysql_query("INSERT INTO `players_heatmap`
+            \mysqli_query($this->mysqli_link, "INSERT INTO `players_heatmap`
                             (`match_id`,`map_id`,`event_name`,`event_x`,`event_y`,`event_z`,`player_name`,`player_id`,`player_team`,`attacker_x`,`attacker_y`,`attacker_z`,`attacker_name`,`attacker_id`,`attacker_team`,`round_id`,`round_time`,`created_at`,`updated_at`) VALUES
                             (" . $this->match_id . ", " . $this->currentMap->getMapId() . ", 'kill', '" . $message->killedPosX . "', '" . $message->killedPosY . "', '" . $message->killedPosZ . "','" . addslashes($message->killedUserName) . "', '" . $killed_id . "', '" . $message->killedUserTeam . "', '" . $message->killerPosX . "', '" . $message->killerPosY . "', '" . $message->killerPosZ . "', '" . $message->userName . "', '" . $killer_id . "', '" . $message->userTeam . "', '" . (($this->roundEndEvent) ? $this->getNbRound() - 1 : $this->getNbRound() ) . "', '" . $this->getRoundTime() . "', NOW(), NOW())
                             ");
@@ -2318,7 +2321,7 @@ class Match implements Taskable {
                     $this->say("Remember to record your own POV demos if needed!", "red");
             }
 
-            \mysql_query("UPDATE `maps` SET tv_record_file='" . $record_name . "' WHERE id='" . $this->currentMap->getMapId() . "'") or $this->addLog("Error while updating tv record name - " . mysql_error(), Logger::ERROR);
+            \mysqli_query($this->mysqli_link, "UPDATE `maps` SET tv_record_file='" . $record_name . "' WHERE id='" . $this->currentMap->getMapId() . "'") or $this->addLog("Error while updating tv record name - " . mysqli_error(), Logger::ERROR);
         }
 
         $this->nbLast['nb_ct'] = $this->nbLast['nb_max_ct'];
@@ -2350,11 +2353,11 @@ class Match implements Taskable {
         $this->stop["t"] = false;
 
         // Preventing old data
-        mysql_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
-        mysql_query("DELETE FROM round WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
-        mysql_query("DELETE FROM round_summary WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+        mysqli_query($this->mysqli_link, "DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+        mysqli_query($this->mysqli_link, "DELETE FROM round WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+        mysqli_query($this->mysqli_link, "DELETE FROM round_summary WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
 
-        \mysql_query("
+        \mysqli_query($this->mysqli_link, "
                     INSERT INTO `round`
                     (`match_id`,`map_id`,`event_name`,`event_time`,`round_id`,`created_at`,`updated_at`)
                         VALUES
@@ -2376,7 +2379,7 @@ class Match implements Taskable {
         Logger::debug("Processing player $user_id $user_name $team $steamid");
         $player = $this->findPlayer($user_id, $steamid);
         if ($player == null) {
-            $player = new Player($this->match_id, $this->currentMap->getMapId(), $steamid);
+            $player = new Player($this->mysqli_link, $this->match_id, $this->currentMap->getMapId(), $steamid);
             $this->players[$user_id] = $player;
             $this->countPlayers();
         }
@@ -2429,7 +2432,7 @@ class Match implements Taskable {
                 $this->specialSituation['side'] = "both";
                 $this->addLog("1v1 situation!");
                 $this->addMatchLog("<b>Situation 1v1</b>", true);
-                \mysql_query("
+                \mysqli_query($this->mysqli_link, "
                             INSERT INTO `round`
                             (`match_id`,`map_id`,`event_name`,`event_time`,`round_id`,`created_at`,`updated_at`)
                                 VALUES
@@ -2459,7 +2462,7 @@ class Match implements Taskable {
                         $this->addLog("Special situation ! 1v" . $nbAlive . " (" . $this->players[$id]->get("name") . ").");
                         $this->addMatchLog("<b>Special situation ! 1v" . $nbAlive . " (" . htmlentities($this->players[$id]->get("name")) . ").</b>");
 
-                        \mysql_query("
+                        \mysqli_query($this->mysqli_link, "
                             INSERT INTO `round`
                             (`match_id`,`map_id`,`event_name`, `event_text`,`event_time`,`round_id`,`created_at`,`updated_at`)
                                 VALUES
@@ -2488,7 +2491,7 @@ class Match implements Taskable {
 
                         $this->addLog("Special situation! 1v" . $nbAlive . " (" . $this->players[$id]->get("name") . ").");
                         $this->addMatchLog("<b>Special situation! 1v" . $nbAlive . " (" . htmlentities($this->players[$id]->get("name")) . ").</b>");
-                        \mysql_query("
+                        \mysqli_query("
                             INSERT INTO `round`
                             (`match_id`,`map_id`,`event_name`, `event_text`,`event_time`,`round_id`,`created_at`,`updated_at`)
                                 VALUES
@@ -2505,7 +2508,7 @@ class Match implements Taskable {
                         $this->addMatchLog("<b>Special situation 1v1 ! - Player: '" . htmlentities($this->players[$this->specialSituation['id']]->get("name")) . "' is in 1v" . $this->specialSituation['situation'] . ".</b>", false);
                         $this->specialSituation['side2'] = "both";
 
-                        \mysql_query("
+                        \mysqli_query("
                             INSERT INTO `round`
                             (`match_id`,`map_id`,`event_name`,`event_time`,`round_id`,`created_at`,`updated_at`)
                                 VALUES
@@ -2591,7 +2594,7 @@ class Match implements Taskable {
                 $this->say("Write !unpause to remove the pause when your team is ready.");
                 $this->addMatchLog("Pausing the match.");
                 $this->rcon->send($pauseMethods["$pauseMethod"]["method"]);
-                \mysql_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
+                \mysqli_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
                 $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id)));
 
                 $this->pause["ct"] = false;
@@ -2611,7 +2614,7 @@ class Match implements Taskable {
             } else {
                 $this->rcon->send("pause");
             }
-            \mysql_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '" . $this->match_id . "'");
+            \mysqli_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '" . $this->match_id . "'");
             $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_unpaused', 'id' => $this->match_id)));
 
             $this->pause["ct"] = false;
@@ -2623,14 +2626,14 @@ class Match implements Taskable {
 
     private function setMatchMap($mapname) {
         if ($this->playMap["ct"] == $this->playMap["t"] AND $this->playMap["ct"] != "") {
-            \mysql_query("UPDATE `maps` SET `map_name` = '" . $this->playMap["ct"] . "' WHERE `match_id` = '" . $this->match_id . "'");
+            \mysqli_query("UPDATE `maps` SET `map_name` = '" . $this->playMap["ct"] . "' WHERE `match_id` = '" . $this->match_id . "'");
             Logger::debug("Loading map");
-            $query = \mysql_query("SELECT * FROM `maps` WHERE match_id = '" . $this->match_id . "'");
+            $query = \mysqli_query("SELECT * FROM `maps` WHERE match_id = '" . $this->match_id . "'");
             if (!$query) {
                 throw new MatchException();
             }
-            while ($data = \mysql_fetch_assoc($query)) {
-                $this->maps[$data["id"]] = new Map($data);
+            while ($data = \mysqli_fetch_assoc($query)) {
+                $this->maps[$data["id"]] = new Map($this->mysqli_link, $data);
                 $this->maps[$data["id"]]->setNbMaxRound($this->maxRound);
             }
             if ($this->maps[$this->matchData["current_map"]]) {
@@ -2658,7 +2661,7 @@ class Match implements Taskable {
             $this->score["team_a"] = $this->currentMap->getScore1();
             $this->score["team_b"] = $this->currentMap->getScore2();
 
-            @mysql_query("UPDATE `matchs` SET score_a = '" . $this->score["team_a"] . "', score_b ='" . $this->score["team_b"] . "' WHERE id='" . $this->match_id . "'");
+            @mysqli_query("UPDATE `matchs` SET score_a = '" . $this->score["team_a"] . "', score_b ='" . $this->score["team_b"] . "' WHERE id='" . $this->match_id . "'");
 
             // Setting nb OverTime
             $this->nbOT = $this->currentMap->getNbOt();
@@ -2694,7 +2697,7 @@ class Match implements Taskable {
             }
 
             $this->say("Round restored, going LIVE!");
-            \mysql_query("UPDATE `matchs` SET ingame_enable = 1 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
+            \mysqli_query("UPDATE `matchs` SET ingame_enable = 1 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
             TaskManager::getInstance()->addTask(new Task($this, self::SET_LIVE, microtime(true) + 2));
         }
     }
@@ -2709,9 +2712,9 @@ class Match implements Taskable {
                     $this->addLog("Stopping current side, new status: " . $this->getStatusText() . ".");
 
                     $this->recupStatus(true);
-                    mysql_query("DELETE FROM player_kill WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
-                    mysql_query("DELETE FROM round WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
-                    mysql_query("DELETE FROM round_summary WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
+                    mysqli_query("DELETE FROM player_kill WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
+                    mysqli_query("DELETE FROM round WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
+                    mysqli_query("DELETE FROM round_summary WHERE round_id >= 1 AND map_id='" . $this->currentMap->getMapId() . "'");
                 } else {
                     // Getting file to restore
                     $data = $this->rcon->send("mp_backup_round_file_last");
@@ -2729,7 +2732,7 @@ class Match implements Taskable {
 
                     $this->rcon->send("mp_backup_round_file \"ebot_paused_" . $this->match_id . "\"");
                     $this->rcon->send("mp_restartgame 1");
-                    \mysql_query("UPDATE `matchs` SET ingame_enable = 0 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
+                    \mysqli_query("UPDATE `matchs` SET ingame_enable = 0 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
 
                     /* if ($this->getNbRound() == $this->maxRound + 1) {
                       $this->rcon->send("mp_swapteams");
@@ -2744,9 +2747,9 @@ class Match implements Taskable {
                       }
                       } */
 
-                    mysql_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
-                    mysql_query("DELETE FROM round WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
-                    mysql_query("DELETE FROM round_summary WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+                    mysqli_query("DELETE FROM player_kill WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+                    mysqli_query("DELETE FROM round WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
+                    mysqli_query("DELETE FROM round_summary WHERE round_id = " . $this->getNbRound() . " AND map_id='" . $this->currentMap->getMapId() . "'");
                 }
 
                 $this->ready["ct"] = false;
@@ -3003,7 +3006,7 @@ class Match implements Taskable {
         $this->rcon->send("exec server.cfg");
 
 
-        mysql_query("UPDATE `matchs` SET enable = 0, auto_start = 0 WHERE id = '" . $this->match_id . "'");
+        mysqli_query("UPDATE `matchs` SET enable = 0, auto_start = 0 WHERE id = '" . $this->match_id . "'");
         $this->needDel = true;
         return true;
     }
@@ -3018,7 +3021,7 @@ class Match implements Taskable {
         $this->rcon->send("exec server.cfg");
         $this->rcon->send("mp_teamname_1 \"\"; mp_teamname_2 \"\"; mp_teamflag_1 \"\"; mp_teamflag_2 \"\"");
 
-        mysql_query("UPDATE `matchs` SET enable = 0, auto_start = 0 WHERE id = '" . $this->match_id . "'");
+        mysqli_query("UPDATE `matchs` SET enable = 0, auto_start = 0 WHERE id = '" . $this->match_id . "'");
         $this->needDel = true;
         return true;
     }
@@ -3073,7 +3076,7 @@ class Match implements Taskable {
         if ($this->currentMap != null) {
             $this->currentMap->setStatus(Map::STATUS_STARTING, true);
             $this->setStatus(self::STATUS_STARTING, true);
-            \mysql_query("UPDATE `matchs` SET `current_map` = '" . $this->currentMap->getMapId() . "' WHERE `id` = '" . $this->match_id . "'");
+            \mysqli_query("UPDATE `matchs` SET `current_map` = '" . $this->currentMap->getMapId() . "' WHERE `id` = '" . $this->match_id . "'");
 
             Logger::debug("Setting need knife round on map.");
             $this->currentMap->setNeedKnifeRound(true);
@@ -3105,7 +3108,7 @@ class Match implements Taskable {
     public function adminStreamerReady() {
         if ($this->config_streamer) {
             $this->streamerReady = true;
-            \mysql_query("UPDATE `matchs` SET `config_streamer` = 2 WHERE `id` = '" . $this->match_id . "'");
+            \mysqli_query("UPDATE `matchs` SET `config_streamer` = 2 WHERE `id` = '" . $this->match_id . "'");
             if (($this->getStatus() == self::STATUS_WU_1_SIDE) || ($this->getStatus() == self::STATUS_WU_KNIFE)) {
                 $this->say("Streamers are ready now!", "red");
                 $this->say("Please get ready by typing: !ready.");
@@ -3169,7 +3172,7 @@ class Match implements Taskable {
             } else {
                 $this->rcon->send("pause");
             }
-            \mysql_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '" . $this->match_id . "'");
+            \mysqli_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '" . $this->match_id . "'");
             $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_unpaused', 'id' => $this->match_id)));
 
             $this->pause["ct"] = false;
@@ -3188,7 +3191,7 @@ class Match implements Taskable {
             } else {
                 $this->rcon->send("pause");
             }
-            \mysql_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
+            \mysqli_query("UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
             $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id)));
 
             $this->pause["ct"] = false;
@@ -3216,8 +3219,8 @@ class Match implements Taskable {
 
     public function adminGoBackRounds($round) {
         $this->enable = false;
-        $sql = mysql_query("SELECT * FROM  round_summary WHERE match_id = '" . $this->match_id . "' AND map_id = '" . $this->currentMap->getMapId() . "' AND round_id = $round");
-        $req = mysql_fetch_array($sql);
+        $sql = mysqli_query("SELECT * FROM  round_summary WHERE match_id = '" . $this->match_id . "' AND map_id = '" . $this->currentMap->getMapId() . "' AND round_id = $round");
+        $req = mysqli_fetch_array($sql);
 
         $backup = $req['backup_file_name'];
 
@@ -3234,7 +3237,7 @@ class Match implements Taskable {
             }
             $this->isPaused = false;
             $this->addLog("Disabling pause.");
-            \mysql_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '" . $this->match_id . "'");
+            \mysqli_query("UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '" . $this->match_id . "'");
             $this->websocket['match']->sendData(json_encode(array('message' => 'status', 'content' => 'is_unpaused', 'id' => $this->match_id)));
         }
 
@@ -3243,7 +3246,7 @@ class Match implements Taskable {
         $this->score["team_a"] = $req['score_a'];
         $this->score["team_b"] = $req['score_b'];
 
-        @mysql_query("UPDATE `matchs` SET score_a = '" . $this->score["team_a"] . "', score_b ='" . $this->score["team_b"] . "' WHERE id='" . $this->match_id . "'");
+        @mysqli_query("UPDATE `matchs` SET score_a = '" . $this->score["team_a"] . "', score_b ='" . $this->score["team_b"] . "' WHERE id='" . $this->match_id . "'");
 
         // To check with overtime
         if ($this->score["team_a"] + $this->score["team_b"] < $this->matchData["max_round"]) {
@@ -3337,7 +3340,7 @@ class Match implements Taskable {
         }
 
         $this->say("Round restored, going LIVE!");
-        \mysql_query("UPDATE `matchs` SET ingame_enable = 1 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
+        \mysqli_query("UPDATE `matchs` SET ingame_enable = 1 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
         TaskManager::getInstance()->addTask(new Task($this, self::SET_LIVE, microtime(true) + 2));
         return true;
     }
