@@ -10,6 +10,7 @@
 
 namespace eBot\Match;
 
+use eBot\Config\Config;
 use eTools\Utils\Logger;
 use eBot\Exception\MatchException;
 use eBot\Match\Map;
@@ -1829,7 +1830,19 @@ class Match implements Taskable {
         /**
          * TV PUSH
          */
-        TaskManager::getInstance()->addTask(new Task($this, self::STOP_RECORD, microtime(true) + 2));
+        $delay = 2;
+        if (\eBot\Config\Config::getInstance()->isUseDelayEndRecord()) {
+            $delay = 90;
+            $text = $this->rcon->send("tv_delay");
+            if (preg_match('!"tv_delay" = "(?<value>.*)"!', $text, $match)) {
+                $delay = 2;
+                if ($match["value"] > 2) {
+                    $delay = $match["value"];
+                }
+            }
+        }
+
+        TaskManager::getInstance()->addTask(new Task($this, self::STOP_RECORD, microtime(true) + $delay));
         $record_name = $this->currentMap->getTvRecordFile();
         if ($record_name != "") {
             $this->currentRecordName = $record_name;

@@ -14,7 +14,7 @@ use \eTools\Utils\Singleton;
 use \eTools\Utils\Logger;
 
 /**
- * @method Config getInstance() Description
+ * @method static Config getInstance() Description
  */
 class Config extends Singleton
 {
@@ -44,6 +44,7 @@ class Config extends Singleton
     private $remember_recordmsg = false;
     private $external_log_ip = "";
     private $node_startup_method = "node";
+    private $useDelayEndRecord = false;
 
     public function __construct()
     {
@@ -85,9 +86,31 @@ class Config extends Singleton
             if (isset($config['REMIND_RECORD']) && is_bool((bool)$config['REMIND_RECORD']))
                 $this->remember_recordmsg = (bool)$config['REMIND_RECORD'];
 
+            if (isset($config['USE_DELAY_END_RECORD']) && is_bool((bool)$config['USE_DELAY_END_RECORD']))
+                $this->useDelayEndRecord = (bool)$config['USE_DELAY_END_RECORD'];
+
             Logger::debug("Configuration loaded");
         }
     }
+
+    /**
+     * @return bool
+     */
+    public function isUseDelayEndRecord()
+    {
+        return $this->useDelayEndRecord;
+    }
+
+    /**
+     * @param bool $useDelayEndRecord
+     * @return Config
+     */
+    public function setUseDelayEndRecord($useDelayEndRecord)
+    {
+        $this->useDelayEndRecord = $useDelayEndRecord;
+        return $this;
+    }
+
 
     public function scanAdvertising()
     {
