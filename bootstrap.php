@@ -151,7 +151,7 @@ if ($config->getNodeStartupMethod() != "none") {
             1 => array("file", APP_ROOT . "logs" . DIRECTORY_SEPARATOR . "websocket.log", "a"),
             2 => array("file", APP_ROOT . "logs" . DIRECTORY_SEPARATOR . "websocket.error", "a")
         );
-        $webSocketProcess = proc_open($config->getNodeStartupMethod().' ' . APP_ROOT . 'websocket_server.js ' . \eBot\Config\Config::getInstance()->getBot_ip() . ' ' . \eBot\Config\Config::getInstance()->getBot_port(), $descriptorspec, $pipes);
+	    $webSocketProcess = proc_open($config->getNodeStartupMethod() . ' ' . APP_ROOT . 'websocket_server.js ' . \eBot\Config\Config::getInstance()->getBot_ip() . ' ' . \eBot\Config\Config::getInstance()->getBot_port() . ' ' . (\eBot\Config\Config::getInstance()->isSSLEnabled() ? 'TRUE': 'FALSE') . ' ' . \eBot\Config\Config::getInstance()->getSSLCertificatePath() . ' ' . \eBot\Config\Config::getInstance()->getSSLKeyPath(), $descriptorspec, $pipes);
         if (is_resource($webSocketProcess)) {
             fclose($pipes[0]);
             usleep(400000);
