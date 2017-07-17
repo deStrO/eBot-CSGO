@@ -293,7 +293,7 @@ class Application extends AbstractApplication {
     }
 
     private function initDatabase() {
-        $conn = @\mysql_connect(Config::getInstance()->getMysql_ip(), Config::getInstance()->getMysql_user(), Config::getInstance()->getMysql_pass());
+        $conn = @\mysql_connect(Config::getInstance()->getMysql_ip() . ':' . Config::getInstance()->getMysql_port(), Config::getInstance()->getMysql_user(), Config::getInstance()->getMysql_pass());
         if (!$conn) {
             Logger::error("Can't login into database " . Config::getInstance()->getMysql_user() . "@" . Config::getInstance()->getMysql_ip());
             die(1);
