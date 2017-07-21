@@ -14,6 +14,9 @@ MYSQL_BASE = "ebotv3"
 [Config]
 BOT_IP = "127.0.0.1"
 BOT_PORT = 12360
+SSL_ENABLED = false
+SSL_CERTIFICATE_PATH = "ssl/cert.pem"
+SSL_KEY_PATH = "ssl/key.pem"
 EXTERNAL_LOG_IP = "" ; use this in case your server isn't binded with the external IP (behind a NAT)
 MANAGE_PLAYER = 1
 DELAY_BUSY_SERVER = 120
@@ -26,7 +29,7 @@ LO3_METHOD = "restart" ; restart or csay or esl
 KO3_METHOD = "restart" ; restart or csay or esl
 DEMO_DOWNLOAD = true ; true or false :: whether gotv demos will be downloaded from the gameserver after matchend or not
 REMIND_RECORD = false ; true will print the 3x "Remember to record your own POV demos if needed!" messages, false will not
-DAMAGE_REPORT = true; true will print damage reports at end of round to players, false will not
+DAMAGE_REPORT = true ; true will print damage reports at end of round to players, false will not
 USE_DELAY_END_RECORD = false ; use the tv_delay to record postpone the tv_stoprecord & upload
 
 [MAPS]

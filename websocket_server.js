@@ -1,4 +1,5 @@
 var http = require('http');
+var https = require('https');
 var formidable = require('formidable');
 var archiver = require('archiver');
 var fs = require('fs');
@@ -7,6 +8,7 @@ var clientUDP = dgram.createSocket("udp4");
 
 var udp_ip = process.argv[2];
 var udp_port = process.argv[3];
+var sslEnabled = process.argv[4] === 'TRUE';
 
 var DEMO_PATH = __dirname + "/demos/";
 
@@ -14,7 +16,7 @@ String.prototype.endsWith = function(suffix) {
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };
 
-var server = http.createServer(function(request, response) {
+function requestHandler (request, response) {
     switch (request.url) {
 
         case '/upload':
@@ -87,7 +89,16 @@ var server = http.createServer(function(request, response) {
             response.end();
             break;
     }
-});
+}
+var server;
+if (sslEnabled) {
+	server = https.createServer({
+		key: fs.readFileSync(process.argv[6] || 'ssl/key.pem'),
+		cert: fs.readFileSync(process.argv[5] ||'ssl/cert.pem')
+	},requestHandler);
+} else {
+	server = http.createServer(requestHandler);
+}
 
 fs.exists(DEMO_PATH, function(exists) {
     if (!exists) {
