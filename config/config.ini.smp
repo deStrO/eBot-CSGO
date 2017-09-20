@@ -12,7 +12,7 @@ MYSQL_PASS = "ebotv3"
 MYSQL_BASE = "ebotv3"
 
 [Config]
-BOT_IP = "127.0.0.1"
+BOT_IP = "127.0.0.1" ; if behind nat, ip which connects to external network
 BOT_PORT = 12360
 SSL_ENABLED = false
 SSL_CERTIFICATE_PATH = "ssl/cert.pem"
@@ -33,14 +33,7 @@ DAMAGE_REPORT = true ; true will print damage reports at end of round to players
 USE_DELAY_END_RECORD = false ; use the tv_delay to record postpone the tv_stoprecord & upload
 
 [MAPS]
-MAP[] = "de_dust2_se"
-MAP[] = "de_nuke_se"
-MAP[] = "de_inferno_se"
-MAP[] = "de_mirage_ce"
-MAP[] = "de_train_se"
 MAP[] = "de_cache"
-MAP[] = "de_season"
-MAP[] = "de_dust2"
 MAP[] = "de_nuke"
 MAP[] = "de_inferno"
 MAP[] = "de_train"
