@@ -79,25 +79,50 @@ function requestHandler (request, response) {
                         io.sockets.in('matchs').emit('matchsHandler', body);
                     } else if (request.url == "livemap") {
                         io.sockets.in('livemap-' + data.id).emit('livemapHandler', body);
-                    } else {
-                        message = JSON.parse(body);
+                    } else if (request.url == "/csgologs"){
+
+                        message = body;
+
+                        console.log("Receiving -->" + message);
+
+                        var ua=request.headers["user-agent"]+" ";
+
+                        if(ua.indexOf("Valve") !== -1){
+
+
+                            body.toString()
+                                .split("\n")
+                                .forEach(function(line) {
+                                    var ip = request.headers["x-server-addr"];
+                                    var dgram = new Buffer(ip+"*"+line);
+
+                                    console.log("Sending -->" + ip+"*"+line);
+
+                                    clientUDP.send(dgram, 0, dgram.length, udp_port, udp_ip);
+                                });
+
+
+                        } else {
+                            message = JSON.parse(body);
+                        }
+
                     }
                 });
             }
 
-            response.writeHead(404);
+            response.writeHead(200);
             response.end();
             break;
     }
 }
 var server;
 if (sslEnabled) {
-	server = https.createServer({
-		key: fs.readFileSync(process.argv[6] || 'ssl/key.pem'),
-		cert: fs.readFileSync(process.argv[5] ||'ssl/cert.pem')
-	},requestHandler);
+    server = https.createServer({
+        key: fs.readFileSync(process.argv[6] || 'ssl/key.pem'),
+        cert: fs.readFileSync(process.argv[5] ||'ssl/cert.pem')
+    },requestHandler);
 } else {
-	server = http.createServer(requestHandler);
+    server = http.createServer(requestHandler);
 }
 
 fs.exists(DEMO_PATH, function(exists) {

@@ -167,7 +167,7 @@ class Match implements Taskable {
             $this->rcon = new Rcon($ip[0], $ip[1], $rcon);
             $this->rconPassword = $rcon;
             Logger::log("RCON init ok");
-            $this->rcon->send("log on; mp_logdetail 3; logaddress_del " . \eBot\Config\Config::getInstance()->getLogAddressIp() . ":" . \eBot\Config\Config::getInstance()->getBot_port() . ";logaddress_add " . \eBot\Config\Config::getInstance()->getLogAddressIp() . ":" . \eBot\Config\Config::getInstance()->getBot_port());
+            $this->rcon->send("log on; mp_logdetail 3; logaddress_del " . \eBot\Config\Config::getInstance()->getLogAddressIp() . ":" . \eBot\Config\Config::getInstance()->getBot_port() . "; logaddress_add_http \"http://" . \eBot\Config\Config::getInstance()->getLogAddressIp() . ":" . \eBot\Config\Config::getInstance()->getBot_port()."/csgologs\"");
             $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getLogAddressIp() . "\"");
             $this->addMatchLog("- RCON connection OK", true, false);
         } catch (\Exception $ex) {
