@@ -167,8 +167,8 @@ class Match implements Taskable {
             $this->rcon = new Rcon($ip[0], $ip[1], $rcon);
             $this->rconPassword = $rcon;
             Logger::log("RCON init ok");
-            $this->rcon->send("log on; mp_logdetail 3; logaddress_del " . \eBot\Config\Config::getInstance()->getLogAddressIp() . ":" . \eBot\Config\Config::getInstance()->getBot_port() . ";logaddress_add " . \eBot\Config\Config::getInstance()->getLogAddressIp() . ":" . \eBot\Config\Config::getInstance()->getBot_port());
-            $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getLogAddressIp() . "\"");
+            $this->rcon->send("log on; mp_logdetail 3; logaddress_delall_http " . \eBot\Config\Config::getInstance()->getLogAddressIp() . ":" . \eBot\Config\Config::getInstance()->getBot_port() . ";logaddress_add_http " . \eBot\Config\Config::getInstance()->getLogAddressIp() . ":" . \eBot\Config\Config::getInstance()->getBot_port());
+            //$this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getLogAddressIp() . "\""); Remove in CS2
             $this->addMatchLog("- RCON connection OK", true, false);
         } catch (\Exception $ex) {
             $this->needDel = true;
@@ -199,8 +199,8 @@ class Match implements Taskable {
         }
         TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 10));
 
-        // CSay Detection
-        try {
+        // CSay Detection     REMOVE FOR THE MOMENT
+        /*try {
             $text = $this->rcon->send("csay_version");
             if (preg_match('!"csay_version" = "(.*)"!', $text, $match)) {
                 $this->addLog("CSay version " . $match[1]);
@@ -212,7 +212,7 @@ class Match implements Taskable {
         } catch (\Exception $ex) {
             Logger::error("Error while getting plugins information");
         }
-        // ESL Plugin Detection
+        // ESL Plugin Detection     REMOVE FOR THE MOMENT
         try {
             $text = $this->rcon->send("esl_version");
             if (preg_match('!"esl_version" = "(.*)"!', $text, $match)) {
@@ -222,7 +222,7 @@ class Match implements Taskable {
             }
         } catch (\Exception $ex) {
             Logger::error("Error while getting plugins information");
-        }
+        }*/
 
         $this->config_full_score = $this->matchData["config_full_score"];
         $this->config_kniferound = $this->matchData["config_knife_round"];
@@ -429,7 +429,7 @@ class Match implements Taskable {
 
         if ($this->pluginPrintPlayers) {
             $this->addLog("Getting status for players.");
-            $text = $this->rcon->send("steamu_printPlayer");
+            $text = $this->rcon->send("steamu_printPlayer"); // Remove in CS2
             $texts = explode("\n", trim($text));
             foreach ($texts as $v) {
                 if (preg_match('!#(\d+) "(.*)" (.*) (\d+) (\d+).(\d+).(\d+).(\d+)!', $v, $arr)) {
