@@ -11,7 +11,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\KillAssist as Object;
+use eBot\Message\Type\KillAssist as MessageObject;
 
 class KillAssist extends Message {
 
@@ -21,7 +21,7 @@ class KillAssist extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
         $o->setUserId($this->datas['user_id']);
         $o->setUserName($this->datas['user_name']);
         $o->setUserTeam($this->datas['user_team']);
@@ -31,7 +31,7 @@ class KillAssist extends Message {
         $o->setKilledUserName($this->datas['killed_user_name']);
         $o->setKilledUserTeam($this->datas['killed_user_team']);
         $o->setKilledUserSteamid($this->datas['killed_steam_id']);
-        
+
         return $o;
     }
 

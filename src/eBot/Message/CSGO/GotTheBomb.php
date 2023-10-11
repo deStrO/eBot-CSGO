@@ -10,7 +10,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\GotTheBomb as Object;
+use eBot\Message\Type\GotTheBomb as MessageObject;
 
 class GotTheBomb extends Message {
 
@@ -19,7 +19,7 @@ class GotTheBomb extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
         return $o;
     }
 

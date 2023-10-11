@@ -17,7 +17,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\TeamScored as Object;
+use eBot\Message\Type\TeamScored as MessageObject;
 
 class TeamScored extends Message {
 
@@ -26,10 +26,10 @@ class TeamScored extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
         $o->setTeam($this->datas["team"] == "CT" ? "ct": "t");
         $o->setScore($this->datas['score']);
-        $o->setPlayers($this->datas['players']);       
+        $o->setPlayers($this->datas['players']);
 
         return $o;
     }

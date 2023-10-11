@@ -2,6 +2,7 @@
 
 namespace eBot\Manager;
 
+use eBot\Application\Application;
 use eTools\Utils\Singleton;
 use eTools\Task\Taskable;
 use eTools\Task\Task;
@@ -53,10 +54,10 @@ class MatchManager extends Singleton implements Taskable {
     private function check() {
         Logger::debug("Checking for new match (current matchs: " . count($this->matchs) . ")");
 
-        $sql = mysql_query("SELECT m.team_a_name as team_a_name, m.team_b_name as team_b_name, m.id as match_id, m.config_authkey as config_authkey, t_a.name as team_a, t_b.name as team_b, s.id as server_id, s.ip as server_ip, s.rcon as server_rcon FROM `matchs` m LEFT JOIN `servers` s ON s.id = m.server_id LEFT JOIN `teams` t_a ON t_a.id = m.team_a LEFT JOIN `teams` t_b ON t_b.id = m.team_b WHERE m.`auto_start` = '1' AND UNIX_TIMESTAMP(m.`startdate`) <= (m.`auto_start_time`*60)+" . time() . " AND UNIX_TIMESTAMP(m.`startdate`) > " . time()) or die(mysql_error());
-        if (!mysql_num_rows($sql))
-            $sql = mysql_query("SELECT m.team_a_name as team_a_name, m.team_b_name as team_b_name, m.id as match_id, m.config_authkey as config_authkey, t_a.name as team_a, t_b.name as team_b, s.id as server_id, s.ip as server_ip, s.rcon as server_rcon FROM `matchs` m LEFT JOIN `servers` s ON s.id = m.server_id LEFT JOIN `teams` t_a ON t_a.id = m.team_a LEFT JOIN `teams` t_b ON t_b.id = m.team_b WHERE m.`status` >= " . Match::STATUS_STARTING . " AND m.`status` < " . Match::STATUS_END_MATCH . " AND m.`enable` = 1") or die(mysql_error());
-        while ($req = mysql_fetch_assoc($sql)) {
+        $sql = mysqli_query(Application::getInstance()->db, "SELECT m.team_a_name as team_a_name, m.team_b_name as team_b_name, m.id as match_id, m.config_authkey as config_authkey, t_a.name as team_a, t_b.name as team_b, s.id as server_id, s.ip as server_ip, s.rcon as server_rcon FROM `matchs` m LEFT JOIN `servers` s ON s.id = m.server_id LEFT JOIN `teams` t_a ON t_a.id = m.team_a LEFT JOIN `teams` t_b ON t_b.id = m.team_b WHERE m.`auto_start` = '1' AND UNIX_TIMESTAMP(m.`startdate`) <= (m.`auto_start_time`*60)+" . time() . " AND UNIX_TIMESTAMP(m.`startdate`) > " . time()) or die(mysqli_error(Application::getInstance()->db));
+        if (!mysqli_num_rows($sql))
+            $sql = mysqli_query(Application::getInstance()->db, "SELECT m.team_a_name as team_a_name, m.team_b_name as team_b_name, m.id as match_id, m.config_authkey as config_authkey, t_a.name as team_a, t_b.name as team_b, s.id as server_id, s.ip as server_ip, s.rcon as server_rcon FROM `matchs` m LEFT JOIN `servers` s ON s.id = m.server_id LEFT JOIN `teams` t_a ON t_a.id = m.team_a LEFT JOIN `teams` t_b ON t_b.id = m.team_b WHERE m.`status` >= " . Match::STATUS_STARTING . " AND m.`status` < " . Match::STATUS_END_MATCH . " AND m.`enable` = 1") or die(mysqli_error(Application::getInstance()->db));
+        while ($req = mysqli_fetch_assoc($sql)) {
             if (!@$this->matchs[$req['server_ip']]) {
                 try {
                     $teamA = $this->getTeamDetails($req['team_a'], 'a', $req);
@@ -66,7 +67,7 @@ class MatchManager extends Singleton implements Taskable {
                     $this->newMatch($req["match_id"], $req['server_ip'], $req['server_rcon'], $req['config_authkey']);
                 } catch (MatchException $ex) {
                     Logger::error("Error while creating the match");
-                    mysql_query("UPDATE `matchs` SET enable=0, auto_start = 0 WHERE id = '" . $req['match_id'] . "'") or die(mysql_error());
+                    mysqli_query(Application::getInstance()->db, "UPDATE `matchs` SET enable=0, auto_start = 0 WHERE id = '" . $req['match_id'] . "'") or die(mysqli_error(Application::getInstance()->db));
                 } catch (\Exception $ex) {
                     if ($ex->getMessage() == "SERVER_BUSY") {
                         Logger::error($req["server_ip"] . " is busy for " . ($this->busyServers[$req['server_ip']] - time(). " seconds"));
@@ -97,11 +98,11 @@ class MatchManager extends Singleton implements Taskable {
             Logger::log("Delay $ip for $delay seconds");
         }
     }
-    
+
     public function setRetry($id, $number) {
         $this->retry[$id] = $number;
     }
-    
+
     public function getRetry($id) {
         return $this->retry[$id];
     }
@@ -149,7 +150,7 @@ class MatchManager extends Singleton implements Taskable {
 
     private function getTeamDetails($id, $t, $data) {
         if (is_numeric($id) && $id > 0) {
-            $ds = mysql_fetch_array(mysql_query("SELECT * FROM `teams` WHERE `id` = '$id'"));
+            $ds = mysqli_fetch_array(mysqli_query("SELECT * FROM `teams` WHERE `id` = '$id'"));
             return $ds;
         } else {
             if ($t == "a") {

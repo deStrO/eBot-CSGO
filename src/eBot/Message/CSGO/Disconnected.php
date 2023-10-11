@@ -10,7 +10,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\Disconnected as Object;
+use eBot\Message\Type\Disconnected as MessageObject;
 
 class Disconnected extends Message {
 
@@ -19,7 +19,7 @@ class Disconnected extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
         $o->setUserId($this->datas['user_id']);
         $o->setUserName($this->datas['user_name']);
         $o->setUserTeam($this->datas['user_team']);

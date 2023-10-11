@@ -11,7 +11,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\Say as Object;
+use eBot\Message\Type\Say as MessageObject;
 
 class SayTeam extends Message {
 
@@ -20,13 +20,13 @@ class SayTeam extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
         $o->setUserId($this->datas['user_id']);
         $o->setUserName($this->datas['user_name']);
         $o->setUserTeam($this->datas['user_team']);
         $o->setUserSteamid($this->datas['steam_id']);
         $o->setText($this->datas['text']);
-        $o->setType(Object::SAY_TEAM);
+        $o->setType(MessageObject::SAY_TEAM);
 
         return $o;
     }

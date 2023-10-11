@@ -10,6 +10,7 @@
 
 namespace eBot\Config;
 
+use eBot\Application\Application;
 use \eTools\Utils\Singleton;
 use \eTools\Utils\Logger;
 
@@ -25,14 +26,14 @@ class Config extends Singleton
     private $mysql_base;
     private $bot_ip;
     private $bot_port;
-	private $sslEnabled;
-	private $sslCertPath;
-	private $sslKeyPath;
-    private $messages = array();
+    private $sslEnabled;
+    private $sslCertPath;
+    private $sslKeyPath;
+    private $messages = [];
     private $record_name = "ebot";
     private $delay_busy_server = 90;
     private $nb_max_matchs = 0;
-    private $advertising = array();
+    private $advertising = [];
     private $maps;
     private $workshop;
     private $lo3_method;
@@ -48,6 +49,15 @@ class Config extends Singleton
     private $node_startup_method = "node";
     private $useDelayEndRecord = false;
 
+    private $logAddressServer = null;
+    private $redisHost = null;
+    private $redisPort = null;
+    private $redisAuthUsername = null;
+    private $redisAuthPassword = null;
+    private $redisChannelLog = null;
+    private $redisChannelEbotFromWs = null;
+    private $redisChannelEbotToWs = null;
+
     public function __construct()
     {
         Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
@@ -62,9 +72,9 @@ class Config extends Singleton
 
             $this->bot_ip = $config["BOT_IP"];
             $this->bot_port = $config["BOT_PORT"];
-	        $this->sslEnabled = $config["SSL_ENABLED"];
-	        $this->sslCertPath = $config["SSL_CERTIFICATE_PATH"];
-	        $this->sslKeyPath = $config["SSL_KEY_PATH"];
+            $this->sslEnabled = $config["SSL_ENABLED"];
+            $this->sslCertPath = $config["SSL_CERTIFICATE_PATH"];
+            $this->sslKeyPath = $config["SSL_KEY_PATH"];
 
             $this->delay_busy_server = $config["DELAY_BUSY_SERVER"];
 
@@ -94,8 +104,147 @@ class Config extends Singleton
             if (isset($config['USE_DELAY_END_RECORD']) && is_bool((bool)$config['USE_DELAY_END_RECORD']))
                 $this->useDelayEndRecord = (bool)$config['USE_DELAY_END_RECORD'];
 
+            $this->logAddressServer = $config['LOG_ADDRESS_SERVER'];
+
+            $this->redisHost = $config['REDIS_HOST'];
+            $this->redisPort = $config['REDIS_PORT'];
+            $this->redisAuthUsername = $config['REDIS_AUTH_USERNAME'];
+            $this->redisAuthPassword = $config['REDIS_AUTH_PASSWORD'];
+            $this->redisChannelLog = $config['REDIS_CHANNEL_LOG'];
+            $this->redisChannelEbotFromWs = $config['REDIS_CHANNEL_EBOT_FROM_WS'];
+            $this->redisChannelEbotToWs = $config['REDIS_CHANNEL_EBOT_TO_WS'];
+
             Logger::debug("Configuration loaded");
         }
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getRedisHost()
+    {
+        return $this->redisHost;
+    }
+
+    /**
+     * @param mixed|null $redisHost
+     */
+    public function setRedisHost($redisHost): void
+    {
+        $this->redisHost = $redisHost;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getRedisPort()
+    {
+        return $this->redisPort;
+    }
+
+    /**
+     * @param mixed|null $redisPort
+     */
+    public function setRedisPort($redisPort): void
+    {
+        $this->redisPort = $redisPort;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getRedisAuthUsername()
+    {
+        return $this->redisAuthUsername;
+    }
+
+    /**
+     * @param mixed|null $redisAuthUsername
+     */
+    public function setRedisAuthUsername($redisAuthUsername): void
+    {
+        $this->redisAuthUsername = $redisAuthUsername;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getRedisAuthPassword()
+    {
+        return $this->redisAuthPassword;
+    }
+
+    /**
+     * @param mixed|null $redisAuthPassword
+     */
+    public function setRedisAuthPassword($redisAuthPassword): void
+    {
+        $this->redisAuthPassword = $redisAuthPassword;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getRedisChannelLog()
+    {
+        return $this->redisChannelLog;
+    }
+
+    /**
+     * @param mixed|null $redisChannelLog
+     */
+    public function setRedisChannelLog($redisChannelLog): void
+    {
+        $this->redisChannelLog = $redisChannelLog;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getRedisChannelEbotFromWs()
+    {
+        return $this->redisChannelEbotFromWs;
+    }
+
+    /**
+     * @param mixed|null $redisChannelEbotFromWs
+     */
+    public function setRedisChannelEbotFromWs($redisChannelEbotFromWs): void
+    {
+        $this->redisChannelEbotFromWs = $redisChannelEbotFromWs;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getRedisChannelEbotToWs()
+    {
+        return $this->redisChannelEbotToWs;
+    }
+
+    /**
+     * @param mixed|null $redisChannelEbotToWs
+     */
+    public function setRedisChannelEbotToWs($redisChannelEbotToWs): void
+    {
+        $this->redisChannelEbotToWs = $redisChannelEbotToWs;
+    }
+
+
+    /**
+     * @return mixed|null
+     */
+    public function getLogAddressServer()
+    {
+        return $this->logAddressServer;
+    }
+
+    /**
+     * @param mixed|null $logAddressServer
+     */
+    public function setLogAddressServer($logAddressServer)
+    {
+        $this->logAddressServer = $logAddressServer;
     }
 
     /**
@@ -113,6 +262,7 @@ class Config extends Singleton
     public function setUseDelayEndRecord($useDelayEndRecord)
     {
         $this->useDelayEndRecord = $useDelayEndRecord;
+
         return $this;
     }
 
@@ -120,8 +270,8 @@ class Config extends Singleton
     public function scanAdvertising()
     {
         unset($this->advertising);
-        $q = \mysql_query("SELECT a.`season_id`, a.`message`, s.`name` FROM `advertising` a LEFT JOIN `seasons` s ON a.`season_id` = s.`id` WHERE a.`active` = 1");
-        while ($row = mysql_fetch_array($q, MYSQL_ASSOC)) {
+        $q = \mysqli_query(Application::getInstance()->db, "SELECT a.`season_id`, a.`message`, s.`name` FROM `advertising` a LEFT JOIN `seasons` s ON a.`season_id` = s.`id` WHERE a.`active` = 1");
+        while ($row = mysqli_fetch_array($q, MYSQLI_ASSOC)) {
             $this->advertising['message'][] = $row['message'];
             if ($row['season_id'] == null) {
                 $row['season_id'] = 0;
@@ -237,38 +387,41 @@ class Config extends Singleton
         $this->bot_port = $bot_port;
     }
 
-	public function isSSLEnabled()
-	{
-		return $this->sslEnabled;
-	}
+    public function isSSLEnabled()
+    {
+        return $this->sslEnabled;
+    }
 
-	public function setSSLEnabled($sslEnabled)
-	{
-		$this->sslEnabled = $sslEnabled;
-		return $this;
-	}
+    public function setSSLEnabled($sslEnabled)
+    {
+        $this->sslEnabled = $sslEnabled;
 
-	public function getSSLCertificatePath()
-	{
-		return $this->sslCertPath;
-	}
+        return $this;
+    }
 
-	public function setSSLCertificatePath($sslCertificatePath)
-	{
-		$this->sslCertPath = $sslCertificatePath;
-		return $this;
-	}
+    public function getSSLCertificatePath()
+    {
+        return $this->sslCertPath;
+    }
 
-	public function getSSLKeyPath()
-	{
-		return $this->sslKeyPath;
-	}
+    public function setSSLCertificatePath($sslCertificatePath)
+    {
+        $this->sslCertPath = $sslCertificatePath;
 
-	public function setSSLKeyPath($sslKeyPath)
-	{
-		$this->sslKeyPath = $sslKeyPath;
-		return $this;
-	}
+        return $this;
+    }
+
+    public function getSSLKeyPath()
+    {
+        return $this->sslKeyPath;
+    }
+
+    public function setSSLKeyPath($sslKeyPath)
+    {
+        $this->sslKeyPath = $sslKeyPath;
+
+        return $this;
+    }
 
     public function getMessages()
     {
@@ -349,6 +502,7 @@ class Config extends Singleton
                 $output['message'][] = $this->advertising['message'][$i];
             }
         }
+
         return $output;
     }
 

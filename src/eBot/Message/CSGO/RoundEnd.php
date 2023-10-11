@@ -11,7 +11,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\RoundEnd as Object;
+use eBot\Message\Type\RoundEnd as MessageObject;
 
 class RoundEnd extends Message {
 
@@ -20,7 +20,7 @@ class RoundEnd extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
 
         return $o;
     }

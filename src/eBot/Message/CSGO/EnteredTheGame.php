@@ -10,7 +10,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\EnteredTheGame as Object;
+use eBot\Message\Type\EnteredTheGame as MessageObject;
 
 class EnteredTheGame extends Message {
 
@@ -19,7 +19,7 @@ class EnteredTheGame extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
         $o->setUserId($this->datas['user_id']);
         $o->setUserName($this->datas['user_name']);
         $o->setUserSteamid($this->datas['steam_id']);

@@ -23,6 +23,16 @@ DELAY_BUSY_SERVER = 120
 NB_MAX_MATCHS = 0
 PAUSE_METHOD = "nextRound" ; nextRound or instantConfirm or instantNoConfirm
 NODE_STARTUP_METHOD = "node" ; binary file name or none in case you are starting it with forever or manually
+LOG_ADDRESS_SERVER = "http://10.10.10.91:12345"
+
+[Redis]
+REDIS_HOST = 127.0.0.1
+REDIS_PORT = 6379
+REDIS_AUTH_USERNAME =
+REDIS_AUTH_PASSWORD =
+REDIS_CHANNEL_LOG = ebot-logs
+REDIS_CHANNEL_EBOT_FROM_WS = ebot-from-ws
+REDIS_CHANNEL_EBOT_TO_WS = ebot-to-ws
 
 [Match]
 LO3_METHOD = "restart" ; restart or csay or esl

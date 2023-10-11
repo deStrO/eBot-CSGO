@@ -10,7 +10,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\ChangeName as Object;
+use eBot\Message\Type\ChangeName as MessageObject;
 
 class ChangeName extends Message {
 
@@ -19,7 +19,7 @@ class ChangeName extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
         $o->setUserId($this->datas['user_id']);
         $o->setUserName($this->datas['user_name']);
         $o->setUserTeam($this->datas['user_team']);

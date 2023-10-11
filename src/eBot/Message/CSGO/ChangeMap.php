@@ -10,7 +10,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\ChangeMap as Object;
+use eBot\Message\Type\ChangeMap as MessageObject;
 
 class ChangeMap extends Message {
 
@@ -19,7 +19,7 @@ class ChangeMap extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
         $o->setMaps($this->datas["maps"]);
         return $o;
     }

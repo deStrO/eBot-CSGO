@@ -10,7 +10,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\RemindRoundScored as Object;
+use eBot\Message\Type\RemindRoundScored as MessageObject;
 
 class RemindRoundScored extends Message {
 
@@ -19,7 +19,7 @@ class RemindRoundScored extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
         $o->setTeam($this->datas["team"]);
 
         switch ($this->datas["team_win"]) {

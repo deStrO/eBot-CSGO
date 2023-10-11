@@ -11,7 +11,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\ThrewStuff as Object;
+use eBot\Message\Type\ThrewStuff as MessageObject;
 
 class ThrewStuff extends Message {
 
@@ -20,7 +20,7 @@ class ThrewStuff extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
         $o->setUserId($this->datas['user_id']);
         $o->setUserName($this->datas['user_name']);
         $o->setUserTeam($this->datas['user_team']);
@@ -29,7 +29,7 @@ class ThrewStuff extends Message {
         $o->setPosY($this->datas["pos_y"]);
         $o->setPosZ($this->datas["pos_z"]);
         $o->setStuff($this->datas["stuff"]);
-        
+
         return $o;
     }
 

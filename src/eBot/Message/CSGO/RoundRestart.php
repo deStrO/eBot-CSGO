@@ -10,7 +10,7 @@
 namespace eBot\Message\CSGO;
 
 use eBot\Message\Message;
-use eBot\Message\Type\RoundRestart as Object;
+use eBot\Message\Type\RoundRestart as MessageObject;
 
 class RoundRestart extends Message {
 
@@ -19,7 +19,7 @@ class RoundRestart extends Message {
     }
 
     public function process() {
-        $o = new Object();
+        $o = new MessageObject();
 
         return $o;
     }

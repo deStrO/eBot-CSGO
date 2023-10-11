@@ -9,6 +9,7 @@
 
 namespace eBot\Match;
 
+use eBot\Application\Application;
 use eTools\Utils\Logger;
 
 class Score {
@@ -86,12 +87,12 @@ class Score {
             $this->score1Side2 += $score_teamA;
             $this->score2Side2 += $score_teamB;
         }
-        
+
         $this->saveScore();
     }
 
     public function saveScore() {
-        mysql_query("UPDATE maps_score SET score1_side1='" . $this->score1Side1 . "',score1_side2='" . $this->score1Side2 . "',score2_side1='" . $this->score2Side1 . "',score2_side2='" . $this->score2Side2 . "' WHERE id='" . $this->id . "' ");
+        mysqli_query(Application::getInstance()->db,"UPDATE maps_score SET score1_side1='" . $this->score1Side1 . "',score1_side2='" . $this->score1Side2 . "',score2_side1='" . $this->score2Side1 . "',score2_side2='" . $this->score2Side2 . "' WHERE id='" . $this->id . "' ");
     }
 
 }
