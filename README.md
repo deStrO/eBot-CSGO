@@ -2,7 +2,7 @@
 
 If you want some help about eBot, check the new forum instead of creating a new issue: http://forum.esport-tools.net
 
-eBot-CSGO
+eBot-CS2
 ==============
 
 The eBot is a full managed server-bot written in PHP and nodeJS. eBot features easy match creation and tons of player and matchstats. Once it's setup, using the eBot is simple and fast.
