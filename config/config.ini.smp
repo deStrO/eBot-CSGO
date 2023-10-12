@@ -61,6 +61,6 @@ MAP[] = "de_overpass"
 [WORKSHOP IDs]
 
 [Settings]
-COMMAND_STOP_DISABLED = false
+COMMAND_STOP_DISABLED = true
 RECORD_METHOD = "matchstart" ; matchstart or knifestart
 DELAY_READY = true
