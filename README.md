@@ -1,6 +1,6 @@
 ## Before going further
 
-If you want some help about eBot, check the new forum instead of creating a new issue: http://forum.esport-tools.net
+If you want some help about eBot, you can join our Discord : https://discord.gg/mcEwFhpWpD
 
 eBot-CS2
 ==============
