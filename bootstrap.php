@@ -73,13 +73,19 @@ function handleShutdown() {
     }
 }
 
-echo "| Registerung Shutdown function !" . PHP_EOL;
+echo "| Register Shutdown function !" . PHP_EOL;
 register_shutdown_function('handleShutdown');
 
 error_reporting(E_ERROR);
 
 $config = \eBot\Config\Config::getInstance();
 
+if ($config->getWebsocketSecretKey() === 'generatestrongsecretkey') {
+    echo "| You must set a WEBSOCKET_SECRET_KEY in config.ini file and the same in app_user.yml on web configuration" . PHP_EOL;
+    echo '-----------------------------------------------------' . PHP_EOL;
+    exit();
+
+}
 if ($config->getNodeStartupMethod() != "none") {
     // Starting ebot Websocket Server
     if (PHP_OS == "Linux") {

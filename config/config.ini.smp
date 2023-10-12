@@ -24,6 +24,7 @@ NB_MAX_MATCHS = 0
 PAUSE_METHOD = "nextRound" ; nextRound or instantConfirm or instantNoConfirm
 NODE_STARTUP_METHOD = "node" ; binary file name or none in case you are starting it with forever or manually
 LOG_ADDRESS_SERVER = "http://10.10.10.91:12345"
+WEBSOCKET_SECRET_KEY = generatestrongsecretkey
 
 [Redis]
 REDIS_HOST = 127.0.0.1

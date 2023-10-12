@@ -2,6 +2,7 @@ import * as http from 'http';
 import * as https from 'https';
 import * as fs from 'fs';
 import {Server} from "socket.io";
+import {authorize} from '@thream/socketio-jwt'
 import {createApp, createRouter, readBody, eventHandler, toNodeListener, getRequestURL} from "h3";
 import {createClient} from 'redis';
 import {parse} from 'ini';
@@ -16,11 +17,8 @@ const config = parse(fs.readFileSync('./config/config.ini', 'utf-8'));
     let io = null;
 
     const redisConfig = {
-        username: config.Redis.REDIS_AUTH_USERNAME,
-        password: config.Redis.REDIS_AUTH_PASSWORD,
-        socket: {
-            host: config.Redis.REDIS_HOST,
-            port: config.Redis.REDIS_PORT,
+        username: config.Redis.REDIS_AUTH_USERNAME, password: config.Redis.REDIS_AUTH_PASSWORD, socket: {
+            host: config.Redis.REDIS_HOST, port: config.Redis.REDIS_PORT,
         }
     };
 
@@ -31,34 +29,28 @@ const config = parse(fs.readFileSync('./config/config.ini', 'utf-8'));
     await client.connect();
 
     const router = createRouter()
-        .post(
-            "/upload",
-            eventHandler(() => {
+        .post("/upload", eventHandler(() => {
 
-            }),
-        )
-        .post(
-            "/**",
-            eventHandler(async (event) => {
-                const body = await readBody(event);
-                const data = body;
-                const requestUrl = getRequestURL(event);
-                if (requestUrl.pathname === "/alive") {
-                    io.to('alive').emit('aliveHandler', {data: body});
-                } else if (requestUrl.pathname === "/rcon") {
-                    io.to('rcon-' + data.id).emit('rconHandler', body);
-                } else if (requestUrl.pathname === "/logger") {
-                    io.to('logger-' + data.id).emit('loggerHandler', body);
-                    io.to('loggersGlobal').emit('loggerGlobalHandler', body);
-                } else if (requestUrl.pathname === "/match") {
-                    io.to('matchs').emit('matchsHandler', body);
-                } else if (requestUrl.pathname === "livemap") {
-                    io.to('livemap-' + data.id).emit('livemapHandler', body);
-                }
+        }),)
+        .post("/**", eventHandler(async (event) => {
+            const body = await readBody(event);
+            const data = body;
+            const requestUrl = getRequestURL(event);
+            if (requestUrl.pathname === "/alive") {
+                io.to('alive').emit('aliveHandler', {data: body});
+            } else if (requestUrl.pathname === "/rcon") {
+                io.to('rcon-' + data.id).emit('rconHandler', body);
+            } else if (requestUrl.pathname === "/logger") {
+                io.to('logger-' + data.id).emit('loggerHandler', body);
+                io.to('loggersGlobal').emit('loggerGlobalHandler', body);
+            } else if (requestUrl.pathname === "/match") {
+                io.to('matchs').emit('matchsHandler', body);
+            } else if (requestUrl.pathname === "livemap") {
+                io.to('livemap-' + data.id).emit('livemapHandler', body);
+            }
 
-                return true;
-            }),
-        );
+            return true;
+        }),);
 
     app.use(router);
 
@@ -78,30 +70,41 @@ const config = parse(fs.readFileSync('./config/config.ini', 'utf-8'));
             origin: "*"
         }
     });
+
+    io.use(
+        authorize({
+            secret: config.Config.WEBSOCKET_SECRET_KEY
+        })
+    )
+
     io.on('connection', function (socket) {
         socket.taggedLogger = false;
         socket.on('identify', function (data) {
-            if (data.type === "alive") {
-                socket.join("alive");
-                client.lPush(config.Redis.REDIS_CHANNEL_EBOT_FROM_WS, "__aliveCheck__");
-            } else if (data.type === "logger") {
-                if (data.match_id) {
-                    socket.join("logger-" + data.match_id);
-                } else {
-                    socket.join("loggersGlobal");
-                }
+            if (socket?.decodedToken?.admin) {
+                if (data.type === "logger") {
+                    if (data.match_id) {
+                        socket.join("logger-" + data.match_id);
+                    } else {
+                        socket.join("loggersGlobal");
+                    }
 
-                socket.join("loggers");
-                socket.taggedLogger = true;
-                client.lPush(config.Redis.REDIS_CHANNEL_EBOT_FROM_WS, "__true__");
-            } else if ((data.type === "rcon") && data.match_id) {
-                socket.join("rcon-" + data.match_id);
-            } else if ((data.type === "livemap") && data.match_id) {
+                    socket.join("loggers");
+                    socket.taggedLogger = true;
+                    client.lPush(config.Redis.REDIS_CHANNEL_EBOT_FROM_WS, "__true__");
+                } else if ((data.type === "rcon") && data.match_id) {
+                    socket.join("rcon-" + data.match_id);
+                } else if (data.type === "alive") {
+                    socket.join("alive");
+                    client.lPush(config.Redis.REDIS_CHANNEL_EBOT_FROM_WS, "__aliveCheck__");
+                } else if (data.type === "relay") {
+                    socket.join("relay");
+                }
+            }
+
+            if ((data.type === "livemap") && data.match_id) {
                 socket.join("livemap-" + data.match_id);
             } else if (data.type === "matchs") {
                 socket.join("matchs");
-            } else if (data.type === "relay") {
-                socket.join("relay");
             }
         });
 
@@ -156,9 +159,7 @@ const config = parse(fs.readFileSync('./config/config.ini', 'utf-8'));
         } else if (messageObject.scope === "livemap") {
             io.to('livemap-' + data.id).emit('livemapHandler', body);
             io.to('relay').emit('relay', {
-                channel: 'livemap-' + data.id,
-                'method': 'livemapHandler',
-                content: body
+                channel: 'livemap-' + data.id, 'method': 'livemapHandler', content: body
             });
         }
     });

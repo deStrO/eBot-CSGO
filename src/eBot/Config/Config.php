@@ -58,6 +58,8 @@ class Config extends Singleton
     private $redisChannelEbotFromWs = null;
     private $redisChannelEbotToWs = null;
 
+    private $websocketSecretKey = null;
+
     public function __construct()
     {
         Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
@@ -114,8 +116,26 @@ class Config extends Singleton
             $this->redisChannelEbotFromWs = $config['REDIS_CHANNEL_EBOT_FROM_WS'];
             $this->redisChannelEbotToWs = $config['REDIS_CHANNEL_EBOT_TO_WS'];
 
+            $this->websocketSecretKey = $config['WEBSOCKET_SECRET_KEY'];
+
             Logger::debug("Configuration loaded");
         }
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getWebsocketSecretKey()
+    {
+        return $this->websocketSecretKey;
+    }
+
+    /**
+     * @param mixed|null $websocketSecretKey
+     */
+    public function setWebsocketSecretKey($websocketSecretKey)
+    {
+        $this->websocketSecretKey = $websocketSecretKey;
     }
 
     /**
@@ -129,7 +149,7 @@ class Config extends Singleton
     /**
      * @param mixed|null $redisHost
      */
-    public function setRedisHost($redisHost): void
+    public function setRedisHost($redisHost)
     {
         $this->redisHost = $redisHost;
     }
@@ -145,7 +165,7 @@ class Config extends Singleton
     /**
      * @param mixed|null $redisPort
      */
-    public function setRedisPort($redisPort): void
+    public function setRedisPort($redisPort)
     {
         $this->redisPort = $redisPort;
     }
@@ -161,7 +181,7 @@ class Config extends Singleton
     /**
      * @param mixed|null $redisAuthUsername
      */
-    public function setRedisAuthUsername($redisAuthUsername): void
+    public function setRedisAuthUsername($redisAuthUsername)
     {
         $this->redisAuthUsername = $redisAuthUsername;
     }
@@ -177,7 +197,7 @@ class Config extends Singleton
     /**
      * @param mixed|null $redisAuthPassword
      */
-    public function setRedisAuthPassword($redisAuthPassword): void
+    public function setRedisAuthPassword($redisAuthPassword)
     {
         $this->redisAuthPassword = $redisAuthPassword;
     }
@@ -193,7 +213,7 @@ class Config extends Singleton
     /**
      * @param mixed|null $redisChannelLog
      */
-    public function setRedisChannelLog($redisChannelLog): void
+    public function setRedisChannelLog($redisChannelLog)
     {
         $this->redisChannelLog = $redisChannelLog;
     }
@@ -209,7 +229,7 @@ class Config extends Singleton
     /**
      * @param mixed|null $redisChannelEbotFromWs
      */
-    public function setRedisChannelEbotFromWs($redisChannelEbotFromWs): void
+    public function setRedisChannelEbotFromWs($redisChannelEbotFromWs)
     {
         $this->redisChannelEbotFromWs = $redisChannelEbotFromWs;
     }
@@ -225,7 +245,7 @@ class Config extends Singleton
     /**
      * @param mixed|null $redisChannelEbotToWs
      */
-    public function setRedisChannelEbotToWs($redisChannelEbotToWs): void
+    public function setRedisChannelEbotToWs($redisChannelEbotToWs)
     {
         $this->redisChannelEbotToWs = $redisChannelEbotToWs;
     }
