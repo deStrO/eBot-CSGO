@@ -98,6 +98,7 @@ class Application extends AbstractApplication
         );
 
         $time = time();
+        $timePub = time();
         while (true) {
             $ip = "";
 
@@ -304,7 +305,10 @@ class Application extends AbstractApplication
             }
 
             //if ($nbMessage < 100) {
-            \eBot\Manager\MatchManager::getInstance()->sendPub();
+             if ($timePub + 1 < time()) {
+                 $timePub = time();
+                 \eBot\Manager\MatchManager::getInstance()->sendPub();
+             }
             \eTools\Task\TaskManager::getInstance()->runTask();
             //}
         }

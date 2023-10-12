@@ -582,6 +582,7 @@ class Match implements Taskable
     {
         if ($name == self::SET_LIVE) {
             $this->addLog("Setting live.");
+            $this->pendingContinueMatch = false;
             $this->enable = true;
         } else if ($name == self::TASK_ENGAGE_MAP) {
             $tvTimeRemaining = $this->rcon->send("tv_time_remaining");
@@ -718,7 +719,7 @@ class Match implements Taskable
     public function sendRotateMessage()
     {
         // This is to send to players the status
-        if ($this->isMatchRound() && !$this->enable) {
+        if ($this->isMatchRound() && !$this->enable && !$this->pendingContinueMatch) {
             if (time() - $this->lastMessage >= 8) {
                 $this->say("Match is paused, write !continue to continue the match.");
                 $teamA = strtoupper($this->side['team_a']);
@@ -1755,7 +1756,7 @@ class Match implements Taskable
             }
 
             $data = $this->rcon->send("mp_backup_round_file_last");
-            if (preg_match('!"mp_backup_round_file_last" = "(?<backup>[a-zA-Z0-9\-_\.]+)"!', $data, $match)) {
+            if (preg_match('!mp_backup_round_file_last = (?<backup>[a-zA-Z0-9\-_\.]+)!', $data, $match)) {
                 $backupFile = "'" . $match["backup"] . "'";
             } else {
                 $backupFile = 'NULL';
@@ -2778,7 +2779,7 @@ class Match implements Taskable
         if ($this->continue["ct"] && $this->continue["t"]) {
             $this->continue["ct"] = false;
             $this->continue["t"] = false;
-
+            $this->pendingContinueMatch = true;
             $this->addMatchLog("Getting back to the match.");
             $this->addLog("Getting back to the match.");
 
@@ -3369,9 +3370,12 @@ class Match implements Taskable
         }
     }
 
+    private $pendingContinueMatch = false;
+
     public function adminGoBackRounds($round)
     {
         $this->enable = false;
+        $this->pendingContinueMatch = true;
         $sql = mysqli_query(Application::getInstance()->db, "SELECT * FROM  round_summary WHERE match_id = '" . $this->match_id . "' AND map_id = '" . $this->currentMap->getMapId() . "' AND round_id = $round");
         $req = mysqli_fetch_array($sql);
 
