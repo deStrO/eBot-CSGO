@@ -131,10 +131,10 @@ const config = parse(fs.readFileSync('./config/config.ini', 'utf-8'));
     });
 
     await subscriber.subscribe(config.Redis.REDIS_CHANNEL_EBOT_TO_WS, (message) => {
-        const messageObject = JSON.parse(message);
-        const body = messageObject.data;
-        let data;
+        let messageObject, body, data;
         try {
+            messageObject = JSON.parse(message)
+            body = messageObject.data;
             data = JSON.parse(body);
             if (data.message === "ping") {
                 return;

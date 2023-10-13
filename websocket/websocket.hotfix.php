@@ -26,7 +26,7 @@ class WebSocket
             null,
             0,
             0,
-            $config->getRedisAuthUsername() ? ['auth' => [$config->getRedisAuthUsername(), $config->getRedisAuthPassword()]] : null
+            $config->getRedisAuthUsername() ? ['auth' => [$config->getRedisAuthUsername(), $config->getRedisAuthPassword()]] : []
         );
 
         $this->client = $redis;

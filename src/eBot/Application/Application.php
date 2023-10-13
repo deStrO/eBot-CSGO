@@ -94,7 +94,7 @@ class Application extends AbstractApplication
             null,
             0,
             0,
-            $config->getRedisAuthUsername() ? ['auth' => [$config->getRedisAuthUsername(), $config->getRedisAuthPassword()]] : null
+            $config->getRedisAuthUsername() ? ['auth' => [$config->getRedisAuthUsername(), $config->getRedisAuthPassword()]] : []
         );
 
         $time = time();
