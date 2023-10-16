@@ -205,7 +205,7 @@ class Match implements Taskable
         // CSay Detection
         try {
             $text = $this->rcon->send("cvarlist csay_");
-            if (preg_match('!csay_all', $text, $match)) {
+            if (strpos($text, 'csay_all') !== false) {
                 $this->addLog("CSay detected");
                 $this->pluginCsay = true;
                 $this->pluginPrintPlayers = true;
