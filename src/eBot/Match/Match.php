@@ -204,13 +204,13 @@ class Match implements Taskable
 
         // CSay Detection
         try {
-            $text = $this->rcon->send("csay_version");
-            if (preg_match('!"csay_version" = "(.*)"!', $text, $match)) {
-                $this->addLog("CSay version " . $match[1]);
+            $text = $this->rcon->send("cvarlist csay_");
+            if (preg_match('!csay_all', $text, $match)) {
+                $this->addLog("CSay detected");
                 $this->pluginCsay = true;
                 $this->pluginPrintPlayers = true;
-                $this->pluginSwitch = true;
-                $this->addMatchLog("- CSay version " . $match[1], false, false);
+                $this->pluginSwitch = false;
+                $this->addMatchLog("- CSay detected", false, false);
             }
         } catch (\Exception $ex) {
             Logger::error("Error while getting plugins information");
@@ -433,7 +433,7 @@ class Match implements Taskable
 
         if ($this->pluginPrintPlayers) {
             $this->addLog("Getting status for players.");
-            $text = $this->rcon->send("steamu_printPlayer");
+            $text = $this->rcon->send("ebot_print_player");
             $texts = explode("\n", trim($text));
             foreach ($texts as $v) {
                 if (preg_match('!#(\d+) "(.*)" (.*) (\d+) (\d+).(\d+).(\d+).(\d+)!', $v, $arr)) {
