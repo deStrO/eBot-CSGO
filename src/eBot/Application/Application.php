@@ -113,7 +113,7 @@ class Application extends AbstractApplication
             }
 
             if (!$data) {
-                usleep(500);
+                usleep(50000);
             }
             //$data = $this->socket->recvfrom($ip);
 
