@@ -60,6 +60,14 @@ class Config extends Singleton
 
     private $websocketSecretKey = null;
 
+    private $timeoutEnabled =false;
+    private $timeoutUseMatchConfig = false;
+    private $timeoutTime = 120;
+    private $timeoutPerTeamPerMatch = 1;
+    private $timeoutOtAddEach = 0;
+    private $timeoutOtAddOnce = 0;
+    private $timeoutOtMax = 1;
+
     public function __construct()
     {
         Logger::debug("Loading " . APP_ROOT . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.ini");
@@ -118,8 +126,129 @@ class Config extends Singleton
 
             $this->websocketSecretKey = $config['WEBSOCKET_SECRET_KEY'];
 
+            // Timeout configuration
+            $this->timeoutEnabled = $config['TIMEOUT_ENABLED'];
+            $this->timeoutTime = $config['TIMEOUT_TIME'];
+            $this->timeoutUseMatchConfig = $config['TIMEOUT_USE_MATCH_CONFIG'];
+            $this->timeoutPerTeamPerMatch = $config['TIMEOUT_PER_TEAM_PER_MATCH'];
+            $this->timeoutOtAddEach = $config['TIMEOUT_OT_ADD_EACH'];
+            $this->timeoutOtAddOnce = $config['TIMEOUT_OT_ADD_ONCE'];
+            $this->timeoutOtMax = $config['TIMEOUT_OT_MAX'];
+
             Logger::debug("Configuration loaded");
         }
+    }
+
+    /**
+     * @return bool|mixed
+     */
+    public function getTimeoutEnabled()
+    {
+        return $this->timeoutEnabled;
+    }
+
+    /**
+     * @param bool|mixed $timeoutEnabled
+     */
+    public function setTimeoutEnabled($timeoutEnabled): void
+    {
+        $this->timeoutEnabled = $timeoutEnabled;
+    }
+
+    /**
+     * @return bool|mixed
+     */
+    public function getTimeoutUseMatchConfig()
+    {
+        return $this->timeoutUseMatchConfig;
+    }
+
+    /**
+     * @param bool|mixed $timeoutUseMatchConfig
+     */
+    public function setTimeoutUseMatchConfig($timeoutUseMatchConfig): void
+    {
+        $this->timeoutUseMatchConfig = $timeoutUseMatchConfig;
+    }
+
+    /**
+     * @return int|mixed
+     */
+    public function getTimeoutTime()
+    {
+        return $this->timeoutTime;
+    }
+
+    /**
+     * @param int|mixed $timeoutTime
+     */
+    public function setTimeoutTime($timeoutTime): void
+    {
+        $this->timeoutTime = $timeoutTime;
+    }
+
+    /**
+     * @return int|mixed
+     */
+    public function getTimeoutPerTeamPerMatch()
+    {
+        return $this->timeoutPerTeamPerMatch;
+    }
+
+    /**
+     * @param int|mixed $timeoutPerTeamPerMatch
+     */
+    public function setTimeoutPerTeamPerMatch($timeoutPerTeamPerMatch): void
+    {
+        $this->timeoutPerTeamPerMatch = $timeoutPerTeamPerMatch;
+    }
+
+    /**
+     * @return int|mixed
+     */
+    public function getTimeoutOtAddEach()
+    {
+        return $this->timeoutOtAddEach;
+    }
+
+    /**
+     * @param int|mixed $timeoutOtAddEach
+     */
+    public function setTimeoutOtAddEach($timeoutOtAddEach): void
+    {
+        $this->timeoutOtAddEach = $timeoutOtAddEach;
+    }
+
+    /**
+     * @return int|mixed
+     */
+    public function getTimeoutOtAddOnce()
+    {
+        return $this->timeoutOtAddOnce;
+    }
+
+    /**
+     * @param int|mixed $timeoutOtAddOnce
+     */
+    public function setTimeoutOtAddOnce($timeoutOtAddOnce): void
+    {
+        $this->timeoutOtAddOnce = $timeoutOtAddOnce;
+    }
+
+    /**
+     * @return int|mixed
+     */
+    public function getTimeoutOtMax()
+    {
+        return $this->timeoutOtMax;
+    }
+
+    /**
+     * @param int|mixed $timeoutOtMax
+     */
+    public function setTimeoutOtMax($timeoutOtMax): void
+    {
+        $this->timeoutOtMax = $timeoutOtMax;
     }
 
     /**
