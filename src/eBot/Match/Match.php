@@ -1989,10 +1989,10 @@ class Match implements Taskable
         if (\eBot\Config\Config::getInstance()->isUseDelayEndRecord()) {
             $delay = 90;
             $text = $this->rcon->send("tv_delay");
-            if (preg_match('!"tv_delay" = "(?<value>.*)"!', $text, $match)) {
+            if (preg_match('!tv_delay = (?<value>.*)!', $text, $match)) {
                 $delay = 2;
                 if ($match["value"] > 2) {
-                    $delay = $match["value"];
+                    $delay = intval($match["value"]) + 15;
                 }
             }
         }
