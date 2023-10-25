@@ -1353,7 +1353,7 @@ class Match implements Taskable
             if ($this->pluginCsay) {
                 $this->say_player($message->userId, "commands available: !help, !status, !stats, !morestats, !score, !ready, !notready, !stop, !restart (for knife round), !stay, !switch");
                 if (Config::getInstance()->getTimeoutEnabled()) {
-                    $this->say_player($message->userId, "commands available: !timeout, !tech (for technical pause)");
+                    $this->say_player($message->userId, "commands available: !tac or !timeout, !tech (for technical pause)");
                 }
             }
         } else if ($this->isCommand($message, "restart")) {
@@ -1411,7 +1411,7 @@ class Match implements Taskable
             } else {
                 $this->addLog("Can't stop match, it's already stopped.");
             }
-        } else if ($this->isMatchRound() && $this->isCommand($message, "timeout")) {
+        } else if ($this->isMatchRound() && ($this->isCommand($message, "timeout") || $this->isCommand($message, "tac"))) {
             if ($this->enable) {
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
