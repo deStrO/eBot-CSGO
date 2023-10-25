@@ -126,6 +126,10 @@ class Match implements Taskable
     private $warmupManualFixIssued = false;
     private $roundData = [];
 
+    private $hookTimeout = null;
+
+    private $hookTimeoutUnpause = false;
+
     public function __construct($match_id, $server_ip, $rcon)
     {
         Logger::debug("Registring MessageManager");
@@ -225,6 +229,24 @@ class Match implements Taskable
             }
         } catch (\Exception $ex) {
             Logger::error("Error while getting plugins information");
+        }
+
+        if (Config::getInstance()->getTimeoutEnabled()) {
+            if (!Config::getInstance()->getTimeoutUseMatchConfig()) {
+                $commands = [
+                    'mp_team_timeout_time '.Config::getInstance()->getTimeoutTime(),
+                    'mp_team_timeout_max '.Config::getInstance()->getTimeoutPerTeamPerMatch(),
+                    'mp_team_timeout_ot_add_each '.Config::getInstance()->getTimeoutOtAddEach(),
+                    'mp_team_timeout_ot_add_once '.Config::getInstance()->getTimeoutOtAddOnce(),
+                    'mp_team_timeout_ot_max '.Config::getInstance()->getTimeoutOtMax(),
+                ];
+                $this->rcon->send(implode('; ', $commands));
+                $this->addLog("Sending TimeOut configuration");
+                $this->addMatchLog("- Sending TimeOut configuration", false, false);
+            } else {
+                $this->addLog('Using match configuration for timeout');
+                $this->addMatchLog("- Using match configuration for timeout", false, false);
+            }
         }
 
         $this->config_full_score = $this->matchData["config_full_score"];
@@ -945,10 +967,47 @@ class Match implements Taskable
                     return $this->processTeamScored($message);
                 case "eBot\Message\Type\RoundEnd":
                     return $this->processRoundEnd($message);
+                case "eBot\Message\Type\Pause":
+                    return $this->processPause($message);
                 default:
                     $this->addLog("Untreated message: " . get_class($message) . ".");
                     break;
             }
+        }
+    }
+
+    private function processPause(\eBot\Message\Type\Pause $message) {
+        if ($message->enabled) {
+            $this->addLog('Pause detected, reason : '.$message->reason);
+            if ($this->hookTimeout === 'ct'  && $message->reason === 'TimeOutCTs') {
+                $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
+                $this->addLog('Timeout confirmed');
+                $this->addMatchLog($team. ' timeout confirmed');
+                $this->hookTimeoutUnpause = true;
+
+                $this->isPaused = true;
+                \mysqli_query(Application::getInstance()->db, "UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
+                $this->websocket['match']->sendData(json_encode(['message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id]));
+            } elseif ($this->hookTimeout === 't'  && $message->reason === 'TimeOutTs') {
+                $team = ($this->side['team_a'] == "t") ? $this->teamAName : $this->teamBName;
+                $this->addLog('Timeout confirmed');
+                $this->addMatchLog($team. ' timeout confirmed');
+                $this->hookTimeoutUnpause = true;
+
+                $this->isPaused = true;
+                \mysqli_query(Application::getInstance()->db, "UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
+                $this->websocket['match']->sendData(json_encode(['message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id]));
+            }
+            $this->hookTimeout = null;
+        } else {
+            $this->addLog('Unpause detected, reason : '.$message->reason);
+            if ($this->hookTimeoutUnpause && in_array($message->reason, ['TimeOutCTs', 'TimeOutTs'])) {
+                $this->addLog('Timeout over');
+                $this->isPaused = false;
+                \mysqli_query(Application::getInstance()->db, "UPDATE `matchs` SET `is_paused` = '0' WHERE `id` = '" . $this->match_id . "'");
+                $this->websocket['match']->sendData(json_encode(['message' => 'status', 'content' => 'is_unpaused', 'id' => $this->match_id]));
+            }
+            $this->hookTimeoutUnpause = false;
         }
     }
 
@@ -1293,6 +1352,9 @@ class Match implements Taskable
         } else if ($this->isCommand($message, "help")) {
             if ($this->pluginCsay) {
                 $this->say_player($message->userId, "commands available: !help, !status, !stats, !morestats, !score, !ready, !notready, !stop, !restart (for knife round), !stay, !switch");
+                if (Config::getInstance()->getTimeoutEnabled()) {
+                    $this->say_player($message->userId, "commands available: !tac or !timeout, !tech (for technical pause)");
+                }
             }
         } else if ($this->isCommand($message, "restart")) {
             if (($this->getStatus() == self::STATUS_KNIFE) || ($this->getStatus() == self::STATUS_END_KNIFE)) {
@@ -1349,7 +1411,23 @@ class Match implements Taskable
             } else {
                 $this->addLog("Can't stop match, it's already stopped.");
             }
-        } else if ($this->isMatchRound() && $this->isCommand($message, "continue")) {
+        } else if ($this->isMatchRound() && ($this->isCommand($message, "timeout") || $this->isCommand($message, "tac"))) {
+            if ($this->enable) {
+                if ($message->getUserTeam() == "CT") {
+                    $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
+                    $this->say('Timeout requested by '.$team);
+                    $this->addMatchLog("$team want a timeout");
+                    $this->rcon->send("timeout_ct_start");
+                    $this->hookTimeout = 'ct';
+                } else if ($message->getUserTeam() == "TERRORIST") {
+                    $team = ($this->side['team_a'] == "t") ? $this->teamAName : $this->teamBName;
+                    $this->addMatchLog("$team want a timeout");
+                    $this->rcon->send("timeout_terrorist_start");
+                    $this->say('Timeout requested by '.$team);
+                    $this->hookTimeout = 't';
+                }
+            }
+        }else if ($this->isMatchRound() && $this->isCommand($message, "continue")) {
             if (!$this->enable) {
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
@@ -1405,34 +1483,38 @@ class Match implements Taskable
 
                 $this->startMatch();
             }
-        } else if ($this->isCommand($message, "pause")) {
-            if ($this->isMatchRound() && !$this->isPaused && $this->enable) {
+        } else if ($this->isCommand($message, "pause") || $this->isCommand($message, "tech")) {
+            if (Config::getInstance()->getTimeoutEnabled() && $this->isCommand($message, "pause") ) {
+                $this->say_player($message->userId, "Use !timeout for a timeout or !tech for technical pause");
+            } else {
+                $command = Config::getInstance()->getTimeoutEnabled() ? 'tech' : 'pause';
+                if ($this->isMatchRound() && !$this->isPaused && $this->enable) {
+                    if ($message->getUserTeam() == "CT") {
+                        $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
+                        if (!$this->pause['ct']) {
+                            $this->pause['ct'] = true;
+                            if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm")
+                                $this->say($team . " (CT) wants to pause, write !$command to confirm.");
+                            else if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm")
+                                $this->say($team . " (CT) match will be paused now!");
+                            else
+                                $this->say($team . " (CT) wants to pause, the match will be paused in the next freezetime.");
+                        }
+                    } else if ($message->getUserTeam() == "TERRORIST") {
+                        $team = ($this->side['team_a'] == "t") ? $this->teamAName : $this->teamBName;
 
-                if ($message->getUserTeam() == "CT") {
-                    $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
-                    if (!$this->pause['ct']) {
-                        $this->pause['ct'] = true;
-                        if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm")
-                            $this->say($team . " (CT) wants to pause, write !pause to confirm.");
-                        else if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm")
-                            $this->say($team . " (CT) match will be paused now!");
-                        else
-                            $this->say($team . " (CT) wants to pause, the match will be paused in the next freezetime.");
+                        if (!$this->pause['t']) {
+                            $this->pause['t'] = true;
+                            if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm")
+                                $this->say($team . " (T) wants to pause, write !$command to confirm.");
+                            else if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm")
+                                $this->say($team . " (T) match will be paused now!");
+                            else
+                                $this->say($team . " (T) wants to pause, the match will be paused in the next freezetime.");
+                        }
                     }
-                } else if ($message->getUserTeam() == "TERRORIST") {
-                    $team = ($this->side['team_a'] == "t") ? $this->teamAName : $this->teamBName;
-
-                    if (!$this->pause['t']) {
-                        $this->pause['t'] = true;
-                        if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantConfirm")
-                            $this->say($team . " (T) wants to pause, write !pause to confirm.");
-                        else if (\eBot\Config\Config::getInstance()->getPauseMethod() == "instantNoConfirm")
-                            $this->say($team . " (T) match will be paused now!");
-                        else
-                            $this->say($team . " (T) wants to pause, the match will be paused in the next freezetime.");
-                    }
+                    $this->pauseMatch();
                 }
-                $this->pauseMatch();
             }
         } else if ($this->isCommand($message, "unpause")) {
             if ($this->isMatchRound() && $this->isPaused && $this->enable) {
@@ -1907,10 +1989,10 @@ class Match implements Taskable
         if (\eBot\Config\Config::getInstance()->isUseDelayEndRecord()) {
             $delay = 90;
             $text = $this->rcon->send("tv_delay");
-            if (preg_match('!"tv_delay" = "(?<value>.*)"!', $text, $match)) {
+            if (preg_match('!tv_delay = (?<value>.*)!', $text, $match)) {
                 $delay = 2;
                 if ($match["value"] > 2) {
-                    $delay = $match["value"];
+                    $delay = intval($match["value"]) + 15;
                 }
             }
         }

@@ -41,7 +41,14 @@ KO3_METHOD = "restart" ; restart or csay or esl
 DEMO_DOWNLOAD = true ; true or false :: whether gotv demos will be downloaded from the gameserver after matchend or not
 REMIND_RECORD = false ; true will print the 3x "Remember to record your own POV demos if needed!" messages, false will not
 DAMAGE_REPORT = true ; true will print damage reports at end of round to players, false will not
-USE_DELAY_END_RECORD = false ; use the tv_delay to record postpone the tv_stoprecord & upload
+USE_DELAY_END_RECORD = true ; use the tv_delay to record postpone the tv_stoprecord & upload
+TIMEOUT_ENABLED = false
+TIMEOUT_USE_MATCH_CONFIG = false ; If false, eBot will sends the RCON commands for the timeout
+TIMEOUT_TIME = 120 ; mp_team_timeout_time
+TIMEOUT_PER_TEAM_PER_MATCH = 1 ; mp_team_timeout_max
+TIMEOUT_OT_ADD_EACH = 0 ; mp_team_timeout_ot_add_each
+TIMEOUT_OT_ADD_ONCE = 0 ; mp_team_timeout_ot_add_once
+TIMEOUT_OT_MAX = 1 ; mp_team_timeout_ot_max
 
 [MAPS]
 MAP[] = "de_dust2"
