@@ -51,6 +51,7 @@ TIMEOUT_OT_ADD_ONCE = 0 ; mp_team_timeout_ot_add_once
 TIMEOUT_OT_MAX = 1 ; mp_team_timeout_ot_max
 
 [MAPS]
+MAP[] = "de_mirage"
 MAP[] = "de_dust2"
 MAP[] = "de_inferno"
 MAP[] = "de_overpass"
