@@ -11,8 +11,19 @@
 namespace eBot\Events\Event;
 
 use eBot\Events\Event;
+use eBot\Match\Match;
 
-class RoundScored extends Event {
+/**
+ * @method Match getMatch()
+ * @method int getScoreA()
+ * @method int getScoreB()
+ * @method string getTeamA()
+ * @method string getTeamB()
+ * @method int getStatus()
+ * @method string getStatusText()
+ */
+class RoundScored extends Event
+{
 
     protected $match;
     protected $scoreA;
@@ -20,7 +31,6 @@ class RoundScored extends Event {
     protected $teamA;
     protected $teamB;
     protected $status;
+    protected $statusText;
 
 }
-
-?>

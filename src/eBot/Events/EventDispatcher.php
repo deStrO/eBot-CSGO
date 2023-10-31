@@ -15,9 +15,9 @@ use eTools\Utils\Logger;
 use eBot\Plugins\Plugin;
 use eBot\Events\Event;
 
-class EventDispatcher extends Singleton {
-
-    private $listeners = array();
+class EventDispatcher extends Singleton
+{
+    private $listeners = [];
 
     const EVENT_SAY = "eBot\Events\Event\Say";
     const EVENT_BOMB_DEFUSING = "eBot\Events\Event\BombDebusing";
@@ -26,37 +26,26 @@ class EventDispatcher extends Singleton {
     const EVENT_ROUNDSCORED = "eBot\Events\Event\RoundScored";
     const EVENT_MATCH_END = "eBot\Events\Event\MatchEnd";
 
-    public function __construct() {
-        $this->listeners[self::EVENT_SAY] = array();
-        $this->listeners[self::EVENT_BOMB_DEFUSING] = array();
-        $this->listeners[self::EVENT_BOMB_PLANTING] = array();
-        $this->listeners[self::EVENT_KILL] = array();
-        $this->listeners[self::EVENT_ROUNDSCORED] = array();
-        $this->listeners[self::EVENT_MATCH_END] = array();
-
-        /*$this->listeners["RoundScored"] = array();
-        $this->listeners["RoundEnd"] = array();
-        $this->listeners["RoundStart"] = array();
-        $this->listeners["MatchStart"] = array();
-        $this->listeners["MatchEnd"] = array();
-        $this->listeners["SideEnd"] = array();
-        $this->listeners["KnifeStart"] = array();
-        $this->listeners["KnifeEnd"] = array();*/
-    }
-
-    public function addListener(Plugin $plugin, $name) {
-        if (!isset($this->listeners[$name])) {
+    public function addListener(Plugin $plugin, $name)
+    {
+        if (!class_exists($name)) {
             Logger::error("Event name $name doesn't exists");
+
             return;
+        }
+
+        if (!isset($this->listeners[$name])) {
+            $this->listeners[$name] = [];
         }
 
         Logger::log("Add listener for " . get_class($plugin) . " to $name");
         $this->listeners[$name][] = $plugin;
     }
 
-    public function dispatchEvent(Event $event) {
+    public function dispatchEvent(Event $event)
+    {
         Logger::debug("Dispatching event " . get_class($event));
-        if (@$this->listeners[get_class($event)]) {
+        if (isset($this->listeners[get_class($event)])) {
             foreach ($this->listeners[get_class($event)] as $plugin) {
                 try {
                     $plugin->onEvent($event);
@@ -66,7 +55,4 @@ class EventDispatcher extends Singleton {
             }
         }
     }
-
 }
-
-?>

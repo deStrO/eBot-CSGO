@@ -11,9 +11,23 @@
 namespace eBot\Events\Event;
 
 use eBot\Events\Event;
+use eBot\Match\Match;
 
-class Kill extends Event {
-
+/**
+ * @method Match getMatch()
+ * @method string getUserId()
+ * @method string getUserName()
+ * @method string getUserTeam()
+ * @method string getUserSteamid()
+ * @method string getKilledUserId()
+ * @method string getKilledUserName()
+ * @method string getKilledUserTeam()
+ * @method string getKilledUserSteamid()
+ * @method string getWeapon()
+ * @method bool getHeadshot()
+ */
+class Kill extends Event
+{
     protected $match;
     protected $userId = "";
     protected $userName = "";
@@ -27,5 +41,3 @@ class Kill extends Event {
     protected $headshot;
 
 }
-
-?>

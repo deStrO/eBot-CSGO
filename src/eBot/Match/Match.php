@@ -12,9 +12,9 @@ namespace eBot\Match;
 
 use eBot\Application\Application;
 use eBot\Config\Config;
+use eBot\Match\Map;
 use eTools\Utils\Logger;
 use eBot\Exception\MatchException;
-use eBot\Match\Map;
 use eTools\Task\TaskManager;
 use eTools\Task\Task;
 use eTools\Task\Taskable;
@@ -174,7 +174,7 @@ class Match implements Taskable
             $this->rcon = new Rcon($ip[0], $ip[1], $rcon);
             $this->rconPassword = $rcon;
             Logger::log("RCON init ok");
-            $this->rcon->send("log on; mp_logdetail 3; logaddress_del_http \"" . \eBot\Config\Config::getInstance()->getLogAddressServer() . "/".$this->server_ip."\";logaddress_add_http \"" . \eBot\Config\Config::getInstance()->getLogAddressServer() . "/".$this->server_ip."\"");
+            $this->rcon->send("log on; mp_logdetail 3; logaddress_del_http \"" . \eBot\Config\Config::getInstance()->getLogAddressServer() . "/" . $this->server_ip . "\";logaddress_add_http \"" . \eBot\Config\Config::getInstance()->getLogAddressServer() . "/" . $this->server_ip . "\"");
             $this->rcon->send("sv_rcon_whitelist_address \"" . \eBot\Config\Config::getInstance()->getLogAddressIp() . "\"");
             $this->addMatchLog("- RCON connection OK", true, false);
         } catch (\Exception $ex) {
@@ -201,7 +201,11 @@ class Match implements Taskable
             $this->websocket['match']->sendData(json_encode(['message' => 'button', 'content' => 'stop', 'id' => $this->match_id]));
             Logger::error("Rcon failed - " . $ex->getMessage());
             Logger::error("Match destructed.");
-            $this->addMatchLog("RCON Failed - " . $ex->getMessage(), false, false);
+            $this->addMatchLog("RCON qqq Failed - " . $ex->getMessage(), false, false);
+            $event = new \eBot\Events\Event\ErrorEvent();
+            $event->setMatch($this);
+            $event->setMessage("RCON Failed - " . $ex->getMessage());
+            \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);
             throw new MatchException();
         }
         TaskManager::getInstance()->addTask(new Task($this, self::TEST_RCON, microtime(true) + 10));
@@ -234,11 +238,11 @@ class Match implements Taskable
         if (Config::getInstance()->getTimeoutEnabled()) {
             if (!Config::getInstance()->getTimeoutUseMatchConfig()) {
                 $commands = [
-                    'mp_team_timeout_time '.Config::getInstance()->getTimeoutTime(),
-                    'mp_team_timeout_max '.Config::getInstance()->getTimeoutPerTeamPerMatch(),
-                    'mp_team_timeout_ot_add_each '.Config::getInstance()->getTimeoutOtAddEach(),
-                    'mp_team_timeout_ot_add_once '.Config::getInstance()->getTimeoutOtAddOnce(),
-                    'mp_team_timeout_ot_max '.Config::getInstance()->getTimeoutOtMax(),
+                    'mp_team_timeout_time ' . Config::getInstance()->getTimeoutTime(),
+                    'mp_team_timeout_max ' . Config::getInstance()->getTimeoutPerTeamPerMatch(),
+                    'mp_team_timeout_ot_add_each ' . Config::getInstance()->getTimeoutOtAddEach(),
+                    'mp_team_timeout_ot_add_once ' . Config::getInstance()->getTimeoutOtAddOnce(),
+                    'mp_team_timeout_ot_max ' . Config::getInstance()->getTimeoutOtMax(),
                 ];
                 $this->rcon->send(implode('; ', $commands));
                 $this->addLog("Sending TimeOut configuration");
@@ -442,6 +446,10 @@ class Match implements Taskable
         $this->rcon->send("mp_backup_round_file \"ebot_" . $this->match_id . "\"");
 
         TaskManager::getInstance()->addTask(new Task($this, self::CHANGE_HOSTNAME, microtime(true) + 60));
+
+        $event = new \eBot\Events\Event\MatchEngaged();
+        $event->setMatch($this);
+        \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);
     }
 
     private function recupStatus($eraseAll = false)
@@ -485,28 +493,28 @@ class Match implements Taskable
             foreach ($status['server']['clients'] as $client) {
                 //$this->processPlayer($client['steamid'], $client['name'], $team, $arr[3]);
             }
-           /* foreach ($texts as $v) {
-                if (preg_match('!#(\d+) "(.*)" (.*) (\d+) (\d+).(\d+).(\d+).(\d+)!', $v, $arr)) {
-                    $ip = $arr[5] . "." . $arr[6] . "." . $arr[7] . "." . $arr[8];
-                    switch ($arr[4]) {
-                        case 0:
-                            $team = "";
-                            break;
-                        case 1:
-                            $team = "SPECTATOR";
-                            break;
-                        case 2:
-                            $team = "TERRORIST";
-                            break;
-                        case 3:
-                            $team = "CT";
-                            break;
-                    }
+            /* foreach ($texts as $v) {
+                 if (preg_match('!#(\d+) "(.*)" (.*) (\d+) (\d+).(\d+).(\d+).(\d+)!', $v, $arr)) {
+                     $ip = $arr[5] . "." . $arr[6] . "." . $arr[7] . "." . $arr[8];
+                     switch ($arr[4]) {
+                         case 0:
+                             $team = "";
+                             break;
+                         case 1:
+                             $team = "SPECTATOR";
+                             break;
+                         case 2:
+                             $team = "TERRORIST";
+                             break;
+                         case 3:
+                             $team = "CT";
+                             break;
+                     }
 
-                    $this->userToEnter[$arr[1]] = $ip;
-                    $this->processPlayer($arr[1], $arr[2], $team, $arr[3]);
-                }
-            }*/
+                     $this->userToEnter[$arr[1]] = $ip;
+                     $this->processPlayer($arr[1], $arr[2], $team, $arr[3]);
+                 }
+             }*/
         }
     }
 
@@ -570,6 +578,12 @@ class Match implements Taskable
                 $setDisable = ", enable = '0'";
             mysqli_query(Application::getInstance()->db, "UPDATE `matchs` SET status='" . $newStatus . "' " . $setDisable . " WHERE id='" . $this->match_id . "'");
         }
+
+        $event = new \eBot\Events\Event\MatchStatusUpdate();
+        $event->setMatch($this);
+        $event->setStatus($this->getStatus());
+        $event->setStatusText($this->getStatusText());
+        \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);
     }
 
     private function getHostname()
@@ -976,31 +990,44 @@ class Match implements Taskable
         }
     }
 
-    private function processPause(\eBot\Message\Type\Pause $message) {
+    private function processPause(\eBot\Message\Type\Pause $message)
+    {
+        $event = new \eBot\Events\Event\Pause();
+        $event->setMatch($this);
+        $event->setPause($message->enabled);
+        $event->setType($message->reason);
         if ($message->enabled) {
-            $this->addLog('Pause detected, reason : '.$message->reason);
-            if ($this->hookTimeout === 'ct'  && $message->reason === 'TimeOutCTs') {
+            $this->addLog('Pause detected, reason : ' . $message->reason);
+            if ($this->hookTimeout === 'ct' && $message->reason === 'TimeOutCTs') {
                 $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
                 $this->addLog('Timeout confirmed');
-                $this->addMatchLog($team. ' timeout confirmed');
+                $this->addMatchLog($team . ' timeout confirmed');
                 $this->hookTimeoutUnpause = true;
 
                 $this->isPaused = true;
                 \mysqli_query(Application::getInstance()->db, "UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
                 $this->websocket['match']->sendData(json_encode(['message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id]));
-            } elseif ($this->hookTimeout === 't'  && $message->reason === 'TimeOutTs') {
+
+                $event->setType('timeout');
+                $event->setTeam('ct');
+                $event->setTeamName($team);
+            } else if ($this->hookTimeout === 't' && $message->reason === 'TimeOutTs') {
                 $team = ($this->side['team_a'] == "t") ? $this->teamAName : $this->teamBName;
                 $this->addLog('Timeout confirmed');
-                $this->addMatchLog($team. ' timeout confirmed');
+                $this->addMatchLog($team . ' timeout confirmed');
                 $this->hookTimeoutUnpause = true;
 
                 $this->isPaused = true;
                 \mysqli_query(Application::getInstance()->db, "UPDATE `matchs` SET `is_paused` = '1' WHERE `id` = '" . $this->match_id . "'");
                 $this->websocket['match']->sendData(json_encode(['message' => 'status', 'content' => 'is_paused', 'id' => $this->match_id]));
+
+                $event->setType('timeout');
+                $event->setTeam('ct');
+                $event->setTeamName($team);
             }
             $this->hookTimeout = null;
         } else {
-            $this->addLog('Unpause detected, reason : '.$message->reason);
+            $this->addLog('Unpause detected, reason : ' . $message->reason);
             if ($this->hookTimeoutUnpause && in_array($message->reason, ['TimeOutCTs', 'TimeOutTs'])) {
                 $this->addLog('Timeout over');
                 $this->isPaused = false;
@@ -1009,6 +1036,7 @@ class Match implements Taskable
             }
             $this->hookTimeoutUnpause = false;
         }
+        \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);
     }
 
     private $tempScoreA = null;
@@ -1415,7 +1443,7 @@ class Match implements Taskable
             if ($this->enable) {
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
-                    $this->say('Timeout requested by '.$team);
+                    $this->say('Timeout requested by ' . $team);
                     $this->addMatchLog("$team want a timeout");
                     $this->rcon->send("timeout_ct_start");
                     $this->hookTimeout = 'ct';
@@ -1423,11 +1451,11 @@ class Match implements Taskable
                     $team = ($this->side['team_a'] == "t") ? $this->teamAName : $this->teamBName;
                     $this->addMatchLog("$team want a timeout");
                     $this->rcon->send("timeout_terrorist_start");
-                    $this->say('Timeout requested by '.$team);
+                    $this->say('Timeout requested by ' . $team);
                     $this->hookTimeout = 't';
                 }
             }
-        }else if ($this->isMatchRound() && $this->isCommand($message, "continue")) {
+        } else if ($this->isMatchRound() && $this->isCommand($message, "continue")) {
             if (!$this->enable) {
                 if ($message->getUserTeam() == "CT") {
                     $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
@@ -1484,11 +1512,21 @@ class Match implements Taskable
                 $this->startMatch();
             }
         } else if ($this->isCommand($message, "pause") || $this->isCommand($message, "tech")) {
-            if (Config::getInstance()->getTimeoutEnabled() && $this->isCommand($message, "pause") ) {
+            if (Config::getInstance()->getTimeoutEnabled() && $this->isCommand($message, "pause")) {
                 $this->say_player($message->userId, "Use !timeout for a timeout or !tech for technical pause");
             } else {
                 $command = Config::getInstance()->getTimeoutEnabled() ? 'tech' : 'pause';
                 if ($this->isMatchRound() && !$this->isPaused && $this->enable) {
+                    $event = new \eBot\Events\Event\Pause();
+                    $event->setMatch($this);
+                    $event->setUserId($message->getUserId());
+                    $event->setUserName($message->getUserName());
+                    $event->setUserTeam($message->getUserTeam());
+                    $event->setUserSteamid($message->getUserSteamid());
+                    $event->setType($message->getType());
+                    $event->setText($message->getText());
+                    \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);
+
                     if ($message->getUserTeam() == "CT") {
                         $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;
                         if (!$this->pause['ct']) {
@@ -1971,6 +2009,7 @@ class Match implements Taskable
             $event->setScoreA($this->score["team_a"]);
             $event->setScoreB($this->score["team_b"]);
             $event->setStatus($this->getStatus());
+            $event->setStatusText($this->getStatusText());
             \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);
         }
         $this->roundEndEvent = true;
@@ -2888,6 +2927,16 @@ class Match implements Taskable
             $this->say("Round restored, going LIVE!");
             \mysqli_query(Application::getInstance()->db, "UPDATE `matchs` SET ingame_enable = 1 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
             TaskManager::getInstance()->addTask(new Task($this, self::SET_LIVE, microtime(true) + 2));
+
+            $event = new \eBot\Events\Event\RoundRestored();
+            $event->setMatch($this);
+            $event->setTeamA($this->teamAName);
+            $event->setTeamB($this->teamAName);
+            $event->setScoreA($this->score["team_a"]);
+            $event->setScoreB($this->score["team_b"]);
+            $event->setStatus($this->getStatus());
+            $event->setStatusText($this->getStatusText());
+            \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);
         }
     }
 
@@ -3582,6 +3631,17 @@ class Match implements Taskable
         \mysqli_query(Application::getInstance()->db, "UPDATE `matchs` SET ingame_enable = 1 WHERE id='" . $this->match_id . "'") or $this->addLog("Can't update ingame_enable", Logger::ERROR);
         TaskManager::getInstance()->addTask(new Task($this, self::SET_LIVE, microtime(true) + 2));
 
+        $event = new \eBot\Events\Event\RoundScored();
+        $event->setMatch($this);
+        $event->setTeamA($this->teamAName);
+        $event->setTeamB($this->teamAName);
+        $event->setScoreA($this->score["team_a"]);
+        $event->setScoreB($this->score["team_b"]);
+        $event->setStatus($this->getStatus());
+        $event->setStatusText($this->getStatusText());
+        $event->setAdmin(true);
+        \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);
+
         return true;
     }
 
@@ -3620,6 +3680,17 @@ class Match implements Taskable
         return $this->currentMap->getMapId();
     }
 
-}
+    public function getTeamA()
+    {
+        return $this->teamAName;
+    }
 
-?>
+    public function getTeamB()
+    {
+        return $this->teamBName;
+    }
+
+    public function getServerIp() {
+        return $this->server_ip;
+    }
+}
