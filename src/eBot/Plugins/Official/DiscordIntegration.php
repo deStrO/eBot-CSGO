@@ -125,7 +125,7 @@ class DiscordIntegration implements Plugin
     private function handleMatchEngaged(MatchEngaged $event)
     {
         $this->dispatch(self::SCOPE_MATCH_STATUS, [
-            'title'       => '[MATCH LOADED] ' . $event->getMatch()->getTeamA() . ' VS ' . $event->getMatch()->getTeamB() . " on " . $event->getMatch()->getServerIp(),
+            'title'       => '[MATCH LOADED] ' . $event->getMatch()->getTeamA() . ' VS ' . $event->getMatch()->getTeamB(),
             'description' => 'Status : ' . $event->getMatch()->getStatusText(),
             'color'       => 0x84cc16,
         ]);
