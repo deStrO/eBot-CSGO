@@ -2005,7 +2005,7 @@ class Match implements Taskable
             $event = new \eBot\Events\Event\RoundScored();
             $event->setMatch($this);
             $event->setTeamA($this->teamAName);
-            $event->setTeamB($this->teamAName);
+            $event->setTeamB($this->teamBName);
             $event->setScoreA($this->score["team_a"]);
             $event->setScoreB($this->score["team_b"]);
             $event->setStatus($this->getStatus());
