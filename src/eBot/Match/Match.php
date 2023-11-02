@@ -3693,4 +3693,12 @@ class Match implements Taskable
     public function getServerIp() {
         return $this->server_ip;
     }
+
+    public function getScoreA() {
+        return $this->currentMap->getScore1();
+    }
+
+    public function getScoreB() {
+        return $this->currentMap->getScore2();
+    }
 }
