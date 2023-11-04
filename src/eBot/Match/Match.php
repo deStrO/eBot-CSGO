@@ -705,7 +705,7 @@ class Match implements Taskable
             if (\eBot\Config\Config::getInstance()->getWorkshop() && \eBot\Config\Config::getInstance()->getWorkshopByMap($this->currentMap->getMapName())) {
                 $this->addLog("Detected a workshop map, loading it using host_workshop_map.");
                 $this->rcon->send("host_workshop_map " . \eBot\Config\Config::getInstance()
-                    ->getWorkshopByMap($this->currentMap->getMapName()) . "/" . $this->currentMap->getMapName());
+                    ->getWorkshopByMap($this->currentMap->getMapName()));
             }
             else {
                 $this->rcon->send("changelevel " . $this->currentMap->getMapName());
