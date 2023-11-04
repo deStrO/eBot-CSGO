@@ -702,10 +702,14 @@ class Match implements Taskable
 
             // Changing map
             $this->addLog("Changing map to: '" . $this->currentMap->getMapName() . "'.");
-            if (\eBot\Config\Config::getInstance()->getWorkshop() && \eBot\Config\Config::getInstance()->getWorkshopByMap($this->currentMap->getMapName()))
-                $this->rcon->send("changelevel workshop/" . \eBot\Config\Config::getInstance()->getWorkshopByMap($this->currentMap->getMapName()) . "/" . $this->currentMap->getMapName());
-            else
+            if (\eBot\Config\Config::getInstance()->getWorkshop() && \eBot\Config\Config::getInstance()->getWorkshopByMap($this->currentMap->getMapName())) {
+                $this->addLog("Detected a workshop map, loading it using host_workshop_map.");
+                $this->rcon->send("host_workshop_map " . \eBot\Config\Config::getInstance()
+                    ->getWorkshopByMap($this->currentMap->getMapName()) . "/" . $this->currentMap->getMapName());
+            }
+            else {
                 $this->rcon->send("changelevel " . $this->currentMap->getMapName());
+            }
 
             if ($this->config_kniferound) {
                 $this->setStatus(self::STATUS_WU_KNIFE, true);
