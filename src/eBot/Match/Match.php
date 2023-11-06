@@ -2485,12 +2485,18 @@ class Match implements Taskable
 
         if ($this->waitRoundStartRecord) {
             $record_name = $this->match_id . "_" . \eTools\Utils\Slugify::cleanTeamName($this->teamAName) . "-" . \eTools\Utils\Slugify::cleanTeamName($this->teamBName) . "_" . $this->currentMap->getMapName();
+
+            // Disable running autorecord to use eBots version.
             $text = $this->rcon->send("tv_autorecord");
-            if (preg_match('!"tv_autorecord" = "(?<value>.*)"!', $text, $match)) {
-                if ($match["value"] == 1) {
-                    Logger::log("Stopping running records (tv_autorecord).");
-                    $this->rcon->send("tv_autorecord 0; tv_stoprecord");
-                }
+            Logger::log("Checking for tv_autorecord: " . $text);
+            // Check if $text contains the desired format
+            if (strpos($text, "true") !== false) {
+                // Log a message and stop running records
+                Logger::log("Stopping running records (tv_autorecord).");
+                $this->rcon->send("tv_autorecord 0; tv_stoprecord");
+            }
+            else {
+                Logger::log("Could not detect a running tv_autorecord.");
             }
 
             Logger::log("Launching record $record_name");
