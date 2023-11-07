@@ -10,17 +10,16 @@
 namespace eBot\Events\Event;
 
 use eBot\Events\Event;
- 
-class Say extends Event {
-	
-	protected $match;
-	protected $user_id;
-	protected $user_name;
-	protected $user_team;
-	protected $user_steamid;
-	protected $type;
-	protected $text;
-	
-}
 
-?>
+class Say extends Event
+{
+
+    protected $match;
+    protected $user_id;
+    protected $user_name;
+    protected $user_team;
+    protected $user_steamid;
+    protected $type;
+    protected $text;
+
+}
