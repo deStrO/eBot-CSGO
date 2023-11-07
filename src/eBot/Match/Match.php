@@ -2525,8 +2525,8 @@ class Match implements Taskable
         if ($this->waitRoundStartRecord) {
             $record_name = $this->match_id . "_" . \eTools\Utils\Slugify::cleanTeamName($this->teamAName) . "-" . \eTools\Utils\Slugify::cleanTeamName($this->teamBName) . "_" . $this->currentMap->getMapName();
             $text = $this->rcon->send("tv_autorecord");
-            if (preg_match('!"tv_autorecord" = "(?<value>.*)"!', $text, $match)) {
-                if ($match["value"] == 1) {
+            if (preg_match('!tv_autorecord = (?<value>.*)!', $text, $match)) {
+                if (in_array($match["value"], ['true', true, '1', 1])) {
                     Logger::log("Stopping running records (tv_autorecord).");
                     $this->rcon->send("tv_autorecord 0; tv_stoprecord");
                 }
