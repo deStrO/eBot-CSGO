@@ -1517,7 +1517,7 @@ class Match implements Taskable
             } else {
                 $command = Config::getInstance()->getTimeoutEnabled() ? 'tech' : 'pause';
                 if ($this->isMatchRound() && !$this->isPaused && $this->enable) {
-                    $event = new \eBot\Events\Event\Pause();
+                    /*$event = new \eBot\Events\Event\Pause();
                     $event->setMatch($this);
                     $event->setUserId($message->getUserId());
                     $event->setUserName($message->getUserName());
@@ -1525,7 +1525,7 @@ class Match implements Taskable
                     $event->setUserSteamid($message->getUserSteamid());
                     $event->setType($message->getType());
                     $event->setText($message->getText());
-                    \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);
+                    \eBot\Events\EventDispatcher::getInstance()->dispatchEvent($event);*/
 
                     if ($message->getUserTeam() == "CT") {
                         $team = ($this->side['team_a'] == "ct") ? $this->teamAName : $this->teamBName;

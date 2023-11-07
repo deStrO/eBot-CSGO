@@ -107,7 +107,7 @@ class DiscordIntegration implements Plugin
         ];
 
         $this->dispatch(self::SCOPE_ERROR, [
-            'title'  => '[' . ($event->getPause() ? 'PAUSE' : 'UNPAUSE') . '] ' . $event->getMatch()->getTeamA() . ' VS ' . $event->getMatch()->getTeamB(),
+            'title'  => '[' . ($event->getPause() ? 'PAUSE' : 'UNPAUSE') . '] ' . $event->getMatch()->getTeamA() . ' (' . $event->getMatch()->getScoreA() . ') VS (' . $event->getMatch()->getScoreB() . ')' . $event->getMatch()->getTeamB(),
             'color'  => 0xef4444,
             'fields' => $fields,
         ]);
@@ -160,15 +160,15 @@ class DiscordIntegration implements Plugin
     private function handleRoundScored(RoundScored $event)
     {
         $this->dispatch(self::SCOPE_SCORE, [
-            'title'       => '[SCORE UPDATE] ' .$event->getMatch()->getTeamA() . ' ('.$event->getMatch()->getScoreA().') VS ('.$event->getMatch()->getScoreB().')' . $event->getMatch()->getTeamB(),
-            'color'       => 0x84cc16,
+            'title' => '[SCORE UPDATE] ' . $event->getMatch()->getTeamA() . ' (' . $event->getMatch()->getScoreA() . ') VS (' . $event->getMatch()->getScoreB() . ')' . $event->getMatch()->getTeamB(),
+            'color' => 0x84cc16,
         ]);
     }
 
     private function handleRoundRestored(RoundRestored $event)
     {
         $this->dispatch(self::SCOPE_SCORE, [
-            'title'       => '[ROUND RESTORED BY ' . ($event->getAdmin() ? 'ADMIN' : 'PLAYERS') . '] ' . $event->getMatch()->getTeamA() . ' ('.$event->getMatch()->getScoreA().') VS ('.$event->getMatch()->getScoreB().')' . $event->getMatch()->getTeamB(),
+            'title'       => '[ROUND RESTORED BY ' . ($event->getAdmin() ? 'ADMIN' : 'PLAYERS') . '] ' . $event->getMatch()->getTeamA() . ' (' . $event->getMatch()->getScoreA() . ') VS (' . $event->getMatch()->getScoreB() . ')' . $event->getMatch()->getTeamB(),
             'description' => $event->getTeamA() . ' (' . $event->getScoreA() . ') VS (' . $event->getScoreB() . ') ' . $event->getTeamB(),
             'color'       => 0x84cc16,
         ]);
